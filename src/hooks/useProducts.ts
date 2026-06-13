@@ -5,6 +5,7 @@ import {
   getNewArrivals,
   getProduct,
   getProducts,
+  getSaleProducts,
   getTrending,
 } from "@/services/productService";
 import type { ProductFilter } from "@/types/product";
@@ -67,5 +68,15 @@ export function useTrending(filter: ProductFilter = {}) {
   return useQuery({
     queryKey: ["products", "trending", filter],
     queryFn: () => getTrending(filter),
+  });
+}
+
+/**
+ * Fetches products currently on sale.
+ */
+export function useSaleProducts(filter: ProductFilter = {}) {
+  return useQuery({
+    queryKey: ["products", "sale", filter],
+    queryFn: () => getSaleProducts(filter),
   });
 }

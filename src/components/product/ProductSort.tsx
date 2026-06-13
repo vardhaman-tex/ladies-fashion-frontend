@@ -1,47 +1,51 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
-  { value: "NEWEST", label: "Newest" },
-  { value: "PRICE_ASC", label: "Price: Low to High" },
-  { value: "PRICE_DESC", label: "Price: High to Low" },
-  { value: "AVG_RATING", label: "Top Rated" },
-  { value: "BEST_SELLING", label: "Best Selling" },
+  { value: "RECOMMENDED", label: "Best Match" },
+  { value: "NEWEST", label: "New" },
+  { value: "PRICE_ASC", label: "Price ↑" },
+  { value: "PRICE_DESC", label: "Price ↓" },
+  { value: "AVG_RATING", label: "Rating" },
 ];
 
-/**
- * Sort dropdown bound to the `sort` URL search parameter.
- */
-export function ProductSort() {
+export function ProductSort({ className }: { className?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentSort = searchParams.get("sort") ?? "NEWEST";
+  const currentSort = searchParams.get("sort") ?? "RECOMMENDED";
 
-  const handleChange = (value: string | null) => {
+  const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "NEWEST") {
+    if (value && value !== "RECOMMENDED") {
       params.set("sort", value);
     } else {
       params.delete("sort");
     }
     params.delete("page");
-    router.push(`?${params.toString()}`);
+    router.push(params.toString() ? `?${params.toString()}` : "?");
   };
 
   return (
-    <Select value={currentSort} onValueChange={handleChange}>
-      <SelectTrigger className="w-48">
-        <SelectValue placeholder="Sort by" />
-      </SelectTrigger>
-      <SelectContent>
-        {SORT_OPTIONS.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
+    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+      {SORT_OPTIONS.map((option) => {
+        const active = currentSort === option.value;
+        return (
+          <button
+            key={option.value}
+            onClick={() => handleChange(option.value)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              active
+                ? "border-rose-600 bg-rose-600 text-white"
+                : "border-border bg-background text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+            )}
+          >
             {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          </button>
+        );
+      })}
+    </div>
   );
 }

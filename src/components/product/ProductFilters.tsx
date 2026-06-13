@@ -2,162 +2,246 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/useCategories";
 
-/**
- * Sidebar of filter controls (category, price, color, fabric, occasion,
- * stock) that read from and write to the URL search params.
- */
+const COLORS = ["Red", "Pink", "Blue", "Green", "Black", "White", "Yellow", "Orange", "Purple", "Beige", "Brown", "Grey"];
+const FABRICS = ["Cotton", "Silk", "Georgette", "Chiffon", "Linen", "Polyester", "Rayon", "Velvet", "Net", "Crepe"];
+const OCCASIONS = ["Casual", "Festive", "Wedding", "Party", "Office", "Beach", "Traditional", "Bridal"];
+const PRICE_PRESETS = [
+  { label: "Under ₹500", min: "", max: "500" },
+  { label: "₹500–₹1000", min: "500", max: "1000" },
+  { label: "₹1000–₹2000", min: "1000", max: "2000" },
+  { label: "₹2000+", min: "2000", max: "" },
+];
+
+interface FilterSectionProps {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+function FilterSection({ title, children, defaultOpen = true }: FilterSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b last:border-b-0">
+      <button
+        className="flex w-full items-center justify-between py-3 text-sm font-semibold"
+        onClick={() => setOpen(!open)}
+      >
+        {title}
+        {open ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="pb-3">{children}</div>}
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+        active
+          ? "border-rose-600 bg-rose-600 text-white"
+          : "border-border bg-background text-foreground hover:border-rose-400 hover:text-rose-600"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function ProductFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: categories } = useCategories();
 
-  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") ?? "");
-  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") ?? "");
-  const [color, setColor] = useState(searchParams.get("color") ?? "");
-  const [fabric, setFabric] = useState(searchParams.get("fabric") ?? "");
-  const [occasion, setOccasion] = useState(searchParams.get("occasion") ?? "");
+  const currentCategory = searchParams.get("categorySlug");
+  const currentColor = searchParams.get("color")?.toLowerCase() ?? null;
+  const currentFabric = searchParams.get("fabric")?.toLowerCase() ?? null;
+  const currentOccasion = searchParams.get("occasion")?.toLowerCase() ?? null;
+  const currentMin = searchParams.get("minPrice") ?? "";
+  const currentMax = searchParams.get("maxPrice") ?? "";
+  const inStock = searchParams.get("inStock") === "true";
 
-  const updateParam = (key: string, value: string | null) => {
+  const updateParam = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
     }
     params.delete("page");
     router.push(`?${params.toString()}`);
   };
 
-  const applyPriceRange = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (minPrice) params.set("minPrice", minPrice); else params.delete("minPrice");
-    if (maxPrice) params.set("maxPrice", maxPrice); else params.delete("maxPrice");
-    params.delete("page");
-    router.push(`?${params.toString()}`);
+  const toggleChip = (key: string, value: string) => {
+    const current = searchParams.get(key)?.toLowerCase();
+    updateParam({ [key]: current === value.toLowerCase() ? null : value.toLowerCase() });
   };
 
-  const applyText = (key: string, value: string) => {
-    updateParam(key, value.trim() || null);
+  const setPrice = (min: string, max: string) => {
+    const currentPreset = PRICE_PRESETS.find(
+      (p) => p.min === currentMin && p.max === currentMax
+    );
+    const selectedPreset = PRICE_PRESETS.find((p) => p.min === min && p.max === max);
+    if (currentPreset === selectedPreset) {
+      updateParam({ minPrice: null, maxPrice: null });
+    } else {
+      updateParam({ minPrice: min || null, maxPrice: max || null });
+    }
   };
-
-  const currentCategory = searchParams.get("categorySlug");
-  const inStock = searchParams.get("inStock") === "true";
 
   const clearAll = () => {
     router.push("?");
-    setMinPrice("");
-    setMaxPrice("");
-    setColor("");
-    setFabric("");
-    setOccasion("");
   };
 
+  const hasFilters =
+    currentCategory || currentColor || currentFabric || currentOccasion ||
+    currentMin || currentMax || inStock;
+
   return (
-    <aside className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Filters</h2>
-        <Button variant="ghost" size="sm" onClick={clearAll}>
-          Clear all
-        </Button>
+    <div className="flex flex-col gap-0">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold">Filters</span>
+        {hasFilters && (
+          <button
+            onClick={clearAll}
+            className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700"
+          >
+            <X className="size-3" /> Clear all
+          </button>
+        )}
       </div>
 
-      <Accordion defaultValue={["category", "price"]} multiple>
-        <AccordionItem value="category">
-          <AccordionTrigger>Category</AccordionTrigger>
-          <AccordionContent>
-            <div className="flex flex-col gap-1">
-              {categories?.map((category) => (
-                <button
-                  key={category.id}
-                  className={`text-left text-sm ${currentCategory === category.slug ? "font-semibold text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => updateParam("categorySlug", currentCategory === category.slug ? null : category.slug)}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+      {/* Category */}
+      {categories && categories.length > 0 && (
+        <FilterSection title="Category">
+          <div className="flex flex-col gap-0.5">
+            <button
+              className={cn(
+                "rounded px-2 py-1.5 text-left text-sm transition-colors",
+                !currentCategory
+                  ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => updateParam({ categorySlug: null, subCategorySlug: null })}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={cn(
+                  "rounded px-2 py-1.5 text-left text-sm transition-colors",
+                  currentCategory === cat.slug
+                    ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() =>
+                  updateParam({
+                    categorySlug: currentCategory === cat.slug ? null : cat.slug,
+                    subCategorySlug: null,
+                  })
+                }
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </FilterSection>
+      )}
 
-        <AccordionItem value="price">
-          <AccordionTrigger>Price Range</AccordionTrigger>
-          <AccordionContent>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                onBlur={applyPriceRange}
+      {/* Price */}
+      <FilterSection title="Price">
+        <div className="flex flex-wrap gap-2">
+          {PRICE_PRESETS.map((preset) => {
+            const active = preset.min === currentMin && preset.max === currentMax;
+            return (
+              <Chip
+                key={preset.label}
+                label={preset.label}
+                active={active}
+                onClick={() => setPrice(preset.min, preset.max)}
               />
-              <span className="text-muted-foreground">-</span>
-              <Input
-                type="number"
-                placeholder="Max"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                onBlur={applyPriceRange}
-              />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+            );
+          })}
+        </div>
+      </FilterSection>
 
-        <AccordionItem value="color">
-          <AccordionTrigger>Color</AccordionTrigger>
-          <AccordionContent>
-            <Input
-              placeholder="e.g. red"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              onBlur={() => applyText("color", color)}
+      {/* Color */}
+      <FilterSection title="Color" defaultOpen={false}>
+        <div className="flex flex-wrap gap-2">
+          {COLORS.map((color) => (
+            <Chip
+              key={color}
+              label={color}
+              active={currentColor === color.toLowerCase()}
+              onClick={() => toggleChip("color", color)}
             />
-          </AccordionContent>
-        </AccordionItem>
+          ))}
+        </div>
+      </FilterSection>
 
-        <AccordionItem value="fabric">
-          <AccordionTrigger>Fabric</AccordionTrigger>
-          <AccordionContent>
-            <Input
-              placeholder="e.g. cotton"
-              value={fabric}
-              onChange={(e) => setFabric(e.target.value)}
-              onBlur={() => applyText("fabric", fabric)}
+      {/* Fabric */}
+      <FilterSection title="Fabric" defaultOpen={false}>
+        <div className="flex flex-wrap gap-2">
+          {FABRICS.map((fabric) => (
+            <Chip
+              key={fabric}
+              label={fabric}
+              active={currentFabric === fabric.toLowerCase()}
+              onClick={() => toggleChip("fabric", fabric)}
             />
-          </AccordionContent>
-        </AccordionItem>
+          ))}
+        </div>
+      </FilterSection>
 
-        <AccordionItem value="occasion">
-          <AccordionTrigger>Occasion</AccordionTrigger>
-          <AccordionContent>
-            <Input
-              placeholder="e.g. wedding"
-              value={occasion}
-              onChange={(e) => setOccasion(e.target.value)}
-              onBlur={() => applyText("occasion", occasion)}
+      {/* Occasion */}
+      <FilterSection title="Occasion" defaultOpen={false}>
+        <div className="flex flex-wrap gap-2">
+          {OCCASIONS.map((occasion) => (
+            <Chip
+              key={occasion}
+              label={occasion}
+              active={currentOccasion === occasion.toLowerCase()}
+              onClick={() => toggleChip("occasion", occasion)}
             />
-          </AccordionContent>
-        </AccordionItem>
+          ))}
+        </div>
+      </FilterSection>
 
-        <AccordionItem value="stock">
-          <AccordionTrigger>Availability</AccordionTrigger>
-          <AccordionContent>
-            <Label className="flex items-center gap-2 text-sm font-normal">
-              <input
-                type="checkbox"
-                checked={inStock}
-                onChange={(e) => updateParam("inStock", e.target.checked ? "true" : null)}
-              />
-              In Stock only
-            </Label>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </aside>
+      {/* In Stock */}
+      <FilterSection title="Availability" defaultOpen={false}>
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <div
+            className={cn(
+              "relative h-5 w-9 rounded-full transition-colors",
+              inStock ? "bg-rose-600" : "bg-muted-foreground/30"
+            )}
+            onClick={() => updateParam({ inStock: inStock ? null : "true" })}
+          >
+            <div
+              className={cn(
+                "absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform",
+                inStock ? "translate-x-4" : "translate-x-0.5"
+              )}
+            />
+          </div>
+          <span className="text-sm text-foreground">In stock only</span>
+        </label>
+      </FilterSection>
+    </div>
   );
 }

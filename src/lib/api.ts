@@ -1,16 +1,24 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-
 /**
- * Shared Axios instance configured to send and receive HttpOnly
- * authentication cookies issued by the backend.
+ * Shared Axios instance.
+ *
+ * In development, Next.js rewrites /api/** → http://localhost:8080/api/**
+ * so all requests go to the same origin (localhost:3000).  This avoids
+ * cross-origin cookie problems (SameSite/Secure) entirely.
+ *
+ * In production, NEXT_PUBLIC_API_BASE_URL should be unset (empty) when the
+ * frontend and backend share an origin, or set to the backend URL when they
+ * don't (e.g. a separate API host behind a CDN that handles CORS).
  */
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  // Empty baseURL → requests go to the same origin; Next.js rewrites proxy them.
+  baseURL: "",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    // Bypass ngrok's browser-warning interstitial page for API requests
+    "ngrok-skip-browser-warning": "true",
   },
 });
 
