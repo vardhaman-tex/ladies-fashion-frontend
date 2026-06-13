@@ -1,17 +1,18 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, XIcon, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { ApiResponse } from "@/types/api";
-import type { ProductDetail } from "@/types/product";
+import type { ProductDetail, ProductImage } from "@/types/product";
 import type { Category } from "@/types/category";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
+import { deleteProductImage } from "@/services/adminProductService";
 
 export default function EditProductPage({
   params,
@@ -20,6 +21,7 @@ export default function EditProductPage({
 }) {
   const { slug } = use(params);
   const router = useRouter();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,10 +36,16 @@ export default function EditProductPage({
   const [color, setColor]         = useState("");
   const [fabric, setFabric]       = useState("");
   const [occasion, setOccasion]   = useState("");
+  const [sizes, setSizes]         = useState("");
   const [description, setDesc]    = useState("");
   const [status, setStatus]       = useState("ACTIVE");
   const [categoryId, setCatId]    = useState("");
   const [featured, setFeatured]   = useState(false);
+
+  // Image state
+  const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -55,10 +63,12 @@ export default function EditProductPage({
         setColor(p.color ?? "");
         setFabric(p.fabric ?? "");
         setOccasion("");
+        setSizes(p.sizes ?? "");
         setDesc(p.description ?? "");
         setStatus(p.status);
         setCatId(p.category?.id ?? "");
         setFeatured(p.isFeatured);
+        setExistingImages(p.images ?? []);
         setCategories(cRes.data.data);
       } catch {
         toast.error("Failed to load product");
@@ -68,6 +78,30 @@ export default function EditProductPage({
     }
     void load();
   }, [slug]);
+
+  function handleNewImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setNewImages((prev) => [...prev, ...files]);
+    e.target.value = "";
+  }
+
+  function removeNewImage(index: number) {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleDeleteExistingImage(imageId: string) {
+    if (!product) return;
+    setDeletingImageId(imageId);
+    try {
+      await deleteProductImage(product.id, imageId);
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+      toast.success("Image removed");
+    } catch {
+      toast.error("Failed to remove image");
+    } finally {
+      setDeletingImageId(null);
+    }
+  }
 
   async function handleSave() {
     if (!product) return;
@@ -87,6 +121,7 @@ export default function EditProductPage({
         color,
         fabric,
         occasion,
+        sizes: sizes || null,
         stockQuantity: product.inventory?.availableQty ?? 0,
         lowStockThreshold: product.inventory?.lowStockThreshold ?? 5,
         status,
@@ -95,6 +130,7 @@ export default function EditProductPage({
         metaDescription: product.metaDescription ?? "",
       };
       formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+      newImages.forEach((img) => formData.append("images", img));
       await api.put(`/api/v1/admin/products/${product.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -161,24 +197,12 @@ export default function EditProductPage({
 
           <div>
             <label className="mb-1 block text-sm font-medium">Price (₹)</label>
-            <Input
-              type="number"
-              min={0}
-              step={0.01}
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
+            <Input type="number" min={0} step={0.01} value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium">Discount Amount (₹)</label>
-            <Input
-              type="number"
-              min={0}
-              step={0.01}
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
-            />
+            <Input type="number" min={0} step={0.01} value={discount} onChange={(e) => setDiscount(e.target.value)} />
           </div>
 
           <div>
@@ -189,6 +213,18 @@ export default function EditProductPage({
           <div>
             <label className="mb-1 block text-sm font-medium">Fabric</label>
             <Input value={fabric} onChange={(e) => setFabric(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Occasion</label>
+            <Input value={occasion} onChange={(e) => setOccasion(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Sizes <span className="text-muted-foreground font-normal">(e.g. S,M,L,XL)</span>
+            </label>
+            <Input value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="S,M,L,XL,XXL" />
           </div>
 
           <div>
@@ -212,9 +248,7 @@ export default function EditProductPage({
               onChange={(e) => setFeatured(e.target.checked)}
               className="size-4"
             />
-            <label htmlFor="featured" className="text-sm font-medium">
-              Featured
-            </label>
+            <label htmlFor="featured" className="text-sm font-medium">Featured</label>
           </div>
 
           <div className="sm:col-span-2">
@@ -226,6 +260,83 @@ export default function EditProductPage({
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
           </div>
+        </div>
+
+        {/* Images section */}
+        <div>
+          <label className="mb-2 block text-sm font-medium">Images</label>
+
+          {/* Existing images */}
+          {existingImages.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {existingImages.map((img) => (
+                <div key={img.id} className="relative size-20 overflow-hidden rounded-lg border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.imageUrl} alt="Product image" className="size-full object-cover" />
+                  {img.isPrimary && (
+                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 text-center text-[9px] text-white">
+                      Primary
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExistingImage(img.id)}
+                    disabled={deletingImageId === img.id}
+                    className="absolute top-1 right-1 rounded-full bg-background/80 p-0.5 disabled:opacity-50"
+                    aria-label="Remove image"
+                  >
+                    {deletingImageId === img.id ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <XIcon className="size-3" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New images to be added on save */}
+          {newImages.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {newImages.map((file, index) => (
+                <div key={index} className="relative size-20 overflow-hidden rounded-lg border border-dashed border-rose-400">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={URL.createObjectURL(file)} alt={file.name} className="size-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewImage(index)}
+                    className="absolute top-1 right-1 rounded-full bg-background/80 p-0.5"
+                    aria-label="Remove image"
+                  >
+                    <XIcon className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            onChange={handleNewImageChange}
+          />
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+          >
+            <ImagePlus className="size-4" />
+            Add images
+          </button>
+          {newImages.length > 0 && (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {newImages.length} new image{newImages.length !== 1 ? "s" : ""} will be uploaded on save
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

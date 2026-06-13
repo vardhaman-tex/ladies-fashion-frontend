@@ -1,10 +1,10 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
-import { XIcon } from "lucide-react";
+import { ImagePlus, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ const STATUS_OPTIONS: ProductStatus[] = ["DRAFT", "ACTIVE", "INACTIVE"];
 export default function NewProductPage() {
   const router = useRouter();
   const { data: categories } = useCategories();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
@@ -32,6 +33,7 @@ export default function NewProductPage() {
   const [color, setColor] = useState("");
   const [fabric, setFabric] = useState("");
   const [occasion, setOccasion] = useState("");
+  const [sizes, setSizes] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState("");
   const [status, setStatus] = useState<ProductStatus>("DRAFT");
@@ -41,11 +43,12 @@ export default function NewProductPage() {
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectedCategory = categories?.find((category) => category.id === categoryId);
+  const selectedCategory = categories?.find((c) => c.id === categoryId);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files ? Array.from(e.target.files) : [];
     setImages((prev) => [...prev, ...files]);
+    e.target.value = "";
   }
 
   function removeImage(index: number) {
@@ -54,12 +57,10 @@ export default function NewProductPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (!name.trim() || !sku.trim() || !price || !categoryId) {
       toast.error("Please fill in all required fields");
       return;
     }
-
     setIsSubmitting(true);
     try {
       const product = await createProduct(
@@ -76,6 +77,7 @@ export default function NewProductPage() {
           color: color || undefined,
           fabric: fabric || undefined,
           occasion: occasion || undefined,
+          sizes: sizes || undefined,
           stockQuantity: stockQuantity ? Number(stockQuantity) : undefined,
           lowStockThreshold: lowStockThreshold ? Number(lowStockThreshold) : undefined,
           status,
@@ -158,43 +160,25 @@ export default function NewProductPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>Category *</Label>
-            <Select
-              value={categoryId}
-              onValueChange={(value) => {
-                setCategoryId(value ?? "");
-                setSubCategoryId("");
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
+            <Select value={categoryId} onValueChange={(v) => { setCategoryId(v ?? ""); setSubCategoryId(""); }}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+                {categories?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-2">
             <Label>Sub-category</Label>
-            <Select value={subCategoryId} onValueChange={(value) => setSubCategoryId(value ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select sub-category" />
-              </SelectTrigger>
+            <Select value={subCategoryId} onValueChange={(v) => setSubCategoryId(v ?? "")}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Select sub-category" /></SelectTrigger>
               <SelectContent>
-                {selectedCategory?.subCategories.map((subCategory) => (
-                  <SelectItem key={subCategory.id} value={subCategory.id}>
-                    {subCategory.name}
-                  </SelectItem>
-                ))}
+                {selectedCategory?.subCategories.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="color">Color</Label>
             <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} />
@@ -203,9 +187,18 @@ export default function NewProductPage() {
             <Label htmlFor="fabric">Fabric</Label>
             <Input id="fabric" value={fabric} onChange={(e) => setFabric(e.target.value)} />
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="occasion">Occasion</Label>
             <Input id="occasion" value={occasion} onChange={(e) => setOccasion(e.target.value)} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="sizes">
+              Sizes <span className="text-muted-foreground font-normal">(e.g. S,M,L,XL)</span>
+            </Label>
+            <Input id="sizes" value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="S,M,L,XL,XXL" />
           </div>
         </div>
 
@@ -220,16 +213,10 @@ export default function NewProductPage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={(value) => setStatus((value ?? "DRAFT") as ProductStatus)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
+            <Select value={status} onValueChange={(v) => setStatus((v ?? "DRAFT") as ProductStatus)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
+                {STATUS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -251,16 +238,24 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        {/* Images */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="images">Images</Label>
-          <Input id="images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleImageChange} />
+          <Label>Images</Label>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            onChange={handleImageChange}
+          />
 
           {images.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {images.map((image, index) => (
+              {images.map((img, index) => (
                 <div key={index} className="relative size-20 overflow-hidden rounded-lg border border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={URL.createObjectURL(image)} alt={image.name} className="size-full object-cover" />
+                  <img src={URL.createObjectURL(img)} alt={img.name} className="size-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
@@ -273,6 +268,15 @@ export default function NewProductPage() {
               ))}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            className="flex w-fit items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+          >
+            <ImagePlus className="size-4" />
+            {images.length === 0 ? "Add images" : "Add more images"}
+          </button>
         </div>
 
         <Button type="submit" disabled={isSubmitting} className="w-full">

@@ -60,12 +60,12 @@ export default function AdminProductsPage() {
     const headers = [
       "name", "sku", "description", "price", "discountAmount",
       "categorySlug", "subCategorySlug", "color", "fabric",
-      "occasion", "stockQuantity", "status",
+      "occasion", "sizes", "stockQuantity", "status",
     ];
     const sample = [
       "Floral Kurti", "KRT-001", "Beautiful floral print kurti", 999, 100,
       "kurtis", "cotton-kurtis", "Pink", "Cotton",
-      "Casual", 50, "ACTIVE",
+      "Casual", "S,M,L,XL", 50, "ACTIVE",
     ];
     const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
     // Set column widths
@@ -139,7 +139,7 @@ export default function AdminProductsPage() {
               <div className="rounded-lg bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
                 <p className="mb-1 font-semibold text-foreground">Expected columns (row 1 = header):</p>
                 <p className="font-mono leading-relaxed">
-                  name · sku · description · price · discountAmount · categorySlug · subCategorySlug · color · fabric · occasion · stockQuantity · status
+                  name · sku · description · price · discountAmount · categorySlug · subCategorySlug · color · fabric · occasion · sizes · stockQuantity · status
                 </p>
               </div>
 

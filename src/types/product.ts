@@ -56,6 +56,7 @@ export interface ProductDetail extends ProductSummary {
   description: string | null;
   fabricDetails: string | null;
   careInstructions: string | null;
+  sizes: string | null;
   images: ProductImage[];
   category: Category | null;
   subCategory: SubCategory | null;

@@ -15,6 +15,7 @@ export interface AdminProductRequest {
   color?: string;
   fabric?: string;
   occasion?: string;
+  sizes?: string;
   stockQuantity?: number;
   lowStockThreshold?: number;
   status?: ProductStatus;
@@ -42,4 +43,11 @@ export async function createProduct(data: AdminProductRequest, images: File[]): 
  */
 export async function deleteProduct(id: string): Promise<void> {
   await api.delete<ApiResponse<void>>(`/api/v1/admin/products/${id}`);
+}
+
+/**
+ * Deletes a single image from a product.
+ */
+export async function deleteProductImage(productId: string, imageId: string): Promise<void> {
+  await api.delete<ApiResponse<void>>(`/api/v1/admin/products/${productId}/images/${imageId}`);
 }
