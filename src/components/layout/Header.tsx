@@ -32,7 +32,7 @@ export function Header() {
           <SheetContent side="left" className="flex w-72 flex-col p-0" showCloseButton={false}>
             <SheetHeader className="border-b px-4 py-3">
               <div className="flex items-center justify-between">
-                <SheetTitle className="font-heading text-lg font-bold">Ladies Fashion</SheetTitle>
+                <SheetTitle className="font-heading text-lg font-bold">Vardhman Textile</SheetTitle>
                 <SheetClose render={<Button variant="ghost" size="icon" className="-mr-1" aria-label="Close menu" />}>
                   <X className="size-4" />
                 </SheetClose>
@@ -134,7 +134,7 @@ export function Header() {
 
         {/* Logo */}
         <Link href="/" className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
-          Ladies Fashion
+          Vardhman Textile
         </Link>
 
         {/* Desktop nav */}

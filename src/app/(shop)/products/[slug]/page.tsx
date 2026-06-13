@@ -180,6 +180,7 @@ export default function ProductDetailPage() {
   const ctaRef = useRef<HTMLDivElement>(null);
   const [ctaVisible, setCtaVisible] = useState(true);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // Sticky bar visibility via IntersectionObserver
   useEffect(() => {
@@ -205,6 +206,9 @@ export default function ProductDetailPage() {
 
   const hasDiscount = product.discountAmount > 0;
   const availableQty = product.inventory?.availableQty ?? null;
+  const availableSizes = product.sizes
+    ? product.sizes.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
 
   const thumbnail =
     product.images.find((img) => img.isPrimary)?.imageUrl ??
@@ -220,7 +224,7 @@ export default function ProductDetailPage() {
       price: product!.price,
       discountAmount: product!.discountAmount,
       quantity: 1,
-      size: null,
+      size: selectedSize,
       color: product!.color ?? null,
     });
   }
@@ -235,7 +239,7 @@ export default function ProductDetailPage() {
         price: product!.price,
         discountAmount: product!.discountAmount,
         quantity: 1,
-        size: null,
+        size: selectedSize,
         color: product!.color ?? null,
       },
       { onSuccess: () => router.push("/cart") }
@@ -261,7 +265,7 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+      {/* SizeGuideModal hidden for now */}
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         {/* Breadcrumb */}
@@ -346,13 +350,30 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Size guide link */}
-            <button
-              onClick={() => setSizeGuideOpen(true)}
-              className="self-start text-sm font-medium text-rose-600 underline-offset-2 hover:underline"
-            >
-              Size Guide
-            </button>
+            {/* Size selector */}
+            {availableSizes.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-foreground">
+                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(selectedSize === size ? null : size)}
+                      className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        selectedSize === size
+                          ? "border-rose-600 bg-rose-600 text-white"
+                          : "border-border text-foreground hover:border-rose-400"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* CTA buttons — observed for sticky bar */}
             <div ref={ctaRef} className="flex gap-2">

@@ -84,7 +84,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                 src={selected.imageUrl}
                 alt={productName}
                 fill
-                className="object-cover"
+                className="object-contain"
                 sizes="(max-width: 768px) 100vw, 45vw"
                 priority
               />

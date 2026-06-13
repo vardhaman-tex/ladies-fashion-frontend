@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ladies Fashion",
-  description: "Ladies Fashion E-Commerce Platform",
+  title: "Vardhman Textile",
+  description: "Vardhman Textile — Premium Ladies Fashion",
 };
 
 export default function RootLayout({

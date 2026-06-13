@@ -51,7 +51,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
         <div className="flex items-center justify-between">
           <Link href="/admin" onClick={onClose} className="flex items-center gap-2">
             <span className="font-heading text-base font-bold text-foreground">
-              Ladies Fashion
+              Vardhman Textile
             </span>
           </Link>
           {onClose && (
