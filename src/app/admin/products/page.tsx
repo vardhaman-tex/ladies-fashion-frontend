@@ -60,12 +60,13 @@ export default function AdminProductsPage() {
     const headers = [
       "name", "sku", "description", "price", "discountAmount",
       "categorySlug", "subCategorySlug", "color", "fabric",
-      "occasion", "sizes", "stockQuantity", "status",
+      "occasion", "sizes", "stockQuantity", "status", "imageUrls",
     ];
     const sample = [
       "Floral Kurti", "KRT-001", "Beautiful floral print kurti", 999, 100,
       "kurtis", "cotton-kurtis", "Pink", "Cotton",
       "Casual", "S,M,L,XL", 50, "ACTIVE",
+      "https://res.cloudinary.com/your-cloud/image/upload/v1/products/img1.jpg",
     ];
     const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
     // Set column widths
@@ -139,7 +140,7 @@ export default function AdminProductsPage() {
               <div className="rounded-lg bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
                 <p className="mb-1 font-semibold text-foreground">Expected columns (row 1 = header):</p>
                 <p className="font-mono leading-relaxed">
-                  name · sku · description · price · discountAmount · categorySlug · subCategorySlug · color · fabric · occasion · sizes · stockQuantity · status
+                  name · sku · description · price · discountAmount · categorySlug · subCategorySlug · color · fabric · occasion · sizes · stockQuantity · status · imageUrls
                 </p>
               </div>
 
