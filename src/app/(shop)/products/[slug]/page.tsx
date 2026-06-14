@@ -178,6 +178,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useProduct(params.slug);
   const { mutate: addToCart, isPending: adding } = useAddToCart();
   const ctaRef = useRef<HTMLDivElement>(null);
+  const sizeRef = useRef<HTMLDivElement>(null);
   const [ctaVisible, setCtaVisible] = useState(true);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -205,7 +206,13 @@ export default function ProductDetailPage() {
   }
 
   const hasDiscount = product.discountAmount > 0;
-  const availableQty = product.inventory?.availableQty ?? null;
+  const sizeInventories = product.inventory?.sizeInventories ?? [];
+
+  // If a size is selected and per-size inventory exists, show that qty; otherwise global
+  const availableQty = selectedSize && sizeInventories.length > 0
+    ? (sizeInventories.find((s) => s.size.toUpperCase() === selectedSize.toUpperCase())?.availableQty ?? product.inventory?.availableQty ?? null)
+    : (product.inventory?.availableQty ?? null);
+
   const availableSizes = product.sizes
     ? product.sizes.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
@@ -360,7 +367,7 @@ export default function ProductDetailPage() {
 
             {/* Size selector */}
             {availableSizes.length > 0 && (
-              <div>
+              <div ref={sizeRef}>
                 <p className="mb-2 text-sm font-medium text-foreground">
                   Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
                 </p>
@@ -476,7 +483,13 @@ export default function ProductDetailPage() {
           <Button
             size="sm"
             disabled={!product.inStock || adding}
-            onClick={handleAddToCart}
+            onClick={() => {
+              if (availableSizes.length > 0 && !selectedSize) {
+                sizeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+              }
+              handleAddToCart();
+            }}
             className="shrink-0"
           >
             <ShoppingCartIcon className="size-4" />

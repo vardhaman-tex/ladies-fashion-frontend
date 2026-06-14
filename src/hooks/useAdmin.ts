@@ -13,8 +13,9 @@ import {
   bulkUploadProducts,
   getAdminInventory,
   updateInventory,
+  updateSizeInventories,
 } from "@/services/adminService";
-import type { AdminEditOrderPayload } from "@/services/adminService";
+import type { AdminEditOrderPayload, SizeInventoryEntry } from "@/services/adminService";
 import type { OrderStatus } from "@/types/order";
 
 export const ADMIN_KEYS = {
@@ -134,6 +135,15 @@ export function useUpdateInventory() {
       stockQuantity: number;
       lowStockThreshold: number;
     }) => updateInventory(productId, stockQuantity, lowStockThreshold),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "inventory"] }),
+  });
+}
+
+export function useUpdateSizeInventories() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ productId, entries }: { productId: string; entries: SizeInventoryEntry[] }) =>
+      updateSizeInventories(productId, entries),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "inventory"] }),
   });
 }

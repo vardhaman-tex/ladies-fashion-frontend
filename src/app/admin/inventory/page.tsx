@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
-import { useAdminInventory, useUpdateInventory } from "@/hooks/useAdmin";
+import { AlertTriangle, Plus, X } from "lucide-react";
+import { useAdminInventory, useUpdateInventory, useUpdateSizeInventories } from "@/hooks/useAdmin";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import { cn } from "@/lib/utils";
+
+interface SizeEntry { size: string; availableQty: number; }
 
 interface InventoryItem {
   productId: string;
@@ -16,12 +18,116 @@ interface InventoryItem {
   soldQty: number;
   lowStockThreshold: number;
   inStock: boolean;
+  sizeInventories?: SizeEntry[];
+}
+
+function SizesModal({
+  item,
+  onClose,
+}: {
+  item: InventoryItem;
+  onClose: () => void;
+}) {
+  const [sizes, setSizes] = useState<SizeEntry[]>(
+    item.sizeInventories && item.sizeInventories.length > 0
+      ? item.sizeInventories.map((s) => ({ ...s }))
+      : [{ size: "", availableQty: 0 }]
+  );
+  const updateSizes = useUpdateSizeInventories();
+
+  function addRow() {
+    setSizes((prev) => [...prev, { size: "", availableQty: 0 }]);
+  }
+
+  function removeRow(i: number) {
+    setSizes((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function updateRow(i: number, field: keyof SizeEntry, value: string | number) {
+    setSizes((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
+  }
+
+  async function handleSave() {
+    const valid = sizes.filter((s) => s.size.trim());
+    try {
+      await updateSizes.mutateAsync({ productId: item.productId, entries: valid });
+      toast.success("Size inventory updated");
+      onClose();
+    } catch {
+      toast.error("Failed to update size inventory");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <h2 className="font-semibold text-sm">
+            Size Inventory — {item.productId.slice(0, 8).toUpperCase()}
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="space-y-2 p-5">
+          <div className="grid grid-cols-[1fr_80px_32px] gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+            <span>Size</span><span>Qty</span><span />
+          </div>
+          {sizes.map((s, i) => (
+            <div key={i} className="grid grid-cols-[1fr_80px_32px] gap-1.5">
+              <input
+                value={s.size}
+                onChange={(e) => updateRow(i, "size", e.target.value.toUpperCase())}
+                placeholder="e.g. S"
+                className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
+              />
+              <input
+                type="number"
+                min={0}
+                value={s.availableQty}
+                onChange={(e) => updateRow(i, "availableQty", Number(e.target.value))}
+                className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
+              />
+              <button
+                onClick={() => removeRow(i)}
+                className="flex items-center justify-center text-muted-foreground hover:text-red-500"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addRow}
+            className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 mt-1"
+          >
+            <Plus className="size-3.5" /> Add size
+          </button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Sizes saved here are deducted from on order placement. Products without per-size inventory use global stock.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2 border-t px-5 py-4">
+          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={updateSizes.isPending}
+            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+          >
+            {updateSizes.isPending ? "Saving…" : "Save Sizes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminInventoryPage() {
   const [page, setPage] = useState(0);
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [editing, setEditing] = useState<{ id: string; qty: number; threshold: number } | null>(null);
+  const [sizesItem, setSizesItem] = useState<InventoryItem | null>(null);
 
   const { data, isLoading } = useAdminInventory(lowStockOnly, page);
   const updateInventory = useUpdateInventory();
@@ -45,6 +151,8 @@ export default function AdminInventoryPage() {
 
   return (
     <div className="p-6 lg:p-8">
+      {sizesItem && <SizesModal item={sizesItem} onClose={() => setSizesItem(null)} />}
+
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inventory</h1>
         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
@@ -67,9 +175,9 @@ export default function AdminInventoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Product ID</th>
+                <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3">Available</th>
-                <th className="px-4 py-3">Reserved</th>
+                <th className="px-4 py-3">Sizes</th>
                 <th className="px-4 py-3">Sold</th>
                 <th className="px-4 py-3">Low Stock At</th>
                 <th className="px-4 py-3">Status</th>
@@ -86,12 +194,15 @@ export default function AdminInventoryPage() {
                 : items.map((item) => {
                     const isEditing = editing?.id === item.productId;
                     const isLow = item.availableQty <= item.lowStockThreshold;
+                    const hasSizeInv = (item.sizeInventories?.length ?? 0) > 0;
                     return (
                       <tr key={item.productId} className={cn("hover:bg-muted/20", isLow && "bg-amber-50/40 dark:bg-amber-950/10")}>
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            {isLow && <AlertTriangle className="size-3.5 text-amber-500" />}
-                            {item.productId.slice(0, 8).toUpperCase()}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            {isLow && <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />}
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {item.productId.slice(0, 8).toUpperCase()}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -109,7 +220,19 @@ export default function AdminInventoryPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{item.reservedQty}</td>
+                        <td className="px-4 py-3">
+                          {hasSizeInv ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.sizeInventories!.map((s) => (
+                                <span key={s.size} className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
+                                  {s.size}: {s.availableQty}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground">{item.soldQty}</td>
                         <td className="px-4 py-3">
                           {isEditing ? (
@@ -130,7 +253,7 @@ export default function AdminInventoryPage() {
                               ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                               : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                           )}>
-                            {item.inStock ? "In Stock" : "Out of Stock"}
+                            {item.inStock ? "In Stock" : "Out"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -146,12 +269,20 @@ export default function AdminInventoryPage() {
                               </button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => setEditing({ id: item.productId, qty: item.availableQty, threshold: item.lowStockThreshold })}
-                              className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
-                            >
-                              Edit
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setEditing({ id: item.productId, qty: item.availableQty, threshold: item.lowStockThreshold })}
+                                className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => setSizesItem(item)}
+                                className="rounded border px-2 py-1 text-xs hover:border-purple-400 hover:text-purple-600"
+                              >
+                                Sizes
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/product/WishlistButton";
@@ -15,10 +16,19 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discountAmount > 0;
   const { mutate: addToCart, isPending: adding } = useAddToCart();
+  const router = useRouter();
+
+  // Does this product have selectable sizes?
+  const hasSizes = product.sizes && product.sizes.split(",").map((s) => s.trim()).filter(Boolean).length > 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // If product has sizes, navigate to PDP so user can pick one
+    if (hasSizes) {
+      router.push(`/products/${product.slug}`);
+      return;
+    }
     addToCart({
       productId: product.id,
       productName: product.name,
@@ -83,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
             disabled={adding}
           >
             <ShoppingBag className="size-3.5 mr-1" />
-            {adding ? "Adding…" : "Add to Cart"}
+            {adding ? "Adding…" : hasSizes ? "Choose Size" : "Add to Cart"}
           </Button>
         )}
       </div>

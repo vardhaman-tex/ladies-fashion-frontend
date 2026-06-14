@@ -139,7 +139,20 @@ export const updateInventory = async (
 ): Promise<unknown> => {
   const { data } = await api.patch<ApiResponse<unknown>>(
     `/api/v1/admin/inventory/${productId}`,
-    { stockQuantity, lowStockThreshold }
+    { availableQty: stockQuantity, lowStockThreshold }
+  );
+  return data.data;
+};
+
+export interface SizeInventoryEntry { size: string; availableQty: number; }
+
+export const updateSizeInventories = async (
+  productId: string,
+  entries: SizeInventoryEntry[]
+): Promise<unknown> => {
+  const { data } = await api.put<ApiResponse<unknown>>(
+    `/api/v1/admin/inventory/${productId}/sizes`,
+    entries
   );
   return data.data;
 };

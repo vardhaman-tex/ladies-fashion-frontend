@@ -15,6 +15,11 @@ export interface ProductImage {
   sortOrder: number;
 }
 
+export interface SizeInventoryEntry {
+  size: string;
+  availableQty: number;
+}
+
 /**
  * Stock information for a product.
  */
@@ -25,6 +30,7 @@ export interface Inventory {
   soldQty: number;
   lowStockThreshold: number;
   inStock: boolean;
+  sizeInventories: SizeInventoryEntry[];
 }
 
 /**
@@ -44,6 +50,7 @@ export interface ProductSummary {
   thumbnail: string | null;
   color: string | null;
   fabric: string | null;
+  sizes: string | null;
   inStock: boolean;
   isFeatured: boolean;
   status: ProductStatus;
