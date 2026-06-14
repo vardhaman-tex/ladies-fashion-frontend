@@ -138,7 +138,9 @@ export function Header() {
                   />
                 }
               >
-                <Heart className="size-4 text-muted-foreground" />
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
+                  <Heart className="size-4" />
+                </div>
                 Wishlist
                 {wishlistCount > 0 && (
                   <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
@@ -154,7 +156,9 @@ export function Header() {
                   />
                 }
               >
-                <Package className="size-4 text-muted-foreground" />
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
+                  <Package className="size-4" />
+                </div>
                 My Orders
               </SheetClose>
               <SheetClose
@@ -165,7 +169,9 @@ export function Header() {
                   />
                 }
               >
-                <User className="size-4 text-muted-foreground" />
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
+                  <User className="size-4" />
+                </div>
                 Account
               </SheetClose>
             </div>
