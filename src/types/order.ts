@@ -18,6 +18,7 @@ export interface OrderItemData {
 export interface OrderData {
   id: string;
   status: OrderStatus;
+  razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
   // Address snapshot
   addrFullName: string;
@@ -30,7 +31,9 @@ export interface OrderData {
   // Totals
   subtotal: number;
   totalDiscount: number;
+  adminDiscount: number;
   total: number;
+  adminNotes: string | null;
   itemCount: number;
   items: OrderItemData[];
   createdAt: string;

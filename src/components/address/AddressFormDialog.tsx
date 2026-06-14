@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAddAddress, useUpdateAddress } from "@/hooks/useAddresses";
 import type { AddressData, AddressRequest } from "@/types/address";
@@ -76,10 +77,16 @@ export function AddressFormDialog({ open, onClose, editing }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-t-2xl bg-background p-6 shadow-xl sm:rounded-2xl">
-        <h2 className="mb-4 font-heading text-lg font-bold">
-          {editing ? "Edit Address" : "Add New Address"}
-        </h2>
+      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl bg-background shadow-xl sm:rounded-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-6 pt-6 pb-2">
+          <h2 className="font-heading text-lg font-bold">
+            {editing ? "Edit Address" : "Add New Address"}
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground -mr-1">
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="px-6 pb-6">
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -190,6 +197,7 @@ export function AddressFormDialog({ open, onClose, editing }: Props) {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

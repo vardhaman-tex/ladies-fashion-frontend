@@ -38,6 +38,30 @@ export const updateOrderStatus = async (
   return data.data;
 };
 
+export interface AdminEditOrderPayload {
+  items?: { itemId: string; quantity: number }[];
+  adminDiscount?: number;
+  adminNotes?: string;
+  addrFullName?: string;
+  addrPhone?: string;
+  addrLine1?: string;
+  addrLine2?: string;
+  addrCity?: string;
+  addrState?: string;
+  addrPincode?: string;
+}
+
+export const editAdminOrder = async (
+  id: string,
+  payload: AdminEditOrderPayload
+): Promise<OrderData> => {
+  const { data } = await api.put<ApiResponse<OrderData>>(
+    `/api/v1/admin/orders/${id}/edit`,
+    payload
+  );
+  return data.data;
+};
+
 // Users
 export const getAdminUsers = async (
   params: { page?: number; size?: number } = {}

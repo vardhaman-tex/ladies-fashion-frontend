@@ -4,6 +4,7 @@ import {
   getAdminOrders,
   getAdminOrder,
   updateOrderStatus,
+  editAdminOrder,
   getAdminUsers,
   toggleUserActive,
   getAdminProducts,
@@ -13,6 +14,7 @@ import {
   getAdminInventory,
   updateInventory,
 } from "@/services/adminService";
+import type { AdminEditOrderPayload } from "@/services/adminService";
 import type { OrderStatus } from "@/types/order";
 
 export const ADMIN_KEYS = {
@@ -51,6 +53,17 @@ export function useUpdateOrderStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
       qc.invalidateQueries({ queryKey: ["admin", "stats"] });
+    },
+  });
+}
+
+export function useEditAdminOrder(orderId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AdminEditOrderPayload) => editAdminOrder(orderId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ADMIN_KEYS.order(orderId) });
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
     },
   });
 }

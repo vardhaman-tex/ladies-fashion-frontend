@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Menu, Heart, User, ShoppingBag, Home, Package, X,
-  Tag, ChevronRight,
+  Tag, ChevronRight, Search,
 } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,9 @@ export function Header() {
   const { data: categories } = useCategories();
   const { itemCount: wishlistCount } = useWishlist();
   const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  // Hide search bar on product detail pages (/products/[slug])
+  // Hide search on product detail pages (/products/[slug])
   const isProductDetail =
     pathname?.startsWith("/products/") &&
     pathname.split("/").length === 3;
@@ -196,15 +198,19 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop search — hidden on PDP */}
-        {!isProductDetail && (
-          <div className="ml-auto hidden flex-1 justify-end md:flex md:max-w-md">
-            <SearchBar />
-          </div>
-        )}
-
         {/* Action icons */}
-        <div className={`flex items-center gap-1 ${isProductDetail ? "ml-auto" : "md:ml-0 ml-auto"}`}>
+        <div className="ml-auto flex items-center gap-1">
+          {/* Search toggle — hidden on PDP */}
+          {!isProductDetail && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={searchOpen ? "Close search" : "Search"}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              {searchOpen ? <X className="size-5" /> : <Search className="size-5" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -230,9 +236,9 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile search bar — hidden on PDP */}
-      {!isProductDetail && (
-        <div className="border-t border-border px-4 py-2 md:hidden">
+      {/* Expandable search bar — shown when toggled, hidden on PDP */}
+      {!isProductDetail && searchOpen && (
+        <div className="border-t border-border px-4 py-2">
           <SearchBar />
         </div>
       )}

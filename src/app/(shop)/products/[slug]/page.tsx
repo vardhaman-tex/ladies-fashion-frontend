@@ -216,6 +216,10 @@ export default function ProductDetailPage() {
     null;
 
   function handleAddToCart() {
+    if (availableSizes.length > 0 && !selectedSize) {
+      toast.error("Please select a size before adding to cart");
+      return;
+    }
     addToCart({
       productId: product!.id,
       productName: product!.name,
@@ -230,6 +234,10 @@ export default function ProductDetailPage() {
   }
 
   function handleBuyNow() {
+    if (availableSizes.length > 0 && !selectedSize) {
+      toast.error("Please select a size before buying");
+      return;
+    }
     addToCart(
       {
         productId: product!.id,
@@ -472,7 +480,7 @@ export default function ProductDetailPage() {
             className="shrink-0"
           >
             <ShoppingCartIcon className="size-4" />
-            {adding ? "Adding…" : "Add to Cart"}
+            {adding ? "Adding…" : availableSizes.length > 0 && !selectedSize ? "Select Size" : "Add to Cart"}
           </Button>
         </div>
       )}
