@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Heart, User, ShoppingBag, Home, Package, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+  Menu, Heart, User, ShoppingBag, Home, Package, X,
+  Tag, ChevronRight,
+} from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
 import { CartDrawer } from "@/components/cart/CartDrawer";
@@ -19,6 +23,12 @@ import { useCategories } from "@/hooks/useCategories";
 export function Header() {
   const { data: categories } = useCategories();
   const { itemCount: wishlistCount } = useWishlist();
+  const pathname = usePathname();
+
+  // Hide search bar on product detail pages (/products/[slug])
+  const isProductDetail =
+    pathname?.startsWith("/products/") &&
+    pathname.split("/").length === 3;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
@@ -30,6 +40,7 @@ export function Header() {
           </SheetTrigger>
 
           <SheetContent side="left" className="flex w-72 flex-col p-0" showCloseButton={false}>
+            {/* Sidebar header */}
             <SheetHeader className="border-b px-4 py-3">
               <div className="flex items-center justify-between">
                 <SheetTitle className="font-heading text-lg font-bold">Vardhman Textile</SheetTitle>
@@ -39,9 +50,13 @@ export function Header() {
               </div>
             </SheetHeader>
 
-            {/* Scrollable area: top links + categories */}
+            {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto">
-              <div className="border-b pb-2 pt-3">
+              {/* Top nav */}
+              <div className="py-2">
+                <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Navigate
+                </p>
                 <SheetClose
                   render={
                     <Link
@@ -50,7 +65,9 @@ export function Header() {
                     />
                   }
                 >
-                  <Home className="size-4 text-muted-foreground" />
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+                    <Home className="size-4" />
+                  </div>
                   Home
                 </SheetClose>
                 <SheetClose
@@ -61,14 +78,33 @@ export function Header() {
                     />
                   }
                 >
-                  <ShoppingBag className="size-4 text-muted-foreground" />
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/30">
+                    <ShoppingBag className="size-4" />
+                  </div>
                   All Products
+                </SheetClose>
+                <SheetClose
+                  render={
+                    <Link
+                      href="/products?discountAmount=1"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                    />
+                  }
+                >
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/30">
+                    <Tag className="size-4" />
+                  </div>
+                  <span className="flex-1">Sale</span>
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
+                    HOT
+                  </span>
                 </SheetClose>
               </div>
 
+              {/* Categories */}
               {categories && categories.length > 0 && (
-                <div className="py-3">
-                  <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="border-t py-2">
+                  <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Categories
                   </p>
                   {categories.map((category) => (
@@ -77,19 +113,23 @@ export function Header() {
                       render={
                         <Link
                           href={`/products?categorySlug=${category.slug}`}
-                          className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                          className="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
                         />
                       }
                     >
                       {category.name}
+                      <ChevronRight className="size-3.5 text-muted-foreground" />
                     </SheetClose>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Account links — always pinned at bottom */}
+            {/* Account — pinned at bottom */}
             <div className="border-t pb-8 pt-2">
+              <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                My Account
+              </p>
               <SheetClose
                 render={
                   <Link
@@ -150,13 +190,15 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop search */}
-        <div className="ml-auto hidden flex-1 justify-end md:flex md:max-w-md">
-          <SearchBar />
-        </div>
+        {/* Desktop search — hidden on PDP */}
+        {!isProductDetail && (
+          <div className="ml-auto hidden flex-1 justify-end md:flex md:max-w-md">
+            <SearchBar />
+          </div>
+        )}
 
         {/* Action icons */}
-        <div className="ml-auto flex items-center gap-1 md:ml-0">
+        <div className={`flex items-center gap-1 ${isProductDetail ? "ml-auto" : "md:ml-0 ml-auto"}`}>
           <Button
             variant="ghost"
             size="icon"
@@ -182,10 +224,12 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile search bar */}
-      <div className="border-t border-border px-4 py-2 md:hidden">
-        <SearchBar />
-      </div>
+      {/* Mobile search bar — hidden on PDP */}
+      {!isProductDetail && (
+        <div className="border-t border-border px-4 py-2 md:hidden">
+          <SearchBar />
+        </div>
+      )}
     </header>
   );
 }

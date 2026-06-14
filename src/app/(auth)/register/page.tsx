@@ -78,7 +78,7 @@ export default function RegisterPage() {
     <Card>
       <CardHeader>
         <CardTitle>Create an account</CardTitle>
-        <CardDescription>Sign up to start shopping with Ladies Fashion</CardDescription>
+        <CardDescription>Sign up to start shopping with Vardhman Textile</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

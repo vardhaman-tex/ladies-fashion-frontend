@@ -9,6 +9,7 @@ import {
   Users,
   BarChart3,
   Tag,
+  FileText,
   LogOut,
   ChevronRight,
   X,
@@ -25,6 +26,7 @@ const NAV = [
   { href: "/admin/categories",  label: "Categories", icon: Tag },
   { href: "/admin/inventory",   label: "Inventory",  icon: BarChart3 },
   { href: "/admin/users",       label: "Users",      icon: Users },
+  { href: "/admin/policies",    label: "Policies",   icon: FileText },
 ];
 
 interface AdminSidebarProps {

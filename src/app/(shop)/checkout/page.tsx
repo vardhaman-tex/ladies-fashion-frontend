@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { useAddresses } from "@/hooks/useAddresses";
 import { useAuthStore } from "@/stores/authStore";
+import { useGuestCartStore } from "@/stores/cartStore";
 import { AddressFormDialog } from "@/components/address/AddressFormDialog";
 import { AddressCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cart } = useCart();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const clearGuestCart = useGuestCartStore((state) => state.clearCart);
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
   const [isProcessing, setIsProcessing] = useState(false);
   // null = loading, true = ready, false = failed
@@ -89,7 +91,7 @@ export default function CheckoutPage() {
         key: orderData.keyId,
         amount: orderData.amountPaise,
         currency: orderData.currency,
-        name: "Ladies Fashion",
+        name: "Vardhman Textile",
         description: "Order Payment",
         order_id: orderData.razorpayOrderId,
         prefill: {
@@ -106,6 +108,7 @@ export default function CheckoutPage() {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
             });
+            clearGuestCart();
             toast.success("Payment successful!");
             router.push(`/orders/${confirmedOrder.id}?confirmed=true`);
           } catch {

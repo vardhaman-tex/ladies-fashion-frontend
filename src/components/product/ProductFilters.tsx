@@ -69,9 +69,9 @@ export function ProductFilters() {
   const { data: categories } = useCategories();
 
   const currentCategory = searchParams.get("categorySlug");
-  const currentColor = searchParams.get("color")?.toLowerCase() ?? null;
-  const currentFabric = searchParams.get("fabric")?.toLowerCase() ?? null;
-  const currentOccasion = searchParams.get("occasion")?.toLowerCase() ?? null;
+  const currentColors = searchParams.get("color")?.toLowerCase().split(",").filter(Boolean) ?? [];
+  const currentFabrics = searchParams.get("fabric")?.toLowerCase().split(",").filter(Boolean) ?? [];
+  const currentOccasions = searchParams.get("occasion")?.toLowerCase().split(",").filter(Boolean) ?? [];
   const currentMin = searchParams.get("minPrice") ?? "";
   const currentMax = searchParams.get("maxPrice") ?? "";
   const inStock = searchParams.get("inStock") === "true";
@@ -87,8 +87,12 @@ export function ProductFilters() {
   };
 
   const toggleChip = (key: string, value: string) => {
-    const current = searchParams.get(key)?.toLowerCase();
-    updateParam({ [key]: current === value.toLowerCase() ? null : value.toLowerCase() });
+    const existing = searchParams.get(key)?.toLowerCase().split(",").filter(Boolean) ?? [];
+    const val = value.toLowerCase();
+    const updated = existing.includes(val)
+      ? existing.filter((v) => v !== val)
+      : [...existing, val];
+    updateParam({ [key]: updated.length > 0 ? updated.join(",") : null });
   };
 
   const setPrice = (min: string, max: string) => {
@@ -108,8 +112,8 @@ export function ProductFilters() {
   };
 
   const hasFilters =
-    currentCategory || currentColor || currentFabric || currentOccasion ||
-    currentMin || currentMax || inStock;
+    currentCategory || currentColors.length > 0 || currentFabrics.length > 0 ||
+    currentOccasions.length > 0 || currentMin || currentMax || inStock;
 
   return (
     <div className="flex flex-col gap-0">
@@ -187,7 +191,7 @@ export function ProductFilters() {
             <Chip
               key={color}
               label={color}
-              active={currentColor === color.toLowerCase()}
+              active={currentColors.includes(color.toLowerCase())}
               onClick={() => toggleChip("color", color)}
             />
           ))}
@@ -201,7 +205,7 @@ export function ProductFilters() {
             <Chip
               key={fabric}
               label={fabric}
-              active={currentFabric === fabric.toLowerCase()}
+              active={currentFabrics.includes(fabric.toLowerCase())}
               onClick={() => toggleChip("fabric", fabric)}
             />
           ))}
@@ -215,7 +219,7 @@ export function ProductFilters() {
             <Chip
               key={occasion}
               label={occasion}
-              active={currentOccasion === occasion.toLowerCase()}
+              active={currentOccasions.includes(occasion.toLowerCase())}
               onClick={() => toggleChip("occasion", occasion)}
             />
           ))}
