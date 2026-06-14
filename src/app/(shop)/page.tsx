@@ -90,47 +90,58 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured products */}
-      <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
-            <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
+      {/* Featured products — hidden when empty */}
+      {(loadingFeatured || (featured?.content?.length ?? 0) > 0) && (
+        <section className="mx-auto w-full max-w-7xl px-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
+              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
+            </div>
+            <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              View All
+              <ArrowRightIcon className="size-4" />
+            </Link>
           </div>
-          <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-            View All
-            <ArrowRightIcon className="size-4" />
-          </Link>
-        </div>
-        <div className="mt-4 sm:mt-6">
-          {loadingFeatured ? <ProductGridSkeleton count={4} /> : <ProductStrip products={featured?.content ?? []} />}
-        </div>
-      </section>
-
-      {/* Trending / New Arrivals / Sale */}
-      <section className="mx-auto w-full max-w-7xl px-4">
-        <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
-        <Tabs defaultValue="trending" className="mt-1">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="trending" className="flex-1 sm:flex-none">Trending</TabsTrigger>
-              <TabsTrigger value="new-arrivals" className="flex-1 sm:flex-none">New Arrivals</TabsTrigger>
-              <TabsTrigger value="sale" className="flex-1 sm:flex-none">Sale</TabsTrigger>
-            </TabsList>
+          <div className="mt-4 sm:mt-6">
+            {loadingFeatured ? <ProductGridSkeleton count={4} /> : <ProductStrip products={featured?.content ?? []} />}
           </div>
+        </section>
+      )}
 
-          <TabsContent value="trending" className="mt-4 sm:mt-6">
-            {loadingTrending ? <ProductGridSkeleton count={4} /> : <ProductStrip products={trending?.content ?? []} />}
-          </TabsContent>
-          <TabsContent value="new-arrivals" className="mt-4 sm:mt-6">
-            {loadingNewArrivals ? <ProductGridSkeleton count={4} /> : <ProductStrip products={newArrivals?.content ?? []} />}
-          </TabsContent>
-          <TabsContent value="sale" className="mt-4 sm:mt-6">
-            {loadingSale ? <ProductGridSkeleton count={4} /> : <ProductStrip products={sale?.content ?? []} />}
-          </TabsContent>
-        </Tabs>
-      </section>
+      {/* Trending / New Arrivals / Sale — hidden when all empty */}
+      {(() => {
+        const tabs = [
+          { value: "trending", label: "Trending", loading: loadingTrending, data: trending },
+          { value: "new-arrivals", label: "New Arrivals", loading: loadingNewArrivals, data: newArrivals },
+          { value: "sale", label: "Sale", loading: loadingSale, data: sale },
+        ];
+        const visibleTabs = tabs.filter((t) => t.loading || (t.data?.content?.length ?? 0) > 0);
+        if (visibleTabs.length === 0) return null;
+        const defaultTab = visibleTabs[0].value;
+        return (
+          <section className="mx-auto w-full max-w-7xl px-4">
+            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
+            <Tabs defaultValue={defaultTab} className="mt-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
+                <TabsList className="w-full sm:w-auto">
+                  {visibleTabs.map((t) => (
+                    <TabsTrigger key={t.value} value={t.value} className="flex-1 sm:flex-none">
+                      {t.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {visibleTabs.map((t) => (
+                <TabsContent key={t.value} value={t.value} className="mt-4 sm:mt-6">
+                  {t.loading ? <ProductGridSkeleton count={4} /> : <ProductStrip products={t.data?.content ?? []} />}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </section>
+        );
+      })()}
 
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">

@@ -73,9 +73,18 @@ export default function CheckoutPage() {
     );
   }
 
+  // Items where the ordered qty exceeds available stock
+  const stockIssues = cart?.items.filter(
+    (item) => item.availableQty !== undefined && item.quantity > item.availableQty
+  ) ?? [];
+
   async function handlePlaceOrder() {
     if (!activeAddressId) {
       toast.error("Please select a delivery address");
+      return;
+    }
+    if (stockIssues.length > 0) {
+      toast.error("Some items exceed available stock. Please update your cart.");
       return;
     }
     if (!window.Razorpay) {
@@ -249,6 +258,11 @@ export default function CheckoutPage() {
                       <p className="text-xs text-muted-foreground">
                         {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
                       </p>
+                      {item.availableQty !== undefined && item.quantity > item.availableQty && (
+                        <p className="text-xs font-medium text-red-600">
+                          Only {item.availableQty} left
+                        </p>
+                      )}
                       <p className="text-sm font-semibold text-rose-600">
                         ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                       </p>
@@ -286,6 +300,21 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {stockIssues.length > 0 && (
+              <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <div>
+                  <p className="font-semibold">Insufficient stock:</p>
+                  {stockIssues.map((item) => (
+                    <p key={item.id}>
+                      {item.productName}{item.size ? ` (${item.size})` : ""} — only {item.availableQty} left, you have {item.quantity} in cart.
+                    </p>
+                  ))}
+                  <p className="mt-1">Please update quantities in your cart before proceeding.</p>
+                </div>
+              </div>
+            )}
+
             {scriptState === "error" && (
               <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
                 <div className="flex items-start gap-2">
@@ -306,7 +335,7 @@ export default function CheckoutPage() {
               className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
               size="lg"
               onClick={handlePlaceOrder}
-              disabled={isProcessing || !activeAddressId || scriptState === "error"}
+              disabled={isProcessing || !activeAddressId || scriptState === "error" || stockIssues.length > 0}
             >
               {isProcessing ? (
                 <>
