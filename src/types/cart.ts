@@ -11,7 +11,7 @@ export interface CartItemData {
   size: string | null;
   color: string | null;
   lineTotal: number;
-  availableQty: number;
+  availableQty?: number;
 }
 
 export interface CartData {
