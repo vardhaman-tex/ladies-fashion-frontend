@@ -168,7 +168,7 @@ export function useCart() {
   // Derive a CartData-like object from guest items
   const subtotal = guestItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const totalDiscount = guestItems.reduce((sum, i) => sum + i.discountAmount * i.quantity, 0);
-  const guestCart = {
+  const guestCart: CartData = {
     id: "guest",
     items: guestItems.map((i) => ({
       id: `${i.productId}-${i.size}-${i.color}`,
