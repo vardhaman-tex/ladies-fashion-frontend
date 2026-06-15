@@ -156,3 +156,21 @@ export const updateSizeInventories = async (
   );
   return data.data;
 };
+
+export const exportInventoryExcel = async (): Promise<Blob> => {
+  const response = await api.get("/api/v1/admin/inventory/export", {
+    responseType: "blob",
+  });
+  return response.data as Blob;
+};
+
+export const importInventoryExcel = async (file: File): Promise<string> => {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<ApiResponse<string>>(
+    "/api/v1/admin/inventory/import",
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data.message;
+};

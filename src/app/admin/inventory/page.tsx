@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Plus, X } from "lucide-react";
+import { AlertTriangle, Download, Plus, Upload, X } from "lucide-react";
 import { useAdminInventory, useUpdateInventory, useUpdateSizeInventories } from "@/hooks/useAdmin";
+import { exportInventoryExcel, importInventoryExcel } from "@/services/adminService";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import { cn } from "@/lib/utils";
 import type { Inventory } from "@/types/product";
@@ -103,6 +104,41 @@ export default function AdminInventoryPage() {
 
   const { data, isLoading } = useAdminInventory(lowStockOnly, page);
   const updateInventory = useUpdateInventory();
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportInventoryExcel();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "inventory.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const msg = await importInventoryExcel(file);
+      toast.success(msg ?? "Inventory imported");
+    } catch {
+      toast.error("Import failed — check file format");
+    } finally {
+      setImporting(false);
+      if (importRef.current) importRef.current.value = "";
+    }
+  }
 
   async function handleSave() {
     if (!editing) return;
@@ -122,8 +158,28 @@ export default function AdminInventoryPage() {
     <div className="p-6 lg:p-8">
       {sizesItem && <SizesModal item={sizesItem} onClose={() => setSizesItem(null)} />}
 
-      <div className="mb-6 flex items-center justify-between">
+      <input ref={importRef} type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" />
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Inventory</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:border-rose-400 hover:text-rose-600 disabled:opacity-50"
+          >
+            <Download className="size-4" />
+            {exporting ? "Exporting…" : "Export Excel"}
+          </button>
+          <button
+            onClick={() => importRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+          >
+            <Upload className="size-4" />
+            {importing ? "Importing…" : "Import Excel"}
+          </button>
+        </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
           <div
             className={cn("relative h-5 w-9 rounded-full transition-colors", lowStockOnly ? "bg-rose-600" : "bg-muted-foreground/30")}
