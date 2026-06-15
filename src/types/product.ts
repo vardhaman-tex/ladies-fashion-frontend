@@ -25,6 +25,9 @@ export interface SizeInventoryEntry {
  */
 export interface Inventory {
   productId: string;
+  productName?: string;
+  productSku?: string;
+  productThumbnail?: string | null;
   availableQty: number;
   reservedQty: number;
   soldQty: number;

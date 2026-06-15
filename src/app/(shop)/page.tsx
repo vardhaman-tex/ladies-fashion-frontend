@@ -90,8 +90,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured products — hidden when empty */}
-      {(loadingFeatured || (featured?.content?.length ?? 0) > 0) && (
+      {/* Featured products — only show once loaded and non-empty */}
+      {!loadingFeatured && (featured?.content?.length ?? 0) > 0 && (
         <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between">
             <div>
@@ -116,7 +116,7 @@ export default function HomePage() {
           { value: "new-arrivals", label: "New Arrivals", loading: loadingNewArrivals, data: newArrivals },
           { value: "sale", label: "Sale", loading: loadingSale, data: sale },
         ];
-        const visibleTabs = tabs.filter((t) => t.loading || (t.data?.content?.length ?? 0) > 0);
+        const visibleTabs = tabs.filter((t) => !t.loading && (t.data?.content?.length ?? 0) > 0);
         if (visibleTabs.length === 0) return null;
         const defaultTab = visibleTabs[0].value;
         return (

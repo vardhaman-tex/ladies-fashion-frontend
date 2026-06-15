@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import {
@@ -305,9 +305,16 @@ export default function AdminProductsPage() {
                           <Link
                             href={`/admin/products/${p.slug}/edit`}
                             className="text-muted-foreground hover:text-foreground"
-                            title="Edit"
+                            title="Edit product"
                           >
                             <Pencil className="size-4" />
+                          </Link>
+                          <Link
+                            href={`/admin/inventory?product=${p.id}`}
+                            className="text-muted-foreground hover:text-blue-600"
+                            title="Manage inventory"
+                          >
+                            <Package className="size-4" />
                           </Link>
                           <button
                             onClick={() => handleToggleStatus(p.id, p.status)}

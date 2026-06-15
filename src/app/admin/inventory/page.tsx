@@ -1,50 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AlertTriangle, Plus, X } from "lucide-react";
 import { useAdminInventory, useUpdateInventory, useUpdateSizeInventories } from "@/hooks/useAdmin";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import { cn } from "@/lib/utils";
+import type { Inventory } from "@/types/product";
 
 interface SizeEntry { size: string; availableQty: number; }
 
-interface InventoryItem {
-  productId: string;
-  productName?: string;
-  productSku?: string;
-  availableQty: number;
-  reservedQty: number;
-  soldQty: number;
-  lowStockThreshold: number;
-  inStock: boolean;
-  sizeInventories?: SizeEntry[];
-}
-
-function SizesModal({
-  item,
-  onClose,
-}: {
-  item: InventoryItem;
-  onClose: () => void;
-}) {
+function SizesModal({ item, onClose }: { item: Inventory; onClose: () => void }) {
   const [sizes, setSizes] = useState<SizeEntry[]>(
-    item.sizeInventories && item.sizeInventories.length > 0
+    item.sizeInventories?.length > 0
       ? item.sizeInventories.map((s) => ({ ...s }))
       : [{ size: "", availableQty: 0 }]
   );
   const updateSizes = useUpdateSizeInventories();
 
-  function addRow() {
-    setSizes((prev) => [...prev, { size: "", availableQty: 0 }]);
-  }
-
-  function removeRow(i: number) {
-    setSizes((prev) => prev.filter((_, idx) => idx !== i));
-  }
-
+  function addRow() { setSizes((p) => [...p, { size: "", availableQty: 0 }]); }
+  function removeRow(i: number) { setSizes((p) => p.filter((_, idx) => idx !== i)); }
   function updateRow(i: number, field: keyof SizeEntry, value: string | number) {
-    setSizes((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
+    setSizes((p) => p.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
   }
 
   async function handleSave() {
@@ -62,9 +41,10 @@ function SizesModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl">
         <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 className="font-semibold text-sm">
-            Size Inventory — {item.productId.slice(0, 8).toUpperCase()}
-          </h2>
+          <div>
+            <h2 className="font-semibold text-sm">Size Inventory</h2>
+            <p className="text-xs text-muted-foreground">{item.productName ?? item.productId}</p>
+          </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="size-4" />
           </button>
@@ -82,37 +62,26 @@ function SizesModal({
                 className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
               />
               <input
-                type="number"
-                min={0}
-                value={s.availableQty}
+                type="number" min={0} value={s.availableQty}
                 onChange={(e) => updateRow(i, "availableQty", Number(e.target.value))}
                 className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
               />
-              <button
-                onClick={() => removeRow(i)}
-                className="flex items-center justify-center text-muted-foreground hover:text-red-500"
-              >
+              <button onClick={() => removeRow(i)} className="flex items-center justify-center text-muted-foreground hover:text-red-500">
                 <X className="size-3.5" />
               </button>
             </div>
           ))}
-          <button
-            onClick={addRow}
-            className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 mt-1"
-          >
+          <button onClick={addRow} className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 mt-1">
             <Plus className="size-3.5" /> Add size
           </button>
           <p className="text-xs text-muted-foreground mt-2">
-            Sizes saved here are deducted from on order placement. Products without per-size inventory use global stock.
+            Saving sizes here also updates the product's size list, enabling size-based cart gating on the storefront.
           </p>
         </div>
         <div className="flex justify-end gap-2 border-t px-5 py-4">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">
-            Cancel
-          </button>
+          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
           <button
-            onClick={handleSave}
-            disabled={updateSizes.isPending}
+            onClick={handleSave} disabled={updateSizes.isPending}
             className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
           >
             {updateSizes.isPending ? "Saving…" : "Save Sizes"}
@@ -124,10 +93,13 @@ function SizesModal({
 }
 
 export default function AdminInventoryPage() {
+  const searchParams = useSearchParams();
+  const highlightProductId = searchParams.get("product");
+
   const [page, setPage] = useState(0);
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [editing, setEditing] = useState<{ id: string; qty: number; threshold: number } | null>(null);
-  const [sizesItem, setSizesItem] = useState<InventoryItem | null>(null);
+  const [sizesItem, setSizesItem] = useState<Inventory | null>(null);
 
   const { data, isLoading } = useAdminInventory(lowStockOnly, page);
   const updateInventory = useUpdateInventory();
@@ -135,11 +107,7 @@ export default function AdminInventoryPage() {
   async function handleSave() {
     if (!editing) return;
     try {
-      await updateInventory.mutateAsync({
-        productId: editing.id,
-        stockQuantity: editing.qty,
-        lowStockThreshold: editing.threshold,
-      });
+      await updateInventory.mutateAsync({ productId: editing.id, stockQuantity: editing.qty, lowStockThreshold: editing.threshold });
       toast.success("Inventory updated");
       setEditing(null);
     } catch {
@@ -147,7 +115,8 @@ export default function AdminInventoryPage() {
     }
   }
 
-  const items = (data?.content ?? []) as InventoryItem[];
+  const items = (data?.content ?? []) as Inventory[];
+  const totalPages = (data as { totalPages?: number })?.totalPages ?? 1;
 
   return (
     <div className="p-6 lg:p-8">
@@ -157,14 +126,10 @@ export default function AdminInventoryPage() {
         <h1 className="text-2xl font-bold">Inventory</h1>
         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
           <div
-            className={cn(
-              "relative h-5 w-9 rounded-full transition-colors",
-              lowStockOnly ? "bg-rose-600" : "bg-muted-foreground/30"
-            )}
+            className={cn("relative h-5 w-9 rounded-full transition-colors", lowStockOnly ? "bg-rose-600" : "bg-muted-foreground/30")}
             onClick={() => { setLowStockOnly(!lowStockOnly); setPage(0); }}
           >
-            <div className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform",
-              lowStockOnly ? "translate-x-4" : "translate-x-0.5")} />
+            <div className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform", lowStockOnly ? "translate-x-4" : "translate-x-0.5")} />
           </div>
           Low stock only
         </label>
@@ -196,34 +161,51 @@ export default function AdminInventoryPage() {
                     const isLow = item.availableQty <= item.lowStockThreshold;
                     const hasSizeInv = (item.sizeInventories?.length ?? 0) > 0;
                     return (
-                      <tr key={item.productId} className={cn("hover:bg-muted/20", isLow && "bg-amber-50/40 dark:bg-amber-950/10")}>
+                      <tr
+                      key={item.productId}
+                      id={`inv-${item.productId}`}
+                      className={cn(
+                        "hover:bg-muted/20",
+                        isLow && "bg-amber-50/40 dark:bg-amber-950/10",
+                        highlightProductId === item.productId && "ring-2 ring-inset ring-rose-400"
+                      )}
+                    >
+                        {/* Product identity */}
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-3">
+                            {item.productThumbnail ? (
+                              <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                <Image src={item.productThumbnail} alt={item.productName ?? ""} fill className="object-cover" sizes="40px" />
+                              </div>
+                            ) : (
+                              <div className="size-10 shrink-0 rounded-lg bg-muted" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-sm max-w-[180px]">{item.productName ?? "—"}</p>
+                              <p className="text-xs text-muted-foreground">{item.productSku ?? ""}</p>
+                            </div>
                             {isLow && <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />}
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {item.productId.slice(0, 8).toUpperCase()}
-                            </span>
                           </div>
                         </td>
+
+                        {/* Available qty */}
                         <td className="px-4 py-3">
                           {isEditing ? (
-                            <input
-                              type="number"
-                              min={0}
-                              value={editing.qty}
+                            <input type="number" min={0} value={editing.qty}
                               onChange={(e) => setEditing({ ...editing, qty: Number(e.target.value) })}
-                              className="w-20 rounded border px-2 py-1 text-sm"
-                            />
+                              className="w-20 rounded border px-2 py-1 text-sm" />
                           ) : (
                             <span className={cn("font-semibold", isLow ? "text-amber-600" : "text-foreground")}>
                               {item.availableQty}
                             </span>
                           )}
                         </td>
+
+                        {/* Size inventory */}
                         <td className="px-4 py-3">
                           {hasSizeInv ? (
                             <div className="flex flex-wrap gap-1">
-                              {item.sizeInventories!.map((s) => (
+                              {item.sizeInventories.map((s) => (
                                 <span key={s.size} className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
                                   {s.size}: {s.availableQty}
                                 </span>
@@ -233,20 +215,19 @@ export default function AdminInventoryPage() {
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </td>
+
                         <td className="px-4 py-3 text-muted-foreground">{item.soldQty}</td>
+
+                        {/* Low stock threshold */}
                         <td className="px-4 py-3">
                           {isEditing ? (
-                            <input
-                              type="number"
-                              min={0}
-                              value={editing.threshold}
+                            <input type="number" min={0} value={editing.threshold}
                               onChange={(e) => setEditing({ ...editing, threshold: Number(e.target.value) })}
-                              className="w-20 rounded border px-2 py-1 text-sm"
-                            />
-                          ) : (
-                            item.lowStockThreshold
-                          )}
+                              className="w-20 rounded border px-2 py-1 text-sm" />
+                          ) : item.lowStockThreshold}
                         </td>
+
+                        {/* Status */}
                         <td className="px-4 py-3">
                           <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold",
                             item.inStock
@@ -256,6 +237,8 @@ export default function AdminInventoryPage() {
                             {item.inStock ? "In Stock" : "Out"}
                           </span>
                         </td>
+
+                        {/* Actions */}
                         <td className="px-4 py-3">
                           {isEditing ? (
                             <div className="flex gap-1">
@@ -263,13 +246,12 @@ export default function AdminInventoryPage() {
                                 className="rounded bg-rose-600 px-2 py-1 text-xs text-white hover:bg-rose-700 disabled:opacity-50">
                                 Save
                               </button>
-                              <button onClick={() => setEditing(null)}
-                                className="rounded border px-2 py-1 text-xs hover:border-rose-400">
+                              <button onClick={() => setEditing(null)} className="rounded border px-2 py-1 text-xs hover:border-rose-400">
                                 Cancel
                               </button>
                             </div>
                           ) : (
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap">
                               <button
                                 onClick={() => setEditing({ id: item.productId, qty: item.availableQty, threshold: item.lowStockThreshold })}
                                 className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
@@ -292,13 +274,13 @@ export default function AdminInventoryPage() {
           </table>
         </div>
 
-        {data && (data as { totalPages?: number }).totalPages && (data as { totalPages: number }).totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm">
-            <span className="text-muted-foreground">Page {page + 1} of {(data as { totalPages: number }).totalPages}</span>
+            <span className="text-muted-foreground">Page {page + 1} of {totalPages}</span>
             <div className="flex gap-2">
               <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
                 className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Prev</button>
-              <button onClick={() => setPage((p) => p + 1)} disabled={page >= (data as { totalPages: number }).totalPages - 1}
+              <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages - 1}
                 className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Next</button>
             </div>
           </div>
