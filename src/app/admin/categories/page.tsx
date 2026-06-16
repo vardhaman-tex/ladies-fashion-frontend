@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { ListTreeIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ListTreeIcon, PackageSearchIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryFormDialog } from "@/components/admin/CategoryFormDialog";
-import { useCategories } from "@/hooks/useCategories";
+import { useAdminCategories } from "@/hooks/useCategories";
 import {
   createCategory,
   deleteCategory,
@@ -21,7 +21,7 @@ import type { Category } from "@/types/category";
 
 export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
-  const { data: categories, isLoading } = useCategories();
+  const { data: categories, isLoading } = useAdminCategories();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -46,6 +46,7 @@ export default function AdminCategoriesPage() {
         toast.success("Category created");
       }
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     } catch (error) {
       const message = isAxiosError<ApiError>(error)
         ? error.response?.data?.message ?? "Unable to save category"
@@ -62,6 +63,7 @@ export default function AdminCategoriesPage() {
       await deleteCategory(id);
       toast.success("Category deleted");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     } catch {
       toast.error("Unable to delete category");
     } finally {
@@ -119,6 +121,14 @@ export default function AdminCategoriesPage() {
                   </td>
                   <td className="px-4 py-2 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        render={<Link href={`/admin/products?categorySlug=${category.slug}`} />}
+                        aria-label="View products in this category"
+                      >
+                        <PackageSearchIcon className="size-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -187,6 +197,14 @@ export default function AdminCategoriesPage() {
                   <ListTreeIcon />
                   Sub-categories
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  render={<Link href={`/admin/products?categorySlug=${category.slug}`} />}
+                  aria-label="View products in this category"
+                >
+                  <PackageSearchIcon className="size-4" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(category)} aria-label="Edit category">
                   <PencilIcon className="size-4" />
                 </Button>
@@ -215,6 +233,7 @@ export default function AdminCategoriesPage() {
                 name: editingCategory.name,
                 description: editingCategory.description,
                 sortOrder: editingCategory.sortOrder,
+                isActive: editingCategory.isActive,
               }
             : undefined
         }

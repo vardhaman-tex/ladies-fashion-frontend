@@ -1,9 +1,10 @@
 "use client";
 
 import * as XLSX from "xlsx";
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
@@ -23,14 +24,18 @@ const STATUS_CHIP: Record<string, string> = {
   DRAFT:        "bg-muted text-muted-foreground",
 };
 
-export default function AdminProductsPage() {
+function AdminProductsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get("categorySlug") || undefined;
+
   const [page, setPage] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<BulkUploadResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading } = useAdminProducts(undefined, page);
+  const { data, isLoading } = useAdminProducts(undefined, page, categorySlug);
   const deleteProduct  = useDeleteAdminProduct();
   const updateStatus   = useUpdateAdminProductStatus();
   const bulkUpload     = useBulkUploadProducts();
@@ -106,6 +111,11 @@ export default function AdminProductsPage() {
     }
   }
 
+  function clearCategoryFilter() {
+    setPage(0);
+    router.push("/admin/products");
+  }
+
   const products = data?.content ?? [];
 
   return (
@@ -127,6 +137,20 @@ export default function AdminProductsPage() {
           </Link>
         </div>
       </div>
+
+      {categorySlug && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+          <span>
+            Filtered by category: <span className="font-semibold">{categorySlug}</span>
+          </span>
+          <button
+            onClick={clearCategoryFilter}
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium hover:bg-rose-100"
+          >
+            <X className="size-3" /> Clear
+          </button>
+        </div>
+      )}
 
       {/* Bulk upload modal */}
       {uploadOpen && (
@@ -367,5 +391,13 @@ export default function AdminProductsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense>
+      <AdminProductsContent />
+    </Suspense>
   );
 }

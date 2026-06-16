@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryFormDialog } from "@/components/admin/CategoryFormDialog";
-import { useCategories } from "@/hooks/useCategories";
+import { useAdminCategories } from "@/hooks/useCategories";
 import {
   createSubCategory,
   deleteSubCategory,
@@ -24,7 +24,7 @@ export default function AdminSubCategoriesPage() {
   const params = useParams<{ id: string }>();
   const categoryId = params.id;
   const queryClient = useQueryClient();
-  const { data: categories, isLoading } = useCategories();
+  const { data: categories, isLoading } = useAdminCategories();
   const category = categories?.find((c) => c.id === categoryId);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -51,6 +51,7 @@ export default function AdminSubCategoriesPage() {
         toast.success("Sub-category created");
       }
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     } catch (error) {
       const message = isAxiosError<ApiError>(error)
         ? error.response?.data?.message ?? "Unable to save sub-category"
@@ -67,6 +68,7 @@ export default function AdminSubCategoriesPage() {
       await deleteSubCategory(id);
       toast.success("Sub-category deleted");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     } catch {
       toast.error("Unable to delete sub-category");
     } finally {
@@ -207,6 +209,7 @@ export default function AdminSubCategoriesPage() {
                 name: editingSubCategory.name,
                 description: editingSubCategory.description,
                 sortOrder: editingSubCategory.sortOrder,
+                isActive: editingSubCategory.isActive,
               }
             : undefined
         }

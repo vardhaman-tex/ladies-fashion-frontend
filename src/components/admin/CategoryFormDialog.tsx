@@ -17,6 +17,7 @@ export interface CategoryFormInitialValues {
   name: string;
   description: string | null;
   sortOrder: number;
+  isActive: boolean;
 }
 
 interface CategoryFormDialogProps {
@@ -27,7 +28,7 @@ interface CategoryFormDialogProps {
   onSubmit: (data: CategoryRequest, image?: File) => Promise<void>;
 }
 
-const EMPTY_VALUES: CategoryFormInitialValues = { name: "", description: "", sortOrder: 0 };
+const EMPTY_VALUES: CategoryFormInitialValues = { name: "", description: "", sortOrder: 0, isActive: true };
 
 /**
  * Shared create/edit form for categories and sub-categories.
@@ -36,6 +37,7 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
+  const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<File | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,6 +47,7 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
       setName(values.name);
       setDescription(values.description ?? "");
       setSortOrder(String(values.sortOrder));
+      setIsActive(values.isActive);
       setImage(undefined);
     }
   }, [open, initialValues]);
@@ -60,6 +63,7 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
           name: name.trim(),
           description: description.trim() || undefined,
           sortOrder: sortOrder ? Number(sortOrder) : undefined,
+          isActive,
         },
         image
       );
@@ -112,6 +116,17 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
               accept="image/*"
               onChange={(e) => setImage(e.target.files?.[0])}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="category-is-active"
+              type="checkbox"
+              className="size-4 rounded border-input"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            <Label htmlFor="category-is-active">Active</Label>
           </div>
 
           <DialogFooter>

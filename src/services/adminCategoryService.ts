@@ -6,6 +6,7 @@ export interface CategoryRequest {
   name: string;
   description?: string;
   sortOrder?: number;
+  isActive?: boolean;
 }
 
 function buildFormData(data: CategoryRequest, image?: File): FormData {
@@ -13,6 +14,14 @@ function buildFormData(data: CategoryRequest, image?: File): FormData {
   formData.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
   if (image) formData.append("image", image);
   return formData;
+}
+
+/**
+ * Fetches all categories (including inactive) with their sub-categories, for admin use.
+ */
+export async function getAdminCategories(): Promise<Category[]> {
+  const response = await api.get<ApiResponse<Category[]>>("/api/v1/admin/categories");
+  return response.data.data;
 }
 
 /**

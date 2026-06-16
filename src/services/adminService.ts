@@ -82,7 +82,7 @@ export const toggleUserActive = async (id: string): Promise<AdminUser> => {
 
 // Products — uses admin endpoint that returns ALL statuses
 export const getAdminProducts = async (
-  params: { search?: string; page?: number; size?: number } = {}
+  params: { search?: string; categorySlug?: string; page?: number; size?: number } = {}
 ): Promise<PageResponse<ProductSummary>> => {
   const { data } = await api.get<ApiResponse<PageResponse<ProductSummary>>>(
     "/api/v1/admin/products",

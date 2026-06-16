@@ -23,7 +23,8 @@ export const ADMIN_KEYS = {
   orders: (status?: OrderStatus, page?: number) => ["admin", "orders", status, page] as const,
   order: (id: string) => ["admin", "order", id] as const,
   users: (page?: number) => ["admin", "users", page] as const,
-  products: (search?: string, page?: number) => ["admin", "products", search, page] as const,
+  products: (search?: string, page?: number, categorySlug?: string) =>
+    ["admin", "products", search, page, categorySlug] as const,
   inventory: (lowStock?: boolean, page?: number) => ["admin", "inventory", lowStock, page] as const,
 };
 
@@ -84,10 +85,10 @@ export function useToggleUserActive() {
   });
 }
 
-export function useAdminProducts(search?: string, page = 0) {
+export function useAdminProducts(search?: string, page = 0, categorySlug?: string) {
   return useQuery({
-    queryKey: ADMIN_KEYS.products(search, page),
-    queryFn: () => getAdminProducts({ search, page }),
+    queryKey: ADMIN_KEYS.products(search, page, categorySlug),
+    queryFn: () => getAdminProducts({ search, page, categorySlug }),
   });
 }
 
