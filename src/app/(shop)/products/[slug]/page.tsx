@@ -181,6 +181,7 @@ export default function ProductDetailPage() {
   const sizeRef = useRef<HTMLDivElement>(null);
   const [ctaVisible, setCtaVisible] = useState(true);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // Sticky bar visibility via IntersectionObserver
@@ -195,6 +196,17 @@ export default function ProductDetailPage() {
     return () => obs.disconnect();
   }, [product]);
 
+  // Initialize the selected color to the first active variant once the product loads
+  useEffect(() => {
+    if (!product) return;
+    const active = product.variants.filter((v) => v.isActive);
+    const first = (active.length > 0 ? active : product.variants)[0];
+    if (first) {
+      setSelectedVariantId(first.id);
+      setSelectedSize(first.skus.length === 1 ? first.skus[0].size : null);
+    }
+  }, [product]);
+
   if (isLoading) return <PDPSkeleton />;
 
   if (!product) {
@@ -206,24 +218,30 @@ export default function ProductDetailPage() {
   }
 
   const hasDiscount = product.discountAmount > 0;
-  const sizeInventories = product.inventory?.sizeInventories ?? [];
+  const activeVariants = product.variants.filter((v) => v.isActive);
+  const displayVariants = activeVariants.length > 0 ? activeVariants : product.variants;
+  const selectedVariant = displayVariants.find((v) => v.id === selectedVariantId) ?? displayVariants[0] ?? null;
+  const availableSizes = selectedVariant?.skus ?? [];
+  const selectedSku = selectedVariant?.skus.find((s) => s.size === selectedSize) ?? null;
+  const needsSizeChoice = availableSizes.length > 1;
 
-  // If a size is selected and per-size inventory exists, show that qty; otherwise global
-  const availableQty = selectedSize && sizeInventories.length > 0
-    ? (sizeInventories.find((s) => s.size.toUpperCase() === selectedSize.toUpperCase())?.availableQty ?? product.inventory?.availableQty ?? null)
-    : (product.inventory?.availableQty ?? null);
+  const availableQty = selectedSku?.availableQty ?? null;
+  const inStockNow = selectedSku ? selectedSku.availableQty > 0 : selectedVariant?.inStock ?? product.inStock;
 
-  const availableSizes = product.sizes
-    ? product.sizes.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
+  function selectVariant(variantId: string) {
+    setSelectedVariantId(variantId);
+    const variant = displayVariants.find((v) => v.id === variantId);
+    setSelectedSize(variant && variant.skus.length === 1 ? variant.skus[0].size : null);
+  }
 
+  const galleryImages = selectedVariant?.images ?? [];
   const thumbnail =
-    product.images.find((img) => img.isPrimary)?.imageUrl ??
-    product.images[0]?.imageUrl ??
-    null;
+    galleryImages.find((img) => img.isPrimary)?.imageUrl ??
+    galleryImages[0]?.imageUrl ??
+    product.thumbnail;
 
   function handleAddToCart() {
-    if (availableSizes.length > 0 && !selectedSize) {
+    if (needsSizeChoice && !selectedSize) {
       toast.error("Please select a size before adding to cart");
       return;
     }
@@ -236,12 +254,12 @@ export default function ProductDetailPage() {
       discountAmount: product!.discountAmount,
       quantity: 1,
       size: selectedSize,
-      color: product!.color ?? null,
+      color: selectedVariant?.color ?? null,
     });
   }
 
   function handleBuyNow() {
-    if (availableSizes.length > 0 && !selectedSize) {
+    if (needsSizeChoice && !selectedSize) {
       toast.error("Please select a size before buying");
       return;
     }
@@ -255,7 +273,7 @@ export default function ProductDetailPage() {
         discountAmount: product!.discountAmount,
         quantity: 1,
         size: selectedSize,
-        color: product!.color ?? null,
+        color: selectedVariant?.color ?? null,
       },
       { onSuccess: () => router.push("/cart") }
     );
@@ -294,7 +312,11 @@ export default function ProductDetailPage() {
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {/* Gallery */}
-          <ProductImageGallery images={product.images} productName={product.name} />
+          <ProductImageGallery
+            key={selectedVariant?.id ?? "default"}
+            images={galleryImages}
+            productName={product.name}
+          />
 
           {/* Info panel */}
           <div className="flex flex-col gap-4">
@@ -327,7 +349,7 @@ export default function ProductDetailPage() {
                 <span>{product.avgRating.toFixed(1)}</span>
                 <span>({product.reviewCount} reviews)</span>
               </div>
-              <StockIndicator inStock={product.inStock} availableQty={availableQty} />
+              <StockIndicator inStock={inStockNow} availableQty={availableQty} />
             </div>
 
             {/* Price */}
@@ -349,41 +371,76 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Attributes */}
-            {(product.color ?? product.fabric) && (
+            {/* Fabric */}
+            {product.fabric && (
               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                {product.color && (
-                  <span className="rounded-full border px-3 py-0.5">
-                    Color: {product.color}
-                  </span>
-                )}
-                {product.fabric && (
-                  <span className="rounded-full border px-3 py-0.5">
-                    Fabric: {product.fabric}
-                  </span>
-                )}
+                <span className="rounded-full border px-3 py-0.5">
+                  Fabric: {product.fabric}
+                </span>
+              </div>
+            )}
+
+            {/* Color swatches */}
+            {displayVariants.length > 1 && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-foreground">
+                  Color{selectedVariant ? <span className="ml-1 font-bold text-rose-600">— {selectedVariant.color}</span> : ""}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {displayVariants.map((variant) => {
+                    const isSelected = variant.id === selectedVariant?.id;
+                    return variant.colorHex ? (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        title={variant.color}
+                        onClick={() => selectVariant(variant.id)}
+                        className={`size-9 rounded-full border-2 transition-all ${
+                          isSelected ? "border-rose-600 ring-2 ring-rose-200" : "border-border"
+                        }`}
+                        style={{ backgroundColor: variant.colorHex }}
+                      />
+                    ) : (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => selectVariant(variant.id)}
+                        className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                          isSelected
+                            ? "border-rose-600 bg-rose-600 text-white"
+                            : "border-border text-foreground hover:border-rose-400"
+                        }`}
+                      >
+                        {variant.color}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {/* Size selector */}
-            {availableSizes.length > 0 && (
+            {needsSizeChoice && (
               <div ref={sizeRef}>
                 <p className="mb-2 text-sm font-medium text-foreground">
                   Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {availableSizes.map((size) => (
+                  {availableSizes.map((sku) => (
                     <button
-                      key={size}
+                      key={sku.id}
                       type="button"
-                      onClick={() => setSelectedSize(selectedSize === size ? null : size)}
+                      disabled={!sku.inStock}
+                      onClick={() => setSelectedSize(selectedSize === sku.size ? null : sku.size)}
                       className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                        selectedSize === size
+                        selectedSize === sku.size
                           ? "border-rose-600 bg-rose-600 text-white"
-                          : "border-border text-foreground hover:border-rose-400"
+                          : !sku.inStock
+                            ? "border-border text-muted-foreground/50 line-through"
+                            : "border-border text-foreground hover:border-rose-400"
                       }`}
                     >
-                      {size}
+                      {sku.size}
                     </button>
                   ))}
                 </div>
@@ -394,7 +451,7 @@ export default function ProductDetailPage() {
             <div ref={ctaRef} className="flex gap-2">
               <Button
                 className="flex-1"
-                disabled={!product.inStock || adding}
+                disabled={!inStockNow || adding}
                 onClick={handleAddToCart}
               >
                 <ShoppingCartIcon className="size-4" />
@@ -403,7 +460,7 @@ export default function ProductDetailPage() {
               <Button
                 className="flex-1"
                 variant="secondary"
-                disabled={!product.inStock || adding}
+                disabled={!inStockNow || adding}
                 onClick={handleBuyNow}
               >
                 <Zap className="size-4" />
@@ -482,9 +539,9 @@ export default function ProductDetailPage() {
           </div>
           <Button
             size="sm"
-            disabled={!product.inStock || adding}
+            disabled={!inStockNow || adding}
             onClick={() => {
-              if (availableSizes.length > 0 && !selectedSize) {
+              if (needsSizeChoice && !selectedSize) {
                 sizeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
                 return;
               }
@@ -493,7 +550,7 @@ export default function ProductDetailPage() {
             className="shrink-0"
           >
             <ShoppingCartIcon className="size-4" />
-            {adding ? "Adding…" : availableSizes.length > 0 && !selectedSize ? "Select Size" : "Add to Cart"}
+            {adding ? "Adding…" : needsSizeChoice && !selectedSize ? "Select Size" : "Add to Cart"}
           </Button>
         </div>
       )}

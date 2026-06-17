@@ -4,94 +4,12 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Download, Plus, Upload, X } from "lucide-react";
-import { useAdminInventory, useUpdateInventory, useUpdateSizeInventories } from "@/hooks/useAdmin";
+import { AlertTriangle, Download, Upload } from "lucide-react";
+import { useAdminInventory, useUpdateInventory } from "@/hooks/useAdmin";
 import { exportInventoryExcel, importInventoryExcel } from "@/services/adminService";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import { cn } from "@/lib/utils";
-import type { Inventory } from "@/types/product";
-
-interface SizeEntry { size: string; availableQty: number; }
-
-function SizesModal({ item, onClose }: { item: Inventory; onClose: () => void }) {
-  const [sizes, setSizes] = useState<SizeEntry[]>(
-    item.sizeInventories?.length > 0
-      ? item.sizeInventories.map((s) => ({ ...s }))
-      : [{ size: "", availableQty: 0 }]
-  );
-  const updateSizes = useUpdateSizeInventories();
-
-  function addRow() { setSizes((p) => [...p, { size: "", availableQty: 0 }]); }
-  function removeRow(i: number) { setSizes((p) => p.filter((_, idx) => idx !== i)); }
-  function updateRow(i: number, field: keyof SizeEntry, value: string | number) {
-    setSizes((p) => p.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
-  }
-
-  async function handleSave() {
-    const valid = sizes.filter((s) => s.size.trim());
-    try {
-      await updateSizes.mutateAsync({ productId: item.productId, entries: valid });
-      toast.success("Size inventory updated");
-      onClose();
-    } catch {
-      toast.error("Failed to update size inventory");
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <div>
-            <h2 className="font-semibold text-sm">Size Inventory</h2>
-            <p className="text-xs text-muted-foreground">{item.productName ?? item.productId}</p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="size-4" />
-          </button>
-        </div>
-        <div className="space-y-2 p-5">
-          <div className="grid grid-cols-[1fr_80px_32px] gap-1.5 text-xs font-medium text-muted-foreground mb-1">
-            <span>Size</span><span>Qty</span><span />
-          </div>
-          {sizes.map((s, i) => (
-            <div key={i} className="grid grid-cols-[1fr_80px_32px] gap-1.5">
-              <input
-                value={s.size}
-                onChange={(e) => updateRow(i, "size", e.target.value.toUpperCase())}
-                placeholder="e.g. S"
-                className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
-              />
-              <input
-                type="number" min={0} value={s.availableQty}
-                onChange={(e) => updateRow(i, "availableQty", Number(e.target.value))}
-                className="rounded border border-input bg-transparent px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-rose-400"
-              />
-              <button onClick={() => removeRow(i)} className="flex items-center justify-center text-muted-foreground hover:text-red-500">
-                <X className="size-3.5" />
-              </button>
-            </div>
-          ))}
-          <button onClick={addRow} className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 mt-1">
-            <Plus className="size-3.5" /> Add size
-          </button>
-          <p className="text-xs text-muted-foreground mt-2">
-            Saving sizes here also updates the product's size list, enabling size-based cart gating on the storefront.
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t px-5 py-4">
-          <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
-          <button
-            onClick={handleSave} disabled={updateSizes.isPending}
-            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
-          >
-            {updateSizes.isPending ? "Saving…" : "Save Sizes"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import type { InventoryRow } from "@/types/admin";
 
 export default function AdminInventoryPage() {
   const searchParams = useSearchParams();
@@ -99,8 +17,7 @@ export default function AdminInventoryPage() {
 
   const [page, setPage] = useState(0);
   const [lowStockOnly, setLowStockOnly] = useState(false);
-  const [editing, setEditing] = useState<{ id: string; qty: number; threshold: number } | null>(null);
-  const [sizesItem, setSizesItem] = useState<Inventory | null>(null);
+  const [editing, setEditing] = useState<{ skuId: string; qty: number; threshold: number } | null>(null);
 
   const { data, isLoading } = useAdminInventory(lowStockOnly, page);
   const updateInventory = useUpdateInventory();
@@ -143,7 +60,11 @@ export default function AdminInventoryPage() {
   async function handleSave() {
     if (!editing) return;
     try {
-      await updateInventory.mutateAsync({ productId: editing.id, stockQuantity: editing.qty, lowStockThreshold: editing.threshold });
+      await updateInventory.mutateAsync({
+        skuId: editing.skuId,
+        availableQty: editing.qty,
+        lowStockThreshold: editing.threshold,
+      });
       toast.success("Inventory updated");
       setEditing(null);
     } catch {
@@ -151,13 +72,11 @@ export default function AdminInventoryPage() {
     }
   }
 
-  const items = (data?.content ?? []) as Inventory[];
+  const items = (data?.content ?? []) as InventoryRow[];
   const totalPages = (data as { totalPages?: number })?.totalPages ?? 1;
 
   return (
     <div className="p-6 lg:p-8">
-      {sizesItem && <SizesModal item={sizesItem} onClose={() => setSizesItem(null)} />}
-
       <input ref={importRef} type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -197,8 +116,9 @@ export default function AdminInventoryPage() {
             <thead>
               <tr className="border-b bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-4 py-3">Product</th>
+                <th className="px-4 py-3">Color</th>
+                <th className="px-4 py-3">Size</th>
                 <th className="px-4 py-3">Available</th>
-                <th className="px-4 py-3">Sizes</th>
                 <th className="px-4 py-3">Sold</th>
                 <th className="px-4 py-3">Low Stock At</th>
                 <th className="px-4 py-3">Status</th>
@@ -208,41 +128,43 @@ export default function AdminInventoryPage() {
             <tbody className="divide-y">
               {isLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i}>{Array.from({ length: 7 }).map((_, j) => (
+                    <tr key={i}>{Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                     ))}</tr>
                   ))
                 : items.map((item) => {
-                    const isEditing = editing?.id === item.productId;
+                    const isEditing = editing?.skuId === item.skuId;
                     const isLow = item.availableQty <= item.lowStockThreshold;
-                    const hasSizeInv = (item.sizeInventories?.length ?? 0) > 0;
                     return (
                       <tr
-                      key={item.productId}
-                      id={`inv-${item.productId}`}
-                      className={cn(
-                        "hover:bg-muted/20",
-                        isLow && "bg-amber-50/40 dark:bg-amber-950/10",
-                        highlightProductId === item.productId && "ring-2 ring-inset ring-rose-400"
-                      )}
-                    >
+                        key={item.skuId}
+                        id={`inv-${item.skuId}`}
+                        className={cn(
+                          "hover:bg-muted/20",
+                          isLow && "bg-amber-50/40 dark:bg-amber-950/10",
+                          highlightProductId === item.productId && "ring-2 ring-inset ring-rose-400"
+                        )}
+                      >
                         {/* Product identity */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {item.productThumbnail ? (
                               <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
-                                <Image src={item.productThumbnail} alt={item.productName ?? ""} fill className="object-cover" sizes="40px" />
+                                <Image src={item.productThumbnail} alt={item.productName} fill className="object-cover" sizes="40px" />
                               </div>
                             ) : (
                               <div className="size-10 shrink-0 rounded-lg bg-muted" />
                             )}
                             <div className="min-w-0">
-                              <p className="truncate font-medium text-sm max-w-[180px]">{item.productName ?? "—"}</p>
-                              <p className="text-xs text-muted-foreground">{item.productSku ?? ""}</p>
+                              <p className="truncate font-medium text-sm max-w-[180px]">{item.productName}</p>
+                              <p className="text-xs text-muted-foreground">{item.productSku}</p>
                             </div>
                             {isLow && <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />}
                           </div>
                         </td>
+
+                        <td className="px-4 py-3 text-muted-foreground">{item.color}</td>
+                        <td className="px-4 py-3 font-medium">{item.size}</td>
 
                         {/* Available qty */}
                         <td className="px-4 py-3">
@@ -254,21 +176,6 @@ export default function AdminInventoryPage() {
                             <span className={cn("font-semibold", isLow ? "text-amber-600" : "text-foreground")}>
                               {item.availableQty}
                             </span>
-                          )}
-                        </td>
-
-                        {/* Size inventory */}
-                        <td className="px-4 py-3">
-                          {hasSizeInv ? (
-                            <div className="flex flex-wrap gap-1">
-                              {item.sizeInventories.map((s) => (
-                                <span key={s.size} className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
-                                  {s.size}: {s.availableQty}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </td>
 
@@ -307,20 +214,12 @@ export default function AdminInventoryPage() {
                               </button>
                             </div>
                           ) : (
-                            <div className="flex gap-1 flex-wrap">
-                              <button
-                                onClick={() => setEditing({ id: item.productId, qty: item.availableQty, threshold: item.lowStockThreshold })}
-                                className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => setSizesItem(item)}
-                                className="rounded border px-2 py-1 text-xs hover:border-purple-400 hover:text-purple-600"
-                              >
-                                Sizes
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setEditing({ skuId: item.skuId, qty: item.availableQty, threshold: item.lowStockThreshold })}
+                              className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
+                            >
+                              Edit
+                            </button>
                           )}
                         </td>
                       </tr>

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { AdminStats, AdminOrderSummary, AdminUser } from "@/types/admin";
+import type { AdminStats, AdminOrderSummary, AdminUser, AdminDataImportResult, InventoryRow } from "@/types/admin";
 import type { OrderData } from "@/types/order";
 import type { OrderStatus } from "@/types/order";
 import type { ProductSummary } from "@/types/product";
@@ -121,48 +121,57 @@ export const bulkUploadProducts = async (file: File): Promise<BulkUploadResult> 
   return data.data;
 };
 
-// Inventory
+// Inventory — one row per (color, size) SKU. Replacing the full set of sizes
+// for a color lives on the product variant endpoints (see adminProductService);
+// this covers browsing stock and adjusting one SKU's quantity at a time.
 export const getAdminInventory = async (
   params: { lowStock?: boolean; page?: number; size?: number } = {}
-): Promise<PageResponse<unknown>> => {
-  const { data } = await api.get<ApiResponse<PageResponse<unknown>>>(
+): Promise<PageResponse<InventoryRow>> => {
+  const { data } = await api.get<ApiResponse<PageResponse<InventoryRow>>>(
     "/api/v1/admin/inventory",
     { params }
   );
   return data.data;
 };
 
+export const getAdminInventoryByProduct = async (productId: string): Promise<InventoryRow[]> => {
+  const { data } = await api.get<ApiResponse<InventoryRow[]>>(
+    `/api/v1/admin/inventory/product/${productId}`
+  );
+  return data.data;
+};
+
 export const updateInventory = async (
-  productId: string,
-  stockQuantity: number,
-  lowStockThreshold: number
-): Promise<unknown> => {
-  const { data } = await api.patch<ApiResponse<unknown>>(
-    `/api/v1/admin/inventory/${productId}`,
-    { availableQty: stockQuantity, lowStockThreshold }
+  skuId: string,
+  payload: { availableQty?: number; lowStockThreshold?: number }
+): Promise<InventoryRow> => {
+  const { data } = await api.patch<ApiResponse<InventoryRow>>(
+    `/api/v1/admin/inventory/${skuId}`,
+    payload
   );
   return data.data;
 };
 
-export interface SizeInventoryEntry { size: string; availableQty: number; }
-
-export const updateSizeInventories = async (
-  productId: string,
-  entries: SizeInventoryEntry[]
-): Promise<unknown> => {
-  const { data } = await api.put<ApiResponse<unknown>>(
-    `/api/v1/admin/inventory/${productId}/sizes`,
-    entries
-  );
-  return data.data;
-};
-
-// Full data backup (categories, sub-categories, products, images, inventory)
+// Full data backup (categories, sub-categories, products, variants, images, SKUs)
 export const exportFullBackup = async (): Promise<Blob> => {
   const response = await api.get("/api/v1/admin/export/full-backup", {
     responseType: "blob",
   });
   return response.data as Blob;
+};
+
+// Restore the workbook produced by exportFullBackup. Rows are upserted by
+// natural key (slug/sku/color/size), so this is safe to run against a
+// freshly-wiped database or to top up an existing one.
+export const importFullBackup = async (file: File): Promise<AdminDataImportResult> => {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<ApiResponse<AdminDataImportResult>>(
+    "/api/v1/admin/import/full-backup",
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data.data;
 };
 
 export const exportInventoryExcel = async (): Promise<Blob> => {

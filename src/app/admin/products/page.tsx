@@ -257,7 +257,7 @@ function AdminProductsContent() {
               <tr className="border-b bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-4 py-3">Product</th>
                 <th className="hidden px-4 py-3 sm:table-cell">SKU</th>
-                <th className="hidden px-4 py-3 md:table-cell">Color</th>
+                <th className="hidden px-4 py-3 md:table-cell">Colors</th>
                 <th className="px-4 py-3">Price</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
@@ -302,7 +302,7 @@ function AdminProductsContent() {
                         {p.sku}
                       </td>
                       <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                        {p.color ?? "—"}
+                        {p.colors.length > 0 ? p.colors.map((c) => c.color).join(", ") : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-semibold text-rose-600">

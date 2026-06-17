@@ -18,14 +18,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const { mutate: addToCart, isPending: adding } = useAddToCart();
   const router = useRouter();
 
-  // Does this product have selectable sizes?
-  const hasSizes = product.sizes && product.sizes.split(",").map((s) => s.trim()).filter(Boolean).length > 0;
+  // Does the shopper need to make a choice we can't make for them?
+  const needsSelection = product.hasSizes || product.colors.length > 1;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // If product has sizes, navigate to PDP so user can pick one
-    if (hasSizes) {
+    // If product has sizes or more than one color, navigate to PDP so user can pick
+    if (needsSelection) {
       router.push(`/products/${product.slug}`);
       return;
     }
@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
       discountAmount: product.discountAmount,
       quantity: 1,
       size: null,
-      color: product.color ?? null,
+      color: product.colors[0]?.color ?? null,
     });
   };
 
@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
             disabled={adding}
           >
             <ShoppingBag className="size-3.5 mr-1" />
-            {adding ? "Adding…" : hasSizes ? "Choose Size" : "Add to Cart"}
+            {adding ? "Adding…" : needsSelection ? "Select Options" : "Add to Cart"}
           </Button>
         )}
       </div>

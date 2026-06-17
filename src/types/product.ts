@@ -6,7 +6,7 @@ import type { Category, SubCategory } from "@/types/category";
 export type ProductStatus = "DRAFT" | "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
 
 /**
- * Image associated with a product.
+ * Image associated with a product variant (color).
  */
 export interface ProductImage {
   id: string;
@@ -15,25 +15,40 @@ export interface ProductImage {
   sortOrder: number;
 }
 
-export interface SizeInventoryEntry {
-  size: string;
-  availableQty: number;
-}
-
 /**
- * Stock information for a product.
+ * One size's stock row within a color variant.
  */
-export interface Inventory {
-  productId: string;
-  productName?: string;
-  productSku?: string;
-  productThumbnail?: string | null;
+export interface VariantSku {
+  id: string;
+  size: string;
+  skuCode: string | null;
   availableQty: number;
   reservedQty: number;
   soldQty: number;
   lowStockThreshold: number;
   inStock: boolean;
-  sizeInventories: SizeInventoryEntry[];
+}
+
+/**
+ * One color of a product, with its own images and per-size stock.
+ */
+export interface ProductVariant {
+  id: string;
+  color: string;
+  colorHex: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  inStock: boolean;
+  images: ProductImage[];
+  skus: VariantSku[];
+}
+
+/**
+ * Lightweight color swatch shown on listing cards.
+ */
+export interface ColorSwatch {
+  color: string;
+  colorHex: string | null;
 }
 
 /**
@@ -51,26 +66,40 @@ export interface ProductSummary {
   avgRating: number;
   reviewCount: number;
   thumbnail: string | null;
-  color: string | null;
   fabric: string | null;
-  sizes: string | null;
+  colors: ColorSwatch[];
+  hasSizes: boolean;
   inStock: boolean;
   isFeatured: boolean;
   status: ProductStatus;
 }
 
 /**
- * Full product details, including images, category info, and recommendations.
+ * Full product details, including color variants, category info, and recommendations.
  */
-export interface ProductDetail extends ProductSummary {
+export interface ProductDetail {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  price: number;
+  discountAmount: number;
+  discountPercent: number;
+  finalPrice: number;
+  avgRating: number;
+  reviewCount: number;
+  thumbnail: string | null;
+  fabric: string | null;
+  occasion: string | null;
+  inStock: boolean;
+  isFeatured: boolean;
+  status: ProductStatus;
   description: string | null;
   fabricDetails: string | null;
   careInstructions: string | null;
-  sizes: string | null;
-  images: ProductImage[];
+  variants: ProductVariant[];
   category: Category | null;
   subCategory: SubCategory | null;
-  inventory: Inventory | null;
   similarProducts: ProductSummary[];
   recommendedProducts: ProductSummary[];
   metaTitle: string | null;
