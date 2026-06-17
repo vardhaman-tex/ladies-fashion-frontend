@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   type SocialLink,
   type SocialLinkRequest,
 } from "@/services/socialLinkService";
+import { exportFullBackup } from "@/services/adminService";
 
 const QUERY_KEY = ["admin", "social-links"];
 
@@ -125,6 +126,46 @@ function SocialLinkForm({
   );
 }
 
+function DataBackupSection() {
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportFullBackup();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ladies-fashion-backup-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Backup downloaded");
+    } catch {
+      toast.error("Failed to generate backup");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div className="mb-8 rounded-xl border p-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="font-semibold">Data Backup</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Download a full snapshot of categories, sub-categories, products, product images, and
+            inventory as a single .xlsx file. Useful before making structural changes.
+          </p>
+        </div>
+        <Button onClick={handleExport} disabled={exporting} className="shrink-0 gap-1.5">
+          {exporting ? <Loader2 className="size-4 animate-spin" /> : <DatabaseBackup className="size-4" />}
+          Export Backup
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSettingsPage() {
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -165,6 +206,8 @@ export default function AdminSettingsPage() {
         <h1 className="text-xl font-bold">Site Settings</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">Configure social media links shown in the footer.</p>
       </div>
+
+      <DataBackupSection />
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-semibold">Social Media Links</h2>

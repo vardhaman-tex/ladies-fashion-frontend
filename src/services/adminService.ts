@@ -157,6 +157,14 @@ export const updateSizeInventories = async (
   return data.data;
 };
 
+// Full data backup (categories, sub-categories, products, images, inventory)
+export const exportFullBackup = async (): Promise<Blob> => {
+  const response = await api.get("/api/v1/admin/export/full-backup", {
+    responseType: "blob",
+  });
+  return response.data as Blob;
+};
+
 export const exportInventoryExcel = async (): Promise<Blob> => {
   const response = await api.get("/api/v1/admin/inventory/export", {
     responseType: "blob",
