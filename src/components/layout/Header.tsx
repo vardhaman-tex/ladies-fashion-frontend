@@ -11,6 +11,7 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   Sheet,
   SheetClose,
@@ -23,6 +24,7 @@ import { useCategories } from "@/hooks/useCategories";
 
 export function Header() {
   const { data: categories } = useCategories();
+  const { data: siteSettings } = useSiteSettings();
   const { itemCount: wishlistCount } = useWishlist();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -45,7 +47,12 @@ export function Header() {
             {/* Sidebar header */}
             <SheetHeader className="border-b px-4 py-3">
               <div className="flex items-center justify-between">
-                <SheetTitle className="font-heading text-lg font-bold">Vardhman Textile</SheetTitle>
+                <SheetTitle className="flex items-center gap-2 font-heading text-lg font-bold">
+                  {siteSettings?.logoUrl && (
+                    <img src={siteSettings.logoUrl} alt="" className="h-6 w-auto" />
+                  )}
+                  Vardhman Textile
+                </SheetTitle>
                 <SheetClose render={<Button variant="ghost" size="icon" className="-mr-1" aria-label="Close menu" />}>
                   <X className="size-4" />
                 </SheetClose>
@@ -181,7 +188,10 @@ export function Header() {
         </Sheet>
 
         {/* Logo */}
-        <Link href="/" className="font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+        <Link href="/" className="flex items-center gap-2 font-heading text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          {siteSettings?.logoUrl && (
+            <img src={siteSettings.logoUrl} alt="" className="h-8 w-auto" />
+          )}
           Vardhman Textile
         </Link>
 

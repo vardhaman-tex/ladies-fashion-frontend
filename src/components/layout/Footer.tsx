@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { getSocialLinks, type SocialLink } from "@/services/socialLinkService";
 
 const HELP_LINKS = [
@@ -89,6 +90,7 @@ function SocialIconBar({ links, size }: { links: SocialLink[]; size: "sm" | "md"
 
 export function Footer() {
   const { data: categories } = useCategories();
+  const { data: siteSettings } = useSiteSettings();
   const { data: socialLinks = [] } = useQuery({
     queryKey: ["social-links"],
     queryFn: getSocialLinks,
@@ -100,7 +102,10 @@ export function Footer() {
       {/* ── Mobile layout (< md) ── */}
       <div className="md:hidden">
         <div className="flex flex-col items-center gap-2 border-b border-border px-4 py-6">
-          <Link href="/" className="font-heading text-xl font-bold tracking-tight text-foreground">
+          <Link href="/" className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight text-foreground">
+            {siteSettings?.logoUrl && (
+              <img src={siteSettings.logoUrl} alt="" className="h-7 w-auto" />
+            )}
             Vardhman Textile
           </Link>
           <p className="text-center text-xs text-muted-foreground">Curated styles for every occasion</p>
@@ -144,7 +149,12 @@ export function Footer() {
       <div className="mx-auto hidden max-w-7xl px-4 py-10 md:block">
         <div className="grid grid-cols-4 gap-8">
           <div>
-            <Link href="/" className="font-heading text-lg font-bold text-foreground">Vardhman Textile</Link>
+            <Link href="/" className="flex items-center gap-2 font-heading text-lg font-bold text-foreground">
+              {siteSettings?.logoUrl && (
+                <img src={siteSettings.logoUrl} alt="" className="h-7 w-auto" />
+              )}
+              Vardhman Textile
+            </Link>
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
               Curated styles for every occasion, delivered to your doorstep.
             </p>

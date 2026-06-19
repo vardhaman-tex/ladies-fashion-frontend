@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, Lock, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
+import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductStrip } from "@/components/product/ProductStrip";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,13 +25,19 @@ export default function HomePage() {
   const { data: newArrivals, isLoading: loadingNewArrivals } = useNewArrivals({ size: 8 });
   const { data: sale, isLoading: loadingSale } = useSaleProducts({ size: 8 });
 
+  const heroImages = Array.from(
+    new Set(
+      [...(featured?.content ?? []), ...(newArrivals?.content ?? [])]
+        .map((p) => p.thumbnail)
+        .filter((url): url is string => Boolean(url))
+    )
+  ).slice(0, 6);
+
   return (
     <div className="flex flex-col gap-10 pb-10 sm:gap-16 sm:pb-16 lg:gap-24 lg:pb-24">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-400 via-rose-500 to-purple-700 px-4 py-14 text-center sm:py-24 lg:py-36">
-        <div className="absolute -top-24 -left-24 size-72 rounded-full bg-amber-300/30 blur-3xl" />
-        <div className="absolute -bottom-32 -right-16 size-96 rounded-full bg-purple-400/30 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_50%)]" />
+      <section className="relative overflow-hidden px-4 py-14 text-center sm:py-24 lg:py-36">
+        <HeroCarousel images={heroImages} />
 
         <div className="relative mx-auto max-w-2xl">
           <p className="text-xs font-semibold tracking-[0.2em] text-white/80 uppercase">New Season Collection</p>

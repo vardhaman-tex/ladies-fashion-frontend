@@ -16,10 +16,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Vardhman Textile",
-  description: "Vardhman Textile — Premium Ladies Fashion",
-};
+async function getLogoUrl(): Promise<string | null> {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+    const res = await fetch(`${base}/api/v1/settings/site`, { next: { revalidate: 300 } });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data?.logoUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const logoUrl = await getLogoUrl();
+  return {
+    title: "Vardhman Textile",
+    description: "Vardhman Textile — Premium Ladies Fashion",
+    ...(logoUrl ? { icons: { icon: logoUrl } } : {}),
+  };
+}
 
 export default function RootLayout({
   children,

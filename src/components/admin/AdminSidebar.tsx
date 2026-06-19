@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { logout as logoutApi } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 
@@ -38,6 +39,7 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps) {
+  const { data: siteSettings } = useSiteSettings();
   const pathname = usePathname();
   const storeLogout = useAuthStore((s) => s.logout);
   const router = useRouter();
@@ -54,6 +56,9 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
       <div className="border-b border-border px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/admin" onClick={onClose} className="flex items-center gap-2">
+            {siteSettings?.logoUrl && (
+              <img src={siteSettings.logoUrl} alt="" className="h-6 w-auto" />
+            )}
             <span className="font-heading text-base font-bold text-foreground">
               Vardhman Textile
             </span>

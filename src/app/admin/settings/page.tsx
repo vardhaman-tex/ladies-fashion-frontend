@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup, Upload, ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,9 @@ import {
   type SocialLink,
   type SocialLinkRequest,
 } from "@/services/socialLinkService";
-import { exportFullBackup } from "@/services/adminService";
+import { exportFullBackup, importFullBackup } from "@/services/adminService";
+import { adminUpdateLogo, adminRemoveLogo } from "@/services/siteSettingsService";
+import { useSiteSettings, SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
 
 const QUERY_KEY = ["admin", "social-links"];
 
@@ -126,8 +128,76 @@ function SocialLinkForm({
   );
 }
 
+function LogoSection() {
+  const qc = useQueryClient();
+  const { data: siteSettings, isLoading } = useSiteSettings();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadMut = useMutation({
+    mutationFn: adminUpdateLogo,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY }); toast.success("Logo updated"); },
+    onError: () => toast.error("Failed to upload logo"),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: adminRemoveLogo,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY }); toast.success("Logo removed"); },
+    onError: () => toast.error("Failed to remove logo"),
+  });
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) uploadMut.mutate(file);
+  }
+
+  return (
+    <div className="mb-8 rounded-xl border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="font-semibold">Site Logo</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Shown in the browser tab icon, site header, footer, mobile menu, and admin panel —
+            wherever &quot;Vardhman Textile&quot; appears. Recommended: square or wide PNG with
+            transparent background.
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {isLoading ? (
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          ) : siteSettings?.logoUrl ? (
+            <img src={siteSettings.logoUrl} alt="Current logo" className="h-10 w-auto rounded border bg-muted/30 p-1" />
+          ) : (
+            <span className="flex h-10 w-16 items-center justify-center rounded border border-dashed text-muted-foreground">
+              <ImageIcon className="size-4" />
+            </span>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} />
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploadMut.isPending} className="gap-1.5">
+            {uploadMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            {siteSettings?.logoUrl ? "Replace" : "Upload"}
+          </Button>
+          {siteSettings?.logoUrl && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive"
+              onClick={() => { if (confirm("Remove the logo?")) removeMut.mutate(); }}
+              disabled={removeMut.isPending}
+            >
+              <X className="size-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DataBackupSection() {
   const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleExport() {
     setExporting(true);
@@ -147,20 +217,73 @@ function DataBackupSection() {
     }
   }
 
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const result = await importFullBackup(file);
+      const total =
+        result.categoriesProcessed +
+        result.subCategoriesProcessed +
+        result.productsProcessed +
+        result.productVariantsProcessed +
+        result.productImagesProcessed +
+        result.variantSkusProcessed;
+
+      if (result.errors.length === 0) {
+        toast.success(`Import complete: ${total} rows applied`);
+      } else {
+        toast.warning(
+          `Import finished with ${result.errors.length} error(s): ${result.errors
+            .slice(0, 3)
+            .map((err) => `${err.sheet} row ${err.row} – ${err.message}`)
+            .join("; ")}${result.errors.length > 3 ? "…" : ""}`
+        );
+      }
+    } catch {
+      toast.error("Failed to import backup file");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="mb-8 rounded-xl border p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="font-semibold">Data Backup</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Download a full snapshot of categories, sub-categories, products, product images, and
-            inventory as a single .xlsx file. Useful before making structural changes.
+            Export or restore a full snapshot of categories, sub-categories, products, product
+            variants (colors), product images, and per-size stock as a single .xlsx file. Import
+            upserts by slug/SKU/color/size, so it&apos;s safe to run after a database reset or to
+            top up existing data.
           </p>
         </div>
-        <Button onClick={handleExport} disabled={exporting} className="shrink-0 gap-1.5">
-          {exporting ? <Loader2 className="size-4 animate-spin" /> : <DatabaseBackup className="size-4" />}
-          Export Backup
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="gap-1.5"
+          >
+            {importing ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            Import Backup
+          </Button>
+          <Button onClick={handleExport} disabled={exporting} className="gap-1.5">
+            {exporting ? <Loader2 className="size-4 animate-spin" /> : <DatabaseBackup className="size-4" />}
+            Export Backup
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -206,6 +329,8 @@ export default function AdminSettingsPage() {
         <h1 className="text-xl font-bold">Site Settings</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">Configure social media links shown in the footer.</p>
       </div>
+
+      <LogoSection />
 
       <DataBackupSection />
 
