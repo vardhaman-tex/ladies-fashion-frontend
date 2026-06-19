@@ -41,7 +41,7 @@ export function HeroCarousel({ images, intervalMs = 4500 }: HeroCarouselProps) {
           key={src}
           src={src}
           alt=""
-          className="absolute inset-0 size-full object-cover transition-opacity duration-1000"
+          className="absolute inset-0 size-full object-cover object-top transition-opacity duration-1000"
           style={{ opacity: i === index ? 1 : 0 }}
         />
       ))}
