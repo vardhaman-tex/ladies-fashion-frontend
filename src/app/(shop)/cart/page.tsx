@@ -24,6 +24,8 @@ export default function CartPage() {
   }
 
   const isEmpty = !cart || cart.items.length === 0;
+  const hasStockIssues =
+    cart?.items.some((item) => item.availableQty !== undefined && item.quantity > item.availableQty) ?? false;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -103,8 +105,14 @@ export default function CartPage() {
                   Add ₹{(999 - cart.total).toFixed(0)} more for free shipping
                 </p>
               )}
+              {hasStockIssues && (
+                <p className="text-xs font-medium text-red-600">
+                  Some items exceed available stock. Reduce quantity to continue.
+                </p>
+              )}
               <Button
                 className="w-full bg-rose-600 hover:bg-rose-700"
+                disabled={hasStockIssues}
                 render={<Link href="/checkout" />}
               >
                 Proceed to Checkout

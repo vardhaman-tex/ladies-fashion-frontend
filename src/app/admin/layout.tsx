@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <div className="size-8 animate-spin rounded-full border-4 border-rose-600 border-t-transparent" />
       </div>
     );
@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-dvh bg-background">
       <AdminSidebar
         mobileOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

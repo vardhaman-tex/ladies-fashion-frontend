@@ -36,14 +36,24 @@ export function HeroCarousel({ images, intervalMs = 4500 }: HeroCarouselProps) {
   return (
     <div className="absolute inset-0 -z-10 overflow-hidden bg-neutral-900">
       {images.map((src, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <div
           key={src}
-          src={src}
-          alt=""
-          className="absolute inset-0 size-full object-cover object-top transition-opacity duration-1000"
+          className="absolute inset-0 transition-opacity duration-1000"
           style={{ opacity: i === index ? 1 : 0 }}
-        />
+        >
+          {/* Blurred, scaled-up backdrop fills the landscape frame so portrait
+              product photos never look oddly cropped. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full scale-110 object-cover blur-2xl brightness-75"
+          />
+          {/* Full, uncropped image on top */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="absolute inset-0 size-full object-contain" />
+        </div>
       ))}
       {/* Overlay for text legibility, matching the previous gradient's contrast */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-purple-900/60" />

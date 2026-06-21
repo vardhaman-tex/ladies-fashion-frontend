@@ -37,6 +37,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   // null = loading, true = ready, false = failed
   const [scriptState, setScriptState] = useState<null | "ready" | "error">(null);
+  const [policyAgreed, setPolicyAgreed] = useState(false);
 
   const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0] ?? null;
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -85,6 +86,10 @@ export default function CheckoutPage() {
     }
     if (stockIssues.length > 0) {
       toast.error("Some items exceed available stock. Please update your cart.");
+      return;
+    }
+    if (!policyAgreed) {
+      toast.error("Please agree to the Cancellation, Return, Refund & Exchange Policy");
       return;
     }
     if (!window.Razorpay) {
@@ -331,11 +336,31 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={policyAgreed}
+                onChange={(e) => setPolicyAgreed(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-rose-600"
+              />
+              <span>
+                I have read and agree to the{" "}
+                <Link
+                  href="/policies/return-policy"
+                  target="_blank"
+                  className="font-medium text-rose-600 underline hover:text-rose-700"
+                >
+                  Cancellation, Return, Refund &amp; Exchange Policy
+                </Link>
+                .
+              </span>
+            </label>
+
             <Button
               className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
               size="lg"
               onClick={handlePlaceOrder}
-              disabled={isProcessing || !activeAddressId || scriptState === "error" || stockIssues.length > 0}
+              disabled={isProcessing || !activeAddressId || scriptState === "error" || stockIssues.length > 0 || !policyAgreed}
             >
               {isProcessing ? (
                 <>

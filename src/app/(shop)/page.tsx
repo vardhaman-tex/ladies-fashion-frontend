@@ -12,8 +12,8 @@ import { useCategories } from "@/hooks/useCategories";
 import { useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
 
 const TRUST_BADGES = [
-  { icon: Truck, label: "Free Shipping", sub: "On orders above ₹999", bg: "bg-orange-100 text-orange-600" },
-  { icon: RotateCcw, label: "Easy Returns", sub: "7-day return window", bg: "bg-rose-100 text-rose-600" },
+  { icon: Truck, label: "Free Shipping", sub: undefined, bg: "bg-orange-100 text-orange-600" },
+  { icon: RotateCcw, label: "Easy Returns", sub: undefined, bg: "bg-rose-100 text-rose-600" },
   { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics", bg: "bg-purple-100 text-purple-600" },
   { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout", bg: "bg-amber-100 text-amber-600" },
 ];
@@ -160,7 +160,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-foreground sm:text-sm">{label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
+                {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
               </div>
             </div>
           ))}

@@ -33,6 +33,10 @@ export function CartItemRow({ item }: CartItemRowProps) {
       ...(!isAuthenticated && { productId: item.productId, size: item.size, color: item.color }),
     });
 
+  const atStockLimit = item.availableQty !== undefined && item.quantity >= item.availableQty;
+  const overStock = item.availableQty !== undefined && item.quantity > item.availableQty;
+  const lowStock = item.availableQty !== undefined && !overStock && item.availableQty <= 10;
+
   return (
     <div className="flex gap-3 py-3">
       {/* Thumbnail */}
@@ -57,6 +61,15 @@ export function CartItemRow({ item }: CartItemRowProps) {
           <p className="text-xs text-muted-foreground">
             {[item.size, item.color].filter(Boolean).join(" · ")}
           </p>
+        )}
+
+        {overStock && (
+          <p className="text-xs font-medium text-red-600">
+            Only {item.availableQty} left — please reduce quantity
+          </p>
+        )}
+        {lowStock && (
+          <p className="text-xs font-medium text-amber-600">Only {item.availableQty} left!</p>
         )}
 
         <div className="flex items-center gap-1.5 mt-auto">
@@ -97,7 +110,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
             size="icon-sm"
             className="h-5 w-5"
             onClick={() => changeQty(1)}
-            disabled={updating}
+            disabled={updating || atStockLimit}
             aria-label="Increase"
           >
             <Plus className="size-3" />

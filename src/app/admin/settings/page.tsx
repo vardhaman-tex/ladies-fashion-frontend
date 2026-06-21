@@ -330,9 +330,9 @@ export default function AdminSettingsPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">Configure social media links shown in the footer.</p>
       </div>
 
-      <LogoSection />
-
       <DataBackupSection />
+
+      <LogoSection />
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-semibold">Social Media Links</h2>

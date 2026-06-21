@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import {
   CheckCircle2,
   ChevronRight,
+  Minus,
+  Plus,
   Share2,
   ShoppingCartIcon,
-  StarIcon,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +20,54 @@ import { ProductStrip } from "@/components/product/ProductStrip";
 import { WishlistButton } from "@/components/product/WishlistButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProduct } from "@/hooks/useProducts";
-import { useAddToCart } from "@/hooks/useCart";
+import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
+import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
+
+/* ─── Quantity stepper (replaces Add to Cart once item is in cart) ───────── */
+function QtyStepper({
+  quantity,
+  onDecrement,
+  onIncrement,
+  disabled,
+  atMax,
+  className = "",
+}: {
+  quantity: number;
+  onDecrement: () => void;
+  onIncrement: () => void;
+  disabled?: boolean;
+  atMax?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between rounded-lg border border-rose-600 bg-rose-50 px-1 ${className}`}
+    >
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onDecrement}
+        disabled={disabled || quantity <= 1}
+        aria-label="Decrease quantity"
+      >
+        <Minus className="size-4" />
+      </Button>
+      <span className="min-w-6 text-center text-sm font-semibold tabular-nums">
+        {quantity}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onIncrement}
+        disabled={disabled || atMax}
+        aria-label="Increase quantity"
+      >
+        <Plus className="size-4" />
+      </Button>
+    </div>
+  );
+}
 
 /* ─── Breadcrumb ──────────────────────────────────────────────────────────── */
 function Breadcrumb({
@@ -177,6 +225,9 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { data: product, isLoading } = useProduct(params.slug);
   const { mutate: addToCart, isPending: adding } = useAddToCart();
+  const { cart } = useCart();
+  const { mutate: updateCartItem, isPending: updatingQty } = useUpdateCartItem();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const ctaRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef<HTMLDivElement>(null);
   const [ctaVisible, setCtaVisible] = useState(true);
@@ -255,6 +306,30 @@ export default function ProductDetailPage() {
       quantity: 1,
       size: selectedSize,
       color: selectedVariant?.color ?? null,
+    });
+  }
+
+  const cartItem =
+    cart?.items.find(
+      (i) =>
+        i.productId === product?.id &&
+        i.size === selectedSize &&
+        i.color === (selectedVariant?.color ?? null)
+    ) ?? null;
+  const atStockLimit = availableQty !== null && (cartItem?.quantity ?? 0) >= availableQty;
+
+  function changeCartQty(delta: number) {
+    if (!cartItem) return;
+    const newQty = cartItem.quantity + delta;
+    if (newQty < 1) return;
+    updateCartItem({
+      itemId: cartItem.id,
+      quantity: newQty,
+      ...(!isAuthenticated && {
+        productId: cartItem.productId,
+        size: cartItem.size,
+        color: cartItem.color,
+      }),
     });
   }
 
@@ -342,13 +417,8 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
-            {/* Ratings + stock */}
+            {/* Stock */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <StarIcon className="size-4 fill-amber-400 text-amber-400" />
-                <span>{product.avgRating.toFixed(1)}</span>
-                <span>({product.reviewCount} reviews)</span>
-              </div>
               <StockIndicator inStock={inStockNow} availableQty={availableQty} />
             </div>
 
@@ -380,7 +450,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Color swatches */}
+            {/* Color variant thumbnails — show each variant's hero image instead of a flat swatch */}
             {displayVariants.length > 1 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-foreground">
@@ -389,29 +459,35 @@ export default function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {displayVariants.map((variant) => {
                     const isSelected = variant.id === selectedVariant?.id;
-                    return variant.colorHex ? (
+                    const variantThumb =
+                      variant.images.find((img) => img.isPrimary)?.imageUrl ??
+                      variant.images[0]?.imageUrl ??
+                      null;
+                    return (
                       <button
                         key={variant.id}
                         type="button"
                         title={variant.color}
+                        aria-label={variant.color}
                         onClick={() => selectVariant(variant.id)}
-                        className={`size-9 rounded-full border-2 transition-all ${
+                        className={`relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-all ${
                           isSelected ? "border-rose-600 ring-2 ring-rose-200" : "border-border"
                         }`}
-                        style={{ backgroundColor: variant.colorHex }}
-                      />
-                    ) : (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        onClick={() => selectVariant(variant.id)}
-                        className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
-                          isSelected
-                            ? "border-rose-600 bg-rose-600 text-white"
-                            : "border-border text-foreground hover:border-rose-400"
-                        }`}
                       >
-                        {variant.color}
+                        {variantThumb ? (
+                          <Image
+                            src={variantThumb}
+                            alt={variant.color}
+                            fill
+                            className="object-cover"
+                            sizes="56px"
+                          />
+                        ) : (
+                          <span
+                            className="absolute inset-0"
+                            style={{ backgroundColor: variant.colorHex ?? undefined }}
+                          />
+                        )}
                       </button>
                     );
                   })}
@@ -449,14 +525,25 @@ export default function ProductDetailPage() {
 
             {/* CTA buttons — observed for sticky bar */}
             <div ref={ctaRef} className="flex gap-2">
-              <Button
-                className="flex-1"
-                disabled={!inStockNow || adding}
-                onClick={handleAddToCart}
-              >
-                <ShoppingCartIcon className="size-4" />
-                {adding ? "Adding…" : "Add to Cart"}
-              </Button>
+              {cartItem ? (
+                <QtyStepper
+                  quantity={cartItem.quantity}
+                  onDecrement={() => changeCartQty(-1)}
+                  onIncrement={() => changeCartQty(1)}
+                  disabled={updatingQty}
+                  atMax={atStockLimit}
+                  className="flex-1"
+                />
+              ) : (
+                <Button
+                  className="flex-1"
+                  disabled={!inStockNow || adding}
+                  onClick={handleAddToCart}
+                >
+                  <ShoppingCartIcon className="size-4" />
+                  {adding ? "Adding…" : "Add to Cart"}
+                </Button>
+              )}
               <Button
                 className="flex-1"
                 variant="secondary"
@@ -524,7 +611,10 @@ export default function ProductDetailPage() {
 
       {/* Sticky add-to-cart bar — mobile only, shown when CTA is off-screen */}
       {!ctaVisible && (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t bg-background/95 px-4 py-3 shadow-lg backdrop-blur md:hidden">
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t bg-background/95 px-4 pt-3 shadow-lg backdrop-blur md:hidden"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+        >
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">
               {product.name}
@@ -537,6 +627,16 @@ export default function ProductDetailPage() {
               <p className="text-sm font-bold">₹{product.price.toFixed(2)}</p>
             )}
           </div>
+          {cartItem ? (
+            <QtyStepper
+              quantity={cartItem.quantity}
+              onDecrement={() => changeCartQty(-1)}
+              onIncrement={() => changeCartQty(1)}
+              disabled={updatingQty}
+              atMax={atStockLimit}
+              className="max-w-32 shrink-0"
+            />
+          ) : (
           <Button
             size="sm"
             disabled={!inStockNow || adding}
@@ -552,6 +652,7 @@ export default function ProductDetailPage() {
             <ShoppingCartIcon className="size-4" />
             {adding ? "Adding…" : needsSizeChoice && !selectedSize ? "Select Size" : "Add to Cart"}
           </Button>
+          )}
         </div>
       )}
     </>

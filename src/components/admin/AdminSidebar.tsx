@@ -126,7 +126,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
   return (
     <>
       {/* Desktop: always-visible fixed sidebar */}
-      <aside className="hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card lg:flex">
+      <aside className="hidden h-dvh w-56 shrink-0 flex-col border-r border-border bg-card lg:flex">
         {navContent}
       </aside>
 

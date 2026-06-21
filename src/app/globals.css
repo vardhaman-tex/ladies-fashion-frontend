@@ -126,6 +126,9 @@
   }
   html {
     @apply font-sans;
+    /* Slightly larger base size for readability — scales all rem-based
+       text, spacing, and component sizing (buttons, gaps, etc.) site-wide. */
+    font-size: 17.5px;
   }
 }@keyframes shimmer {
   0% { transform: translateX(-100%); }

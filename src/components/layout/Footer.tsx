@@ -140,6 +140,15 @@ export function Footer() {
           </div>
         </div>
 
+        <div className="border-b border-border px-4 py-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal</p>
+          <ul className="flex flex-col gap-1.5">
+            <li><Link href="/policies/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
+            <li><Link href="/policies/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground">Terms &amp; Conditions</Link></li>
+            <li><Link href="/policies/return-policy" className="text-sm text-muted-foreground hover:text-foreground">Return Policy</Link></li>
+          </ul>
+        </div>
+
         <div className="px-4 py-4 text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} Vardhman Textile. All rights reserved.
         </div>
