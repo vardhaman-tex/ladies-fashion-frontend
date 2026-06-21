@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRightIcon, Lock, RotateCcw, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRightIcon, Lock, ShieldCheck, Truck } from "lucide-react";
 import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductStrip } from "@/components/product/ProductStrip";
@@ -13,7 +13,6 @@ import { useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } fro
 
 const TRUST_BADGES = [
   { icon: Truck, label: "Free Shipping", sub: undefined, bg: "bg-orange-100 text-orange-600" },
-  { icon: RotateCcw, label: "Easy Returns", sub: undefined, bg: "bg-rose-100 text-rose-600" },
   { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics", bg: "bg-purple-100 text-purple-600" },
   { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout", bg: "bg-amber-100 text-amber-600" },
 ];
@@ -152,7 +151,7 @@ export default function HomePage() {
 
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:divide-x sm:divide-border sm:gap-0">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:divide-x sm:divide-border sm:gap-0">
           {TRUST_BADGES.map(({ icon: Icon, label, sub, bg }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
               <div className={`flex size-10 items-center justify-center rounded-full sm:size-12 ${bg}`}>
