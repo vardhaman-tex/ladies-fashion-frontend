@@ -347,12 +347,8 @@ export default function ProductDetailPage() {
       toast.error("Please select a size before buying");
       return;
     }
-    // Already in cart — skip re-adding (would double the quantity) and go
-    // straight to checkout.
-    if (cartItem) {
-      router.push("/checkout");
-      return;
-    }
+    // The button itself swaps to "Go to Cart" (-> router.push("/cart")) once
+    // cartItem exists, so this function is only ever invoked pre-add-to-cart.
     addToCart(
       {
         productId: product!.id,
@@ -565,10 +561,19 @@ export default function ProductDetailPage() {
                 className="flex-1"
                 variant="secondary"
                 disabled={!inStockNow || adding}
-                onClick={handleBuyNow}
+                onClick={cartItem ? () => router.push("/cart") : handleBuyNow}
               >
-                <Zap className="size-4" />
-                Buy Now
+                {cartItem ? (
+                  <>
+                    <ShoppingCartIcon className="size-4" />
+                    Go to Cart
+                  </>
+                ) : (
+                  <>
+                    <Zap className="size-4" />
+                    Buy Now
+                  </>
+                )}
               </Button>
               <WishlistButton
                 variant="full"

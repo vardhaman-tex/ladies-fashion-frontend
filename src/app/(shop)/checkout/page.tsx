@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AddressData } from "@/types/address";
 import { createRazorpayOrder, verifyPayment } from "@/services/paymentService";
+import { cancelOrder } from "@/services/orderService";
 
 function formatAddress(a: AddressData) {
   return [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode]
@@ -132,6 +133,13 @@ export default function CheckoutPage() {
         },
         modal: {
           ondismiss: () => {
+            // The order (and its stock deduction) was already created by
+            // createRazorpayOrder above — cancel it now so the stock is
+            // released immediately instead of being stuck against an
+            // abandoned PENDING order indefinitely.
+            cancelOrder(orderData.internalOrderId).catch(() => {
+              /* best-effort cleanup — order just stays PENDING if this fails */
+            });
             toast("Payment cancelled.");
             setIsProcessing(false);
           },

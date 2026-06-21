@@ -31,6 +31,9 @@ export function usePlaceOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
+      // Placing an order decrements stock — keep the admin inventory table
+      // (if open in the same session) from showing pre-order quantities.
+      queryClient.invalidateQueries({ queryKey: ["admin", "inventory"] });
     },
   });
 }

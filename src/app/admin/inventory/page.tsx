@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Download, Upload } from "lucide-react";
 import { useAdminInventory, useUpdateInventory } from "@/hooks/useAdmin";
@@ -21,6 +22,7 @@ export default function AdminInventoryPage() {
 
   const { data, isLoading } = useAdminInventory(lowStockOnly, page);
   const updateInventory = useUpdateInventory();
+  const queryClient = useQueryClient();
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -49,6 +51,12 @@ export default function AdminInventoryPage() {
     try {
       const msg = await importInventoryExcel(file);
       toast.success(msg ?? "Inventory imported");
+      // The import happens via plain fetch (not a useMutation), so nothing
+      // else tells this page's cached inventory query to refetch — without
+      // this it kept showing pre-import numbers until a hard reload, even
+      // though the import had already landed (and the storefront, whose
+      // queries weren't cached yet, showed the new numbers immediately).
+      queryClient.invalidateQueries({ queryKey: ["admin", "inventory"] });
     } catch {
       toast.error("Import failed — check file format");
     } finally {
