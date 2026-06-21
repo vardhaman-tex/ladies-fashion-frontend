@@ -151,7 +151,7 @@ export default function HomePage() {
 
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:divide-x sm:divide-border sm:gap-0">
+        <div className="grid grid-cols-3 gap-3 sm:divide-x sm:divide-border sm:gap-0">
           {TRUST_BADGES.map(({ icon: Icon, label, sub, bg }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
               <div className={`flex size-10 items-center justify-center rounded-full sm:size-12 ${bg}`}>

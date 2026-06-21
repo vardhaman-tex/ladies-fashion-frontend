@@ -21,6 +21,7 @@ import { WishlistButton } from "@/components/product/WishlistButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
+import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 
@@ -226,7 +227,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useProduct(params.slug);
   const { mutate: addToCart, isPending: adding } = useAddToCart();
   const { cart } = useCart();
-  const { mutate: updateCartItem, isPending: updatingQty } = useUpdateCartItem();
+  const { mutate: updateCartItem } = useUpdateCartItem();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const ctaRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef<HTMLDivElement>(null);
@@ -316,26 +317,40 @@ export default function ProductDetailPage() {
         i.size === selectedSize &&
         i.color === (selectedVariant?.color ?? null)
     ) ?? null;
-  const atStockLimit = availableQty !== null && (cartItem?.quantity ?? 0) >= availableQty;
+  const { quantity: displayCartQty, change: changeCartQtyDebounced } = useDebouncedQuantity(
+    cartItem?.quantity ?? 1,
+    (quantity) => {
+      if (!cartItem) return;
+      updateCartItem({
+        itemId: cartItem.id,
+        quantity,
+        ...(!isAuthenticated && {
+          productId: cartItem.productId,
+          size: cartItem.size,
+          color: cartItem.color,
+        }),
+      });
+    }
+  );
+  const atStockLimit = availableQty !== null && displayCartQty >= availableQty;
 
   function changeCartQty(delta: number) {
     if (!cartItem) return;
-    const newQty = cartItem.quantity + delta;
+    const newQty = displayCartQty + delta;
     if (newQty < 1) return;
-    updateCartItem({
-      itemId: cartItem.id,
-      quantity: newQty,
-      ...(!isAuthenticated && {
-        productId: cartItem.productId,
-        size: cartItem.size,
-        color: cartItem.color,
-      }),
-    });
+    if (availableQty !== null && newQty > availableQty) return;
+    changeCartQtyDebounced(newQty);
   }
 
   function handleBuyNow() {
     if (needsSizeChoice && !selectedSize) {
       toast.error("Please select a size before buying");
+      return;
+    }
+    // Already in cart — skip re-adding (would double the quantity) and go
+    // straight to checkout.
+    if (cartItem) {
+      router.push("/checkout");
       return;
     }
     addToCart(
@@ -350,7 +365,10 @@ export default function ProductDetailPage() {
         size: selectedSize,
         color: selectedVariant?.color ?? null,
       },
-      { onSuccess: () => router.push("/cart") }
+      // Buy Now should skip the cart page and take the customer straight to
+      // checkout — previously this routed to /cart, making the button behave
+      // like a second "Add to Cart" instead of an express checkout shortcut.
+      { onSuccess: () => router.push("/checkout") }
     );
   }
 
@@ -527,10 +545,9 @@ export default function ProductDetailPage() {
             <div ref={ctaRef} className="flex gap-2">
               {cartItem ? (
                 <QtyStepper
-                  quantity={cartItem.quantity}
+                  quantity={displayCartQty}
                   onDecrement={() => changeCartQty(-1)}
                   onIncrement={() => changeCartQty(1)}
-                  disabled={updatingQty}
                   atMax={atStockLimit}
                   className="flex-1"
                 />
@@ -629,10 +646,9 @@ export default function ProductDetailPage() {
           </div>
           {cartItem ? (
             <QtyStepper
-              quantity={cartItem.quantity}
+              quantity={displayCartQty}
               onDecrement={() => changeCartQty(-1)}
               onIncrement={() => changeCartQty(1)}
-              disabled={updatingQty}
               atMax={atStockLimit}
               className="max-w-32 shrink-0"
             />

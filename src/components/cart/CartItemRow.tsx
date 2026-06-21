@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRemoveCartItem, useUpdateCartItem } from "@/hooks/useCart";
+import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { useAuthStore } from "@/stores/authStore";
 import type { CartItemData } from "@/types/cart";
 
@@ -14,17 +15,22 @@ interface CartItemRowProps {
 
 export function CartItemRow({ item }: CartItemRowProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { mutate: update, isPending: updating } = useUpdateCartItem();
+  const { mutate: update } = useUpdateCartItem();
   const { mutate: remove, isPending: removing } = useRemoveCartItem();
 
-  const changeQty = (delta: number) => {
-    const newQty = item.quantity + delta;
-    if (newQty < 1) return;
+  const { quantity: displayQty, change } = useDebouncedQuantity(item.quantity, (quantity) => {
     update({
       itemId: item.id,
-      quantity: newQty,
+      quantity,
       ...(!isAuthenticated && { productId: item.productId, size: item.size, color: item.color }),
     });
+  });
+
+  const changeQty = (delta: number) => {
+    const newQty = displayQty + delta;
+    if (newQty < 1) return;
+    if (item.availableQty !== undefined && newQty > item.availableQty) return;
+    change(newQty);
   };
 
   const onRemove = () =>
@@ -33,7 +39,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
       ...(!isAuthenticated && { productId: item.productId, size: item.size, color: item.color }),
     });
 
-  const atStockLimit = item.availableQty !== undefined && item.quantity >= item.availableQty;
+  const atStockLimit = item.availableQty !== undefined && displayQty >= item.availableQty;
   const overStock = item.availableQty !== undefined && item.quantity > item.availableQty;
   const lowStock = item.availableQty !== undefined && !overStock && item.availableQty <= 10;
 
@@ -99,18 +105,18 @@ export function CartItemRow({ item }: CartItemRowProps) {
             size="icon-sm"
             className="h-5 w-5"
             onClick={() => changeQty(-1)}
-            disabled={updating || item.quantity <= 1}
+            disabled={displayQty <= 1}
             aria-label="Decrease"
           >
             <Minus className="size-3" />
           </Button>
-          <span className="w-5 text-center text-xs font-medium tabular-nums">{item.quantity}</span>
+          <span className="w-5 text-center text-xs font-medium tabular-nums">{displayQty}</span>
           <Button
             variant="ghost"
             size="icon-sm"
             className="h-5 w-5"
             onClick={() => changeQty(1)}
-            disabled={updating || atStockLimit}
+            disabled={atStockLimit}
             aria-label="Increase"
           >
             <Plus className="size-3" />
