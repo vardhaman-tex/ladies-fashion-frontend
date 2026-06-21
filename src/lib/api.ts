@@ -15,6 +15,13 @@ export const api = axios.create({
   // Empty baseURL → requests go to the same origin; Next.js rewrites proxy them.
   baseURL: "",
   withCredentials: true,
+  // Without this, axios's default is 0 (no timeout) — a slow/hung backend
+  // leaves the browser's connection open indefinitely. On mobile networks the
+  // OS/carrier eventually kills that idle connection itself and shows its own
+  // generic "page couldn't load" interstitial instead of our app ever getting
+  // a chance to show a retry UI. Failing fast client-side lets React Query's
+  // isError path render something useful instead.
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
     // Bypass ngrok's browser-warning interstitial page for API requests

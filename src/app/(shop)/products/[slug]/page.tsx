@@ -224,7 +224,7 @@ function PDPSkeleton() {
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const { data: product, isLoading } = useProduct(params.slug);
+  const { data: product, isLoading, isError, refetch, isRefetching } = useProduct(params.slug);
   const { mutate: addToCart, isPending: adding } = useAddToCart();
   const { cart } = useCart();
   const { mutate: updateCartItem } = useUpdateCartItem();
@@ -235,6 +235,37 @@ export default function ProductDetailPage() {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  // `cartItem` and the useDebouncedQuantity() hook below must be computed
+  // unconditionally, before the isLoading/isError/!product early returns —
+  // calling a hook only on some renders (e.g. only once `product` has
+  // loaded) violates the Rules of Hooks and throws "Rendered fewer/more
+  // hooks than expected" the moment the page transitions out of the loading
+  // skeleton. That's why this uses safe `?.` chaining into `product`
+  // instead of the `selectedVariant` derived value (which isn't computed
+  // until after those early returns).
+  const cartItem =
+    cart?.items.find(
+      (i) =>
+        i.productId === product?.id &&
+        i.size === selectedSize &&
+        i.color === (product?.variants?.find((v) => v.id === selectedVariantId)?.color ?? null)
+    ) ?? null;
+  const { quantity: displayCartQty, change: changeCartQtyDebounced } = useDebouncedQuantity(
+    cartItem?.quantity ?? 1,
+    (quantity) => {
+      if (!cartItem) return;
+      updateCartItem({
+        itemId: cartItem.id,
+        quantity,
+        ...(!isAuthenticated && {
+          productId: cartItem.productId,
+          size: cartItem.size,
+          color: cartItem.color,
+        }),
+      });
+    }
+  );
 
   // Sticky bar visibility via IntersectionObserver
   useEffect(() => {
@@ -260,6 +291,21 @@ export default function ProductDetailPage() {
   }, [product]);
 
   if (isLoading) return <PDPSkeleton />;
+
+  // Distinguish "the request actually failed/timed out" from "the product
+  // genuinely doesn't exist" — previously both fell through to the same
+  // "Product not found" message, which is misleading and gives the shopper
+  // no way to recover from a transient backend hiccup other than reloading.
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 text-center text-muted-foreground">
+        <p>Couldn&apos;t load this product. Please check your connection and try again.</p>
+        <Button variant="outline" className="mt-4" onClick={() => refetch()} disabled={isRefetching}>
+          {isRefetching ? "Retrying…" : "Retry"}
+        </Button>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -310,28 +356,6 @@ export default function ProductDetailPage() {
     });
   }
 
-  const cartItem =
-    cart?.items.find(
-      (i) =>
-        i.productId === product?.id &&
-        i.size === selectedSize &&
-        i.color === (selectedVariant?.color ?? null)
-    ) ?? null;
-  const { quantity: displayCartQty, change: changeCartQtyDebounced } = useDebouncedQuantity(
-    cartItem?.quantity ?? 1,
-    (quantity) => {
-      if (!cartItem) return;
-      updateCartItem({
-        itemId: cartItem.id,
-        quantity,
-        ...(!isAuthenticated && {
-          productId: cartItem.productId,
-          size: cartItem.size,
-          color: cartItem.color,
-        }),
-      });
-    }
-  );
   const atStockLimit = availableQty !== null && displayCartQty >= availableQty;
 
   function changeCartQty(delta: number) {
