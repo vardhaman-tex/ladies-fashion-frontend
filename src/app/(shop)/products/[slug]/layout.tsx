@@ -14,6 +14,8 @@ async function getProductMeta(slug: string): Promise<ProductMetaSummary | null> 
     const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
     const res = await fetch(`${base}/api/v1/products/${slug}`, {
       next: { revalidate: 300 },
+      // Hard timeout — see src/app/layout.tsx for why this matters at build time.
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const json = await res.json();

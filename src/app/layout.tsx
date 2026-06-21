@@ -19,7 +19,14 @@ const geistMono = Geist_Mono({
 async function getLogoUrl(): Promise<string | null> {
   try {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-    const res = await fetch(`${base}/api/v1/settings/site`, { next: { revalidate: 300 } });
+    const res = await fetch(`${base}/api/v1/settings/site`, {
+      next: { revalidate: 300 },
+      // Hard timeout — this fetch runs at build/render time for every route via
+      // the root layout. Without it, an unreachable/slow backend (e.g. a dead
+      // ngrok tunnel) can hang each page well past Next's own build watchdog,
+      // failing the whole build instead of just falling back to no icon.
+      signal: AbortSignal.timeout(5000),
+    });
     if (!res.ok) return null;
     const json = await res.json();
     return json?.data?.logoUrl ?? null;
