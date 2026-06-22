@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Loader2 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { getPolicyBySlug } from "@/services/policyService";
 import { Button } from "@/components/ui/button";
 
@@ -49,11 +50,14 @@ export default function PolicyPage() {
         Last updated: {new Date(policy.updatedAt).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}
       </p>
 
-      {/* Render content — if it contains HTML tags, render as HTML; otherwise as plain text */}
+      {/* Render content — if it contains HTML tags, render as HTML; otherwise as plain text.
+          policy.content is admin-authored today, but it's sanitized with DOMPurify before
+          being rendered so a compromised admin account or policy-editing endpoint can't turn
+          this into a stored-XSS vector on a page every visitor passes through pre-checkout. */}
       {policy.content.includes("<") ? (
         <div
           className="[&_h1]:mb-3 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mb-1 [&_h3]:mt-4 [&_h3]:font-semibold [&_p]:mb-3 [&_p]:text-sm [&_p]:leading-relaxed [&_p]:text-muted-foreground [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_li]:text-sm [&_li]:text-muted-foreground [&_a]:text-rose-600 [&_a]:underline"
-          dangerouslySetInnerHTML={{ __html: policy.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy.content) }}
         />
       ) : (
         <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
