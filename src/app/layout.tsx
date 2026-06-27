@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
@@ -44,11 +45,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Reading request headers opts every route into dynamic rendering.
+  // This is required so Next.js can stamp the per-request nonce (set by
+  // proxy.ts) onto its own inline RSC-payload scripts at serve time.
+  await headers();
+
   return (
     <html
       lang="en"
