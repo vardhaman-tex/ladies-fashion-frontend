@@ -53,3 +53,21 @@ export interface OrderSummaryData {
 export interface PlaceOrderPayload {
   addressId: string;
 }
+
+export interface TrackOrderData {
+  id: string;
+  status: OrderStatus;
+  addrFullName: string;
+  addrPhone: string;
+  addrLine1: string;
+  addrLine2: string | null;
+  addrCity: string;
+  addrState: string;
+  addrPincode: string;
+  subtotal: number;
+  totalDiscount: number;
+  total: number;
+  itemCount: number;
+  items: OrderItemData[];
+  createdAt: string;
+}

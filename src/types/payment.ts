@@ -2,6 +2,34 @@ export interface CreatePaymentOrderRequest {
   addressId: string;
 }
 
+export interface GuestOrderItem {
+  productId: string;
+  size?: string | null;
+  color?: string | null;
+  quantity: number;
+}
+
+export interface GuestCreatePaymentOrderRequest {
+  fullName: string;
+  phone: string;
+  email: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  items: GuestOrderItem[];
+}
+
+export type GuestCreatePaymentOrderResponse = CreatePaymentOrderResponse;
+
+export interface GuestPaymentVerifyRequest {
+  internalOrderId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
 export interface CreatePaymentOrderResponse {
   internalOrderId: string;
   razorpayOrderId: string;

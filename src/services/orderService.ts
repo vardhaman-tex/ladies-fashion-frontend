@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { OrderData, OrderSummaryData, PlaceOrderPayload } from "@/types/order";
+import type { OrderData, OrderSummaryData, PlaceOrderPayload, TrackOrderData } from "@/types/order";
 
 const BASE = "/api/v1/orders";
 
@@ -23,5 +23,12 @@ export async function getOrder(id: string): Promise<OrderData> {
 
 export async function cancelOrder(id: string): Promise<OrderData> {
   const { data } = await api.put<ApiResponse<OrderData>>(`${BASE}/${id}/cancel`);
+  return data.data;
+}
+
+export async function trackOrder(orderId: string, phone: string): Promise<TrackOrderData> {
+  const { data } = await api.get<ApiResponse<TrackOrderData>>(`${BASE}/track`, {
+    params: { orderId, phone },
+  });
   return data.data;
 }

@@ -2,6 +2,9 @@ import type {
   CreatePaymentOrderRequest,
   CreatePaymentOrderResponse,
   PaymentVerifyRequest,
+  GuestCreatePaymentOrderRequest,
+  GuestCreatePaymentOrderResponse,
+  GuestPaymentVerifyRequest,
 } from "@/types/payment";
 
 interface ApiResponse<T> {
@@ -40,6 +43,42 @@ export async function verifyPayment(req: PaymentVerifyRequest): Promise<{ id: st
     const err = await res.json().catch(() => ({}));
     throw new Error(
       (err as ApiResponse<unknown>).message ?? "Payment verification failed"
+    );
+  }
+  const body: ApiResponse<{ id: string }> = await res.json();
+  return body.data;
+}
+
+export async function createGuestRazorpayOrder(
+  req: GuestCreatePaymentOrderRequest
+): Promise<GuestCreatePaymentOrderResponse> {
+  const res = await fetch("/api/v1/payments/guest/create-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as ApiResponse<unknown>).message ?? "Failed to create guest payment order"
+    );
+  }
+  const body: ApiResponse<GuestCreatePaymentOrderResponse> = await res.json();
+  return body.data;
+}
+
+export async function verifyGuestPayment(
+  req: GuestPaymentVerifyRequest
+): Promise<{ id: string }> {
+  const res = await fetch("/api/v1/payments/guest/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as ApiResponse<unknown>).message ?? "Guest payment verification failed"
     );
   }
   const body: ApiResponse<{ id: string }> = await res.json();
