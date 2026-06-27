@@ -27,19 +27,21 @@ export interface AuthResponse {
 
 /**
  * Request payload for authenticating an existing user.
+ * identifier = email address OR mobile number — backend resolves which one.
  */
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
 /**
  * Request payload for registering a new user account.
+ * mobile is the primary identity; email is optional.
  */
 export interface RegisterRequest {
+  mobile: string;
+  password: string;
   firstName: string;
   lastName: string;
-  email: string;
-  mobile?: string;
-  password: string;
+  email?: string;
 }

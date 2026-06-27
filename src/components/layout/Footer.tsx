@@ -4,13 +4,19 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAuthStore } from "@/stores/authStore";
 import { getSocialLinks, type SocialLink } from "@/services/socialLinkService";
 
-const HELP_LINKS = [
+const AUTH_LINKS = [
+  { label: "Track Order", href: "/track-order" },
   { label: "My Orders", href: "/orders" },
   { label: "My Profile", href: "/account" },
   { label: "Wishlist", href: "/wishlist" },
   { label: "Saved Addresses", href: "/account/addresses" },
+];
+
+const GUEST_LINKS = [
+  { label: "Track Order", href: "/track-order" },
 ];
 
 // Inline SVG icons keyed by platform name
@@ -91,6 +97,8 @@ function SocialIconBar({ links, size }: { links: SocialLink[]; size: "sm" | "md"
 export function Footer() {
   const { data: categories } = useCategories();
   const { data: siteSettings } = useSiteSettings();
+  const { isAuthenticated } = useAuthStore();
+  const accountLinks = isAuthenticated ? AUTH_LINKS : GUEST_LINKS;
   const { data: socialLinks = [] } = useQuery({
     queryKey: ["social-links"],
     queryFn: getSocialLinks,
@@ -131,7 +139,7 @@ export function Footer() {
           <div className="px-4 py-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Account</p>
             <ul className="flex flex-col gap-1.5">
-              {HELP_LINKS.map(({ label, href }) => (
+              {accountLinks.map(({ label, href }) => (
                 <li key={label}>
                   <Link href={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link>
                 </li>
@@ -189,7 +197,7 @@ export function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-foreground">Account</h4>
             <ul className="mt-3 flex flex-col gap-2">
-              {HELP_LINKS.map(({ label, href }) => (
+              {accountLinks.map(({ label, href }) => (
                 <li key={label}>
                   <Link href={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link>
                 </li>

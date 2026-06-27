@@ -41,18 +41,23 @@ export default function RegisterPage() {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      mobile: "",
+      password: "",
       firstName: "",
       lastName: "",
       email: "",
-      mobile: "",
-      password: "",
     },
   });
 
   async function onSubmit(values: RegisterFormValues) {
     setIsSubmitting(true);
     try {
-      const authResponse = await registerUser(values);
+      const payload = {
+        ...values,
+        // don't send email key at all when blank
+        email: values.email?.trim() || undefined,
+      };
+      const authResponse = await registerUser(payload);
       setUser({
         id: authResponse.id,
         firstName: authResponse.firstName,
@@ -83,55 +88,15 @@ export default function RegisterPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Jane" autoComplete="given-name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Doe" autoComplete="family-name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" autoComplete="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Phone first — primary identity */}
             <FormField
               control={form.control}
               name="mobile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mobile number</FormLabel>
+                  <FormLabel>Mobile number *</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+919876543210" autoComplete="tel" {...field} />
+                    <Input type="tel" placeholder="9876543210" autoComplete="tel" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +107,7 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password *</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -162,6 +127,50 @@ export default function RegisterPage() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jane" autoComplete="given-name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" autoComplete="family-name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Email{" "}
+                    <span className="text-muted-foreground font-normal">(optional)</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="you@example.com" autoComplete="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

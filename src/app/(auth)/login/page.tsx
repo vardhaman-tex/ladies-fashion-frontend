@@ -41,7 +41,7 @@ function LoginForm() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { identifier: "", password: "" },
   });
 
   async function onSubmit(values: LoginFormValues) {
@@ -74,7 +74,7 @@ function LoginForm() {
       <CardHeader>
         <CardTitle>Log in</CardTitle>
         <CardDescription>
-          Enter your email and password to access your account
+          Enter your phone number (or email) and password
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -82,15 +82,15 @@ function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <FormField
               control={form.control}
-              name="email"
+              name="identifier"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Phone or Email</FormLabel>
                   <FormControl>
                     <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      autoComplete="email"
+                      type="text"
+                      placeholder="9876543210 or you@example.com"
+                      autoComplete="username"
                       {...field}
                     />
                   </FormControl>

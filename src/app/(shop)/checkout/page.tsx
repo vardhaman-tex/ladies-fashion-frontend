@@ -99,7 +99,7 @@ export default function CheckoutPage() {
 
     async function handleGuestPlaceOrder() {
       const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
-      if (!fullName.trim() || !phone.trim() || !email.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
+      if (!fullName.trim() || !phone.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -117,7 +117,8 @@ export default function CheckoutPage() {
         const orderData = await createGuestRazorpayOrder({
           fullName: fullName.trim(),
           phone: phone.trim(),
-          email: email.trim(),
+          // email is optional — only include it when the user provided one
+          ...(email.trim() && { email: email.trim() }),
           addressLine1: addressLine1.trim(),
           addressLine2: guestForm.addressLine2.trim() || undefined,
           city: city.trim(),
@@ -154,7 +155,9 @@ export default function CheckoutPage() {
               });
               clearGuestCart();
               toast.success("Payment successful!");
-              router.push(`/guest-order-confirmed?orderId=${confirmed.id}`);
+              // orderRef: swap confirmed.id → confirmed.orderNumber once backend ships that field
+              const orderRef = confirmed.id;
+              router.push(`/guest-order-confirmed?orderRef=${orderRef}`);
             } catch {
               toast.error("Payment verification failed. Contact support.");
               setIsProcessing(false);
@@ -230,7 +233,10 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="g-email">Email *</Label>
+                    <Label htmlFor="g-email">
+                      Email{" "}
+                      <span className="font-normal text-muted-foreground">(optional)</span>
+                    </Label>
                     <Input
                       id="g-email"
                       type="email"

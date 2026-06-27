@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Menu, Heart, User, ShoppingBag, Home, Package, X,
-  Tag, ChevronRight, Search,
+  Tag, ChevronRight, Search, LogIn, MapPin,
 } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuthStore } from "@/stores/authStore";
 
 export function Header() {
   const { data: categories } = useCategories();
   const { data: siteSettings } = useSiteSettings();
   const { itemCount: wishlistCount } = useWishlist();
+  const { isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -134,55 +136,104 @@ export function Header() {
               )}
             </div>
 
-            {/* Account — pinned at bottom */}
+            {/* Bottom section — auth-conditional */}
             <div className="border-t pb-8 pt-2">
-              <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                My Account
-              </p>
-              <SheetClose
-                render={
-                  <Link
-                    href="/wishlist"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
-                  />
-                }
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
-                  <Heart className="size-4" />
-                </div>
-                Wishlist
-                {wishlistCount > 0 && (
-                  <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
-                    {wishlistCount}
-                  </span>
-                )}
-              </SheetClose>
-              <SheetClose
-                render={
-                  <Link
-                    href="/orders"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
-                  />
-                }
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
-                  <Package className="size-4" />
-                </div>
-                My Orders
-              </SheetClose>
-              <SheetClose
-                render={
-                  <Link
-                    href="/account"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
-                  />
-                }
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
-                  <User className="size-4" />
-                </div>
-                Account
-              </SheetClose>
+              {isAuthenticated ? (
+                <>
+                  <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    My Account
+                  </p>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/wishlist"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
+                      <Heart className="size-4" />
+                    </div>
+                    Wishlist
+                    {wishlistCount > 0 && (
+                      <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </SheetClose>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/orders"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
+                      <Package className="size-4" />
+                    </div>
+                    My Orders
+                  </SheetClose>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/account"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
+                      <User className="size-4" />
+                    </div>
+                    Account
+                  </SheetClose>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/track-order"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
+                      <MapPin className="size-4" />
+                    </div>
+                    Track Order
+                  </SheetClose>
+                </>
+              ) : (
+                <>
+                  <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Account
+                  </p>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/login"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+                      <LogIn className="size-4" />
+                    </div>
+                    Login
+                  </SheetClose>
+                  <SheetClose
+                    render={
+                      <Link
+                        href="/track-order"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
+                      <MapPin className="size-4" />
+                    </div>
+                    Track Order
+                  </SheetClose>
+                </>
+              )}
             </div>
           </SheetContent>
         </Sheet>

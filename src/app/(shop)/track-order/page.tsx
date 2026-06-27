@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { isAxiosError } from "axios";
 import {
   Search,
   MapPin,
@@ -91,7 +92,9 @@ function StatusTimeline({ status }: { status: OrderStatus }) {
 
 function TrackOrderForm() {
   const searchParams = useSearchParams();
-  const [orderId, setOrderId] = useState(searchParams.get("orderId") ?? "");
+  // orderRef is the human-readable order number (or UUID until backend ships orderNumber).
+  // When backend adds orderNumber, the confirmation page will start passing that value here.
+  const [orderId, setOrderId] = useState(searchParams.get("orderRef") ?? "");
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [order, setOrder] = useState<TrackOrderData | null>(null);
@@ -107,7 +110,11 @@ function TrackOrderForm() {
       const result = await trackOrder(orderId.trim(), phone.trim());
       setOrder(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Order not found. Check your Order ID and phone number.");
+      if (isAxiosError(err) && err.response?.status === 404) {
+        setError("No order found. Please check your Order ID and phone number.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

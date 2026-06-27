@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId") ?? "";
-  const shortId = orderId.slice(0, 8).toUpperCase();
+  // orderRef holds the human-readable order number (or UUID until backend ships orderNumber).
+  // To swap in the real orderNumber: change the URL param name in checkout/page.tsx
+  // from `confirmed.id` to `confirmed.orderNumber` — one line.
+  const orderRef = searchParams.get("orderRef") ?? "";
 
   return (
     <div className="container mx-auto max-w-lg px-4 py-16 text-center">
@@ -19,10 +21,10 @@ function ConfirmationContent() {
         Thank you for your order. We&apos;ve received it and will confirm shortly.
       </p>
 
-      {orderId && (
+      {orderRef && (
         <div className="mb-8 rounded-xl border p-5 text-left">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Order ID</p>
-          <p className="mt-1 font-mono text-xl font-bold">#{shortId}</p>
+          <p className="mt-1 font-mono text-xl font-bold">#{orderRef}</p>
           <p className="mt-3 text-sm text-muted-foreground">
             To track your order, use your{" "}
             <span className="font-medium text-foreground">Order ID</span> and the{" "}
@@ -34,7 +36,7 @@ function ConfirmationContent() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button
-          render={<Link href={`/track-order${orderId ? `?orderId=${orderId}` : ""}`} />}
+          render={<Link href={`/track-order${orderRef ? `?orderRef=${orderRef}` : ""}`} />}
           className="gap-2 bg-rose-600 hover:bg-rose-700"
         >
           <Search className="size-4" />

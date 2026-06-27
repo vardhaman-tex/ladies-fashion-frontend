@@ -89,22 +89,15 @@ export default function CartPage() {
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Shipping</span>
-                  <span className="text-green-600">
-                    {cart.total >= 999 ? "Free" : "₹49"}
-                  </span>
+                  <span>Delivery</span>
+                  <span className="text-green-600">Free</span>
                 </div>
               </div>
               <Separator />
               <div className="flex justify-between font-semibold text-base">
                 <span>Total</span>
-                <span>₹{(cart.total + (cart.total >= 999 ? 0 : 49)).toFixed(0)}</span>
+                <span>₹{cart.total.toFixed(0)}</span>
               </div>
-              {cart.total < 999 && (
-                <p className="text-xs text-muted-foreground">
-                  Add ₹{(999 - cart.total).toFixed(0)} more for free shipping
-                </p>
-              )}
               {hasStockIssues && (
                 <p className="text-xs font-medium text-red-600">
                   Some items exceed available stock. Reduce quantity to continue.
