@@ -97,6 +97,14 @@ export default function CheckoutPage() {
     const guestDiscount = cart!.totalDiscount;
     const guestTotal = cart!.total;
 
+    const guestAddressValid =
+      guestForm.fullName.trim() !== "" &&
+      guestForm.phone.trim() !== "" &&
+      guestForm.addressLine1.trim() !== "" &&
+      guestForm.city.trim() !== "" &&
+      guestForm.state.trim() !== "" &&
+      guestForm.pincode.trim() !== "";
+
     async function handleGuestPlaceOrder() {
       const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
       if (!fullName.trim() || !phone.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
@@ -400,7 +408,7 @@ export default function CheckoutPage() {
                 className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
-                disabled={isProcessing || scriptState === "error"}
+                disabled={isProcessing || scriptState === "error" || !guestAddressValid || !policyAgreed}
               >
                 {isProcessing ? (
                   <>
