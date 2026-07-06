@@ -12,9 +12,9 @@ import { useCategories } from "@/hooks/useCategories";
 import { useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
 
 const TRUST_BADGES = [
-  { icon: Truck, label: "Free Shipping", sub: undefined, bg: "bg-orange-100 text-orange-600" },
-  { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics", bg: "bg-purple-100 text-purple-600" },
-  { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout", bg: "bg-amber-100 text-amber-600" },
+  { icon: Truck, label: "Free Shipping", sub: undefined },
+  { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics" },
+  { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout" },
 ];
 
 export default function HomePage() {
@@ -40,14 +40,14 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-2xl">
           <p className="text-xs font-semibold tracking-[0.2em] text-white/80 uppercase">New Season Collection</p>
-          <h1 className="mt-3 font-heading text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-7xl">
+          <h1 className="mt-3 font-heading text-3xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Celebrate Every Occasion in Style
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm text-white/90 sm:mt-5 sm:text-lg">
             Discover the latest collections of ethnic and contemporary fashion — curated for every festival, function, and everyday moment.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button size="lg" className="bg-white text-rose-600 hover:bg-white/90" render={<Link href="/products" />}>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90" render={<Link href="/products" />}>
               Shop Now
               <ArrowRightIcon />
             </Button>
@@ -62,8 +62,8 @@ export default function HomePage() {
       <section className="mx-auto w-full max-w-7xl px-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>
-            <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Shop by Category</h2>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Browse</p>
+            <h2 className="mt-1 font-heading text-xl font-semibold text-foreground sm:text-3xl">Shop by Category</h2>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
@@ -71,7 +71,7 @@ export default function HomePage() {
             <Link
               key={category.id}
               href={`/products?categorySlug=${category.slug}`}
-              className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted shadow-sm transition-shadow hover:shadow-xl"
+              className="group relative aspect-[4/5] overflow-hidden rounded-xl bg-muted transition-shadow hover:shadow-md"
             >
               {category.imageUrl ? (
                 <Image
@@ -86,7 +86,7 @@ export default function HomePage() {
                   {category.name}
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-colors group-hover:from-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-3 sm:p-4">
                 <span className="text-xs font-bold text-white sm:text-sm">{category.name}</span>
                 <ArrowRightIcon className="size-4 shrink-0 -translate-x-1 text-white opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
@@ -101,8 +101,8 @@ export default function HomePage() {
         <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
-              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
+              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Curated for you</p>
+              <h2 className="mt-1 font-heading text-xl font-semibold text-foreground sm:text-3xl">Featured Picks</h2>
             </div>
             <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
               View All
@@ -127,10 +127,10 @@ export default function HomePage() {
         const defaultTab = visibleTabs[0].value;
         return (
           <section className="mx-auto w-full max-w-7xl px-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Discover More</p>
             <Tabs defaultValue={defaultTab} className="mt-1">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
+                <h2 className="font-heading text-xl font-semibold text-foreground sm:text-3xl">What&apos;s Hot</h2>
                 <TabsList className="w-full sm:w-auto">
                   {visibleTabs.map((t) => (
                     <TabsTrigger key={t.value} value={t.value} className="flex-1 sm:flex-none">
@@ -152,9 +152,9 @@ export default function HomePage() {
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">
         <div className="grid grid-cols-3 gap-3 sm:divide-x sm:divide-border sm:gap-0">
-          {TRUST_BADGES.map(({ icon: Icon, label, sub, bg }) => (
+          {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
-              <div className={`flex size-10 items-center justify-center rounded-full sm:size-12 ${bg}`}>
+              <div className="flex size-10 items-center justify-center rounded-full bg-secondary text-foreground sm:size-12">
                 <Icon className="size-4 sm:size-5" />
               </div>
               <div>

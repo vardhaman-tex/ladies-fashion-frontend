@@ -72,7 +72,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             </button>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-rose-600">
+        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-primary">
           Admin Panel
         </p>
       </div>
@@ -89,7 +89,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
-                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                  ? "bg-accent text-primary"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >

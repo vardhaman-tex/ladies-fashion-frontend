@@ -83,14 +83,14 @@ export default function CartPage() {
                   <span>₹{cart.subtotal.toFixed(0)}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
+                  <div className="flex justify-between text-success font-medium">
                     <span>Discount</span>
                     <span>−₹{cart.totalDiscount.toFixed(0)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
-                  <span className="text-green-600">Free</span>
+                  <span className="text-success">Free</span>
                 </div>
               </div>
               <Separator />
@@ -99,12 +99,12 @@ export default function CartPage() {
                 <span>₹{cart.total.toFixed(0)}</span>
               </div>
               {hasStockIssues && (
-                <p className="text-xs font-medium text-red-600">
+                <p className="text-xs font-medium text-destructive">
                   Some items exceed available stock. Reduce quantity to continue.
                 </p>
               )}
               <Button
-                className="w-full bg-rose-600 hover:bg-rose-700"
+                className="w-full bg-primary hover:bg-primary/90"
                 disabled={hasStockIssues}
                 render={<Link href="/checkout" />}
               >

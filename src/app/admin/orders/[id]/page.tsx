@@ -76,7 +76,7 @@ function EditOrderModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-card shadow-xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl rounded-2xl bg-card shadow-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h2 className="font-semibold">Edit Order #{order.id.slice(0, 8).toUpperCase()}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -178,7 +178,7 @@ function EditOrderModal({
           <button
             onClick={handleSave}
             disabled={editOrder.isPending}
-            className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
           >
             {editOrder.isPending ? "Saving…" : "Save Changes"}
           </button>
@@ -222,7 +222,7 @@ export default function AdminOrderDetailPage({
     return (
       <div className="p-8 text-center text-muted-foreground">
         Order not found.{" "}
-        <Link href="/admin/orders" className="text-rose-600 hover:underline">
+        <Link href="/admin/orders" className="text-primary hover:underline">
           Back to orders
         </Link>
       </div>
@@ -257,7 +257,7 @@ export default function AdminOrderDetailPage({
         </span>
         <button
           onClick={() => setEditOpen(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50"
+          className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-white px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent"
         >
           <Pencil className="size-3.5" /> Edit Order
         </button>
@@ -272,7 +272,7 @@ export default function AdminOrderDetailPage({
               key={next}
               onClick={() => handleStatus(next)}
               disabled={updateStatus.isPending}
-              className="rounded-lg border border-rose-200 bg-white px-4 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+              className="rounded-lg border border-primary/25 bg-white px-4 py-1.5 text-sm font-medium text-primary hover:bg-accent disabled:opacity-50"
             >
               {next.charAt(0) + next.slice(1).toLowerCase()}
             </button>
@@ -304,7 +304,7 @@ export default function AdminOrderDetailPage({
                   <Link
                     href={`/products/${item.productSlug}`}
                     target="_blank"
-                    className="line-clamp-1 font-medium hover:text-rose-600"
+                    className="line-clamp-1 font-medium hover:text-primary"
                   >
                     {item.productName}
                   </Link>
@@ -315,7 +315,7 @@ export default function AdminOrderDetailPage({
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-semibold text-rose-600">
+                  <p className="font-semibold text-primary">
                     ₹{item.lineTotal.toLocaleString("en-IN")}
                   </p>
                   {item.discountAmount > 0 && (
@@ -334,13 +334,13 @@ export default function AdminOrderDetailPage({
               <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
             </div>
             {order.totalDiscount > 0 && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-success">
                 <span>Item Discounts</span>
                 <span>−₹{order.totalDiscount.toLocaleString("en-IN")}</span>
               </div>
             )}
             {(order.adminDiscount ?? 0) > 0 && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-success">
                 <span>Admin Discount</span>
                 <span>−₹{order.adminDiscount.toLocaleString("en-IN")}</span>
               </div>
@@ -366,7 +366,7 @@ export default function AdminOrderDetailPage({
               </p>
               <a
                 href={`tel:${order.addrPhone}`}
-                className="flex items-center gap-1 hover:text-rose-600 transition-colors w-fit"
+                className="flex items-center gap-1 hover:text-primary transition-colors w-fit"
               >
                 📞 {order.addrPhone}
               </a>

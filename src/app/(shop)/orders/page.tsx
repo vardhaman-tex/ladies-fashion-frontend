@@ -11,12 +11,12 @@ import { cn } from "@/lib/utils";
 import type { OrderStatus, OrderSummaryData } from "@/types/order";
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING:   "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PAID:      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  SHIPPED:   "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  PENDING:   "bg-warning/15 text-warning",
+  PAID:      "bg-success/15 text-success",
+  CONFIRMED: "bg-secondary text-secondary-foreground",
+  SHIPPED:   "bg-accent text-accent-foreground",
+  DELIVERED: "bg-success/15 text-success",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -75,7 +75,7 @@ function OrderCard({ order }: { order: OrderSummaryData }) {
             })}
           </p>
           <div className="flex items-center gap-1 shrink-0">
-            <span className="font-semibold text-rose-600 text-sm">
+            <span className="font-semibold text-primary text-sm">
               ₹{order.total.toLocaleString("en-IN")}
             </span>
             <ChevronRight className="size-4 text-muted-foreground" />

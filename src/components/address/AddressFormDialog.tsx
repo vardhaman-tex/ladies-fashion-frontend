@@ -77,7 +77,7 @@ export function AddressFormDialog({ open, onClose, editing }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl bg-background shadow-xl sm:rounded-2xl">
+      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl bg-background shadow-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-6 pt-6 pb-2">
           <h2 className="font-heading text-lg font-bold">
             {editing ? "Edit Address" : "Add New Address"}

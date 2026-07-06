@@ -43,7 +43,7 @@ function QtyStepper({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border border-rose-600 bg-rose-50 px-1 ${className}`}
+      className={`flex items-center justify-between rounded-lg border border-primary bg-accent px-1 ${className}`}
     >
       <Button
         variant="ghost"
@@ -121,13 +121,13 @@ function StockIndicator({
   }
   if (availableQty !== null && availableQty <= 10) {
     return (
-      <span className="text-xs font-semibold text-amber-600">
+      <span className="text-xs font-semibold text-warning">
         Only {availableQty} left!
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+    <span className="flex items-center gap-1 text-xs font-semibold text-success">
       <CheckCircle2 className="size-3.5" />
       In Stock
     </span>
@@ -149,7 +149,7 @@ function SizeGuideModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-background p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -492,7 +492,7 @@ export default function ProductDetailPage() {
             {displayVariants.length > 1 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Color{selectedVariant ? <span className="ml-1 font-bold text-rose-600">— {selectedVariant.color}</span> : ""}
+                  Color{selectedVariant ? <span className="ml-1 font-bold text-primary">— {selectedVariant.color}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {displayVariants.map((variant) => {
@@ -509,7 +509,7 @@ export default function ProductDetailPage() {
                         aria-label={variant.color}
                         onClick={() => selectVariant(variant.id)}
                         className={`relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-all ${
-                          isSelected ? "border-rose-600 ring-2 ring-rose-200" : "border-border"
+                          isSelected ? "border-primary ring-2 ring-primary/20" : "border-border"
                         }`}
                       >
                         {variantThumb ? (
@@ -537,7 +537,7 @@ export default function ProductDetailPage() {
             {needsSizeChoice && (
               <div ref={sizeRef}>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
+                  Size{selectedSize ? <span className="ml-1 font-bold text-primary">— {selectedSize}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {availableSizes.map((sku) => (
@@ -548,10 +548,10 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedSize(selectedSize === sku.size ? null : sku.size)}
                       className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
                         selectedSize === sku.size
-                          ? "border-rose-600 bg-rose-600 text-white"
+                          ? "border-primary bg-primary text-white"
                           : !sku.inStock
                             ? "border-border text-muted-foreground/50 line-through"
-                            : "border-border text-foreground hover:border-rose-400"
+                            : "border-border text-foreground hover:border-primary/50"
                       }`}
                     >
                       {sku.size}

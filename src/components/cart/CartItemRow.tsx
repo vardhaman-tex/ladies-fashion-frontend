@@ -70,12 +70,12 @@ export function CartItemRow({ item }: CartItemRowProps) {
         )}
 
         {overStock && (
-          <p className="text-xs font-medium text-red-600">
+          <p className="text-xs font-medium text-destructive">
             Only {item.availableQty} left — please reduce quantity
           </p>
         )}
         {lowStock && (
-          <p className="text-xs font-medium text-amber-600">Only {item.availableQty} left!</p>
+          <p className="text-xs font-medium text-warning">Only {item.availableQty} left!</p>
         )}
 
         <div className="flex items-center gap-1.5 mt-auto">

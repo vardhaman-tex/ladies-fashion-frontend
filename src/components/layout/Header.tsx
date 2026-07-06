@@ -72,43 +72,34 @@ export function Header() {
                   render={
                     <Link
                       href="/"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
-                    <Home className="size-4" />
-                  </div>
+                  <Home className="size-[1.125rem] text-muted-foreground" />
                   Home
                 </SheetClose>
                 <SheetClose
                   render={
                     <Link
                       href="/products"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/30">
-                    <ShoppingBag className="size-4" />
-                  </div>
+                  <ShoppingBag className="size-[1.125rem] text-muted-foreground" />
                   All Products
                 </SheetClose>
                 <SheetClose
                   render={
                     <Link
                       href="/products?discountAmount=1"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                      className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/30">
-                    <Tag className="size-4" />
-                  </div>
+                  <Tag className="size-[1.125rem] text-muted-foreground" />
                   <span className="flex-1">Sale</span>
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
-                    HOT
-                  </span>
                 </SheetClose>
               </div>
 
@@ -124,7 +115,7 @@ export function Header() {
                       render={
                         <Link
                           href={`/products?categorySlug=${category.slug}`}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                          className="flex min-h-11 items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                         />
                       }
                     >
@@ -147,16 +138,14 @@ export function Header() {
                     render={
                       <Link
                         href="/wishlist"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
-                      <Heart className="size-4" />
-                    </div>
+                    <Heart className="size-[1.125rem] text-muted-foreground" />
                     Wishlist
                     {wishlistCount > 0 && (
-                      <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-primary">
                         {wishlistCount}
                       </span>
                     )}
@@ -165,39 +154,33 @@ export function Header() {
                     render={
                       <Link
                         href="/orders"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
-                      <Package className="size-4" />
-                    </div>
+                    <Package className="size-[1.125rem] text-muted-foreground" />
                     My Orders
                   </SheetClose>
                   <SheetClose
                     render={
                       <Link
                         href="/account"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
-                      <User className="size-4" />
-                    </div>
+                    <User className="size-[1.125rem] text-muted-foreground" />
                     Account
                   </SheetClose>
                   <SheetClose
                     render={
                       <Link
                         href="/track-order"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
-                      <MapPin className="size-4" />
-                    </div>
+                    <MapPin className="size-[1.125rem] text-muted-foreground" />
                     Track Order
                   </SheetClose>
                 </>
@@ -210,26 +193,22 @@ export function Header() {
                     render={
                       <Link
                         href="/login"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
-                      <LogIn className="size-4" />
-                    </div>
+                    <LogIn className="size-[1.125rem] text-muted-foreground" />
                     Login
                   </SheetClose>
                   <SheetClose
                     render={
                       <Link
                         href="/track-order"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                        className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60"
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
-                      <MapPin className="size-4" />
-                    </div>
+                    <MapPin className="size-[1.125rem] text-muted-foreground" />
                     Track Order
                   </SheetClose>
                 </>
@@ -280,7 +259,7 @@ export function Header() {
           >
             <Heart className="size-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-semibold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}

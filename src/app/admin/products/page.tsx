@@ -125,13 +125,13 @@ function AdminProductsContent() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setUploadOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+            className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 py-2 text-sm font-semibold text-primary hover:bg-accent"
           >
             <Upload className="size-4" /> Upload Excel
           </button>
           <Link
             href="/admin/products/new"
-            className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
           >
             <Plus className="size-4" /> Add Product
           </Link>
@@ -139,13 +139,13 @@ function AdminProductsContent() {
       </div>
 
       {categorySlug && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/25 bg-accent px-4 py-2 text-sm text-primary">
           <span>
             Filtered by category: <span className="font-semibold">{categorySlug}</span>
           </span>
           <button
             onClick={clearCategoryFilter}
-            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium hover:bg-rose-100"
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium hover:bg-accent"
           >
             <X className="size-3" /> Clear
           </button>
@@ -155,7 +155,7 @@ function AdminProductsContent() {
       {/* Bulk upload modal */}
       {uploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-card shadow-xl">
+          <div className="w-full max-w-lg rounded-2xl bg-card shadow-lg">
             <div className="flex items-center justify-between border-b px-5 py-4">
               <h2 className="font-semibold">Bulk Upload Products</h2>
               <button onClick={closeUpload} className="text-muted-foreground hover:text-foreground">
@@ -183,12 +183,12 @@ function AdminProductsContent() {
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
                   "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 text-center transition-colors",
-                  uploadFile ? "border-rose-300 bg-rose-50/40" : "border-muted-foreground/30 hover:border-rose-300"
+                  uploadFile ? "border-primary/40 bg-accent/40" : "border-muted-foreground/30 hover:border-primary/40"
                 )}
               >
-                <FileSpreadsheet className={cn("size-8", uploadFile ? "text-rose-600" : "text-muted-foreground")} />
+                <FileSpreadsheet className={cn("size-8", uploadFile ? "text-primary" : "text-muted-foreground")} />
                 {uploadFile ? (
-                  <p className="text-sm font-medium text-rose-700">{uploadFile.name}</p>
+                  <p className="text-sm font-medium text-primary">{uploadFile.name}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">Click to select an <span className="font-semibold">.xlsx</span> file</p>
                 )}
@@ -206,14 +206,14 @@ function AdminProductsContent() {
                 <div className="rounded-lg border p-4 text-sm">
                   <div className="flex items-center gap-2 font-semibold">
                     {uploadResult.failed === 0 ? (
-                      <CheckCircle2 className="size-4 text-green-600" />
+                      <CheckCircle2 className="size-4 text-success" />
                     ) : (
                       <AlertCircle className="size-4 text-amber-500" />
                     )}
                     Upload complete — {uploadResult.total} rows processed
                   </div>
                   <div className="mt-2 flex gap-4 text-muted-foreground">
-                    <span className="text-green-600">{uploadResult.success} succeeded</span>
+                    <span className="text-success">{uploadResult.success} succeeded</span>
                     {uploadResult.failed > 0 && (
                       <span className="text-red-500">{uploadResult.failed} failed</span>
                     )}
@@ -239,7 +239,7 @@ function AdminProductsContent() {
                   <button
                     onClick={handleBulkUpload}
                     disabled={!uploadFile || bulkUpload.isPending}
-                    className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
                   >
                     {bulkUpload.isPending ? "Uploading…" : "Upload"}
                   </button>
@@ -280,7 +280,7 @@ function AdminProductsContent() {
                         <Link
                           href={`/products/${p.slug}`}
                           target="_blank"
-                          className="flex items-center gap-3 hover:text-rose-600"
+                          className="flex items-center gap-3 hover:text-primary"
                         >
                           <div className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">
                             {p.thumbnail && (
@@ -305,7 +305,7 @@ function AdminProductsContent() {
                         {p.colors.length > 0 ? p.colors.map((c) => c.color).join(", ") : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-rose-600">
+                        <span className="font-semibold text-primary">
                           ₹{p.finalPrice.toLocaleString("en-IN")}
                         </span>
                         {p.discountAmount > 0 && (
@@ -346,7 +346,7 @@ function AdminProductsContent() {
                             title={p.status === "ACTIVE" ? "Deactivate" : "Activate"}
                           >
                             {p.status === "ACTIVE" ? (
-                              <ToggleRight className="size-4 text-green-600" />
+                              <ToggleRight className="size-4 text-success" />
                             ) : (
                               <ToggleLeft className="size-4 text-muted-foreground" />
                             )}
@@ -375,14 +375,14 @@ function AdminProductsContent() {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50"
               >
                 Prev
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(data.totalPages - 1, p + 1))}
                 disabled={page >= data.totalPages - 1}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50"
               >
                 Next
               </button>

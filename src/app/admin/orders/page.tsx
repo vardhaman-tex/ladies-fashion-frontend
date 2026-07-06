@@ -14,12 +14,12 @@ import type { OrderStatus } from "@/types/order";
 const ALL_STATUSES: OrderStatus[] = ["PENDING", "PAID", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING:   "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PAID:      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  SHIPPED:   "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  PENDING:   "bg-warning/15 text-warning",
+  PAID:      "bg-success/15 text-success",
+  CONFIRMED: "bg-secondary text-secondary-foreground",
+  SHIPPED:   "bg-accent text-accent-foreground",
+  DELIVERED: "bg-success/15 text-success",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -69,8 +69,8 @@ function OrdersContent() {
           className={cn(
             "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             !statusParam
-              ? "border-rose-600 bg-rose-600 text-white"
-              : "border-border text-muted-foreground hover:border-rose-400"
+              ? "border-primary bg-primary text-white"
+              : "border-border text-muted-foreground hover:border-primary/50"
           )}
         >
           All
@@ -82,8 +82,8 @@ function OrdersContent() {
             className={cn(
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               statusParam === s
-                ? "border-rose-600 bg-rose-600 text-white"
-                : "border-border text-muted-foreground hover:border-rose-400"
+                ? "border-primary bg-primary text-white"
+                : "border-border text-muted-foreground hover:border-primary/50"
             )}
           >
             {s.charAt(0) + s.slice(1).toLowerCase()}
@@ -121,7 +121,7 @@ function OrdersContent() {
                       <td className="px-4 py-3">
                         <Link
                           href={`/admin/orders/${order.id}`}
-                          className="flex items-center gap-2 font-mono text-xs hover:text-rose-600"
+                          className="flex items-center gap-2 font-mono text-xs hover:text-primary"
                         >
                           <div className="relative size-8 shrink-0 overflow-hidden rounded bg-muted">
                             {order.firstItemThumbnail && (
@@ -133,7 +133,7 @@ function OrdersContent() {
                       </td>
                       <td className="px-4 py-3 font-medium">{order.addrFullName}</td>
                       <td className="px-4 py-3 text-muted-foreground">{order.itemCount}</td>
-                      <td className="px-4 py-3 font-semibold text-rose-600">
+                      <td className="px-4 py-3 font-semibold text-primary">
                         ₹{order.total.toLocaleString("en-IN")}
                       </td>
                       <td className="px-4 py-3">
@@ -151,7 +151,7 @@ function OrdersContent() {
                               key={next}
                               onClick={() => handleStatusChange(order.id, next)}
                               disabled={updateStatus.isPending}
-                              className="rounded border border-border px-2 py-0.5 text-[11px] font-medium hover:border-rose-400 hover:text-rose-600 disabled:opacity-50"
+                              className="rounded border border-border px-2 py-0.5 text-[11px] font-medium hover:border-primary/50 hover:text-primary disabled:opacity-50"
                             >
                               → {next.charAt(0) + next.slice(1).toLowerCase()}
                             </button>
@@ -177,14 +177,14 @@ function OrdersContent() {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50"
               >
                 Prev
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(data.totalPages - 1, p + 1))}
                 disabled={page >= data.totalPages - 1}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50"
               >
                 Next
               </button>

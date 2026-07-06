@@ -38,8 +38,8 @@ export function ProductSort({ className }: { className?: string }) {
             className={cn(
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               active
-                ? "border-rose-600 bg-rose-600 text-white"
-                : "border-border bg-background text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                ? "border-primary bg-primary text-white"
+                : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-primary"
             )}
           >
             {option.label}

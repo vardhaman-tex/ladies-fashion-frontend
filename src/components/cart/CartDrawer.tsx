@@ -32,7 +32,7 @@ export function CartDrawer() {
       <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Cart" className="relative" />}>
         <ShoppingBag className="size-5" />
         {itemCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white pointer-events-none">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white pointer-events-none">
             {itemCount > 99 ? "99+" : itemCount}
           </span>
         )}
@@ -44,7 +44,7 @@ export function CartDrawer() {
             <ShoppingBag className="size-4" />
             Your Cart
             {itemCount > 0 && (
-              <span className="ml-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+              <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-primary">
                 {itemCount}
               </span>
             )}
@@ -79,7 +79,7 @@ export function CartDrawer() {
                   <span>Subtotal</span>
                   <span>₹{cart.subtotal.toFixed(0)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-medium text-green-600">
+                <div className="flex justify-between text-xs font-medium text-success">
                   <span>Discount</span>
                   <span>−₹{cart.totalDiscount.toFixed(0)}</span>
                 </div>
@@ -101,7 +101,7 @@ export function CartDrawer() {
               </Button>
               <Button
                 size="sm"
-                className="flex-1 bg-rose-600 hover:bg-rose-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 onClick={goToCheckout}
               >
                 Checkout

@@ -132,7 +132,7 @@ export default function AddressesPage() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDelete(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-background p-6 shadow-xl mx-4">
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-background p-6 shadow-lg mx-4">
             <h3 className="font-heading text-lg font-bold">Delete Address?</h3>
             <p className="mt-1 text-sm text-muted-foreground">This action cannot be undone.</p>
             <div className="mt-4 flex gap-2">

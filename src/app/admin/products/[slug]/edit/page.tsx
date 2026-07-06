@@ -239,7 +239,7 @@ function VariantEditor({
         {newImages.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {newImages.map((file, index) => (
-              <div key={index} className="relative size-20 overflow-hidden rounded-lg border border-dashed border-rose-400">
+              <div key={index} className="relative size-20 overflow-hidden rounded-lg border border-dashed border-primary/50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={URL.createObjectURL(file)} alt={file.name} className="size-full object-cover" />
                 <button

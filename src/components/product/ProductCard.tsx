@@ -70,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {hasDiscount && product.inStock && (
-          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-rose-600 px-2 py-0.5 text-xs font-semibold text-white">
+          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
             {Math.round(product.discountPercent)}% OFF
           </span>
         )}
@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {product.inStock && (
           <Button
             size="sm"
-            className="absolute inset-x-2 bottom-2 rounded-lg bg-white/90 text-xs font-semibold text-foreground shadow hover:bg-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
+            className="absolute inset-x-2 bottom-2 h-9 rounded-lg bg-white/90 text-xs font-semibold text-foreground shadow-sm hover:bg-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
             onClick={handleAddToCart}
             disabled={adding}
           >
@@ -106,10 +106,10 @@ export function ProductCard({ product }: ProductCardProps) {
         {hasDiscount ? (
           <div className="flex flex-col gap-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-foreground">
+              <span className="text-sm font-semibold text-foreground">
                 ₹{product.finalPrice.toLocaleString("en-IN")}
               </span>
-              <span className="whitespace-nowrap text-xs font-semibold text-rose-600">
+              <span className="whitespace-nowrap text-xs font-semibold text-primary">
                 {Math.round(product.discountPercent)}% off
               </span>
             </div>
@@ -118,7 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
         ) : (
-          <span className="text-sm font-bold text-foreground">
+          <span className="text-sm font-semibold text-foreground">
             ₹{product.price.toLocaleString("en-IN")}
           </span>
         )}

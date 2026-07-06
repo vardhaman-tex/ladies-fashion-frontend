@@ -152,7 +152,7 @@ export default function CheckoutPage() {
             email: orderData.customerEmail,
             contact: orderData.customerPhone,
           },
-          theme: { color: "#e11d48" },
+          theme: { color: "#9e3b50" },
           handler: async (response) => {
             try {
               const confirmed = await verifyGuestPayment({
@@ -197,7 +197,7 @@ export default function CheckoutPage() {
         <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
           <h1 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl">Checkout</h1>
 
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary px-4 py-3 text-sm text-secondary-foreground">
             <User className="size-4 shrink-0" />
             <span>
               Checking out as guest.{" "}
@@ -213,7 +213,7 @@ export default function CheckoutPage() {
             <div className="order-2 space-y-6 lg:order-1">
               <section>
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <MapPin className="size-5 text-rose-600" />
+                  <MapPin className="size-5 text-primary" />
                   Delivery Details
                 </h2>
 
@@ -315,7 +315,7 @@ export default function CheckoutPage() {
             <div className="order-1 space-y-4 lg:order-2">
               <div className="rounded-xl border p-5">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <Package className="size-5 text-rose-600" />
+                  <Package className="size-5 text-primary" />
                   Order Summary
                 </h2>
 
@@ -338,7 +338,7 @@ export default function CheckoutPage() {
                         <p className="text-xs text-muted-foreground">
                           {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
                         </p>
-                        <p className="text-sm font-semibold text-rose-600">
+                        <p className="text-sm font-semibold text-primary">
                           ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                         </p>
                       </div>
@@ -352,14 +352,14 @@ export default function CheckoutPage() {
                     <span>₹{guestSubtotal.toLocaleString("en-IN")}</span>
                   </div>
                   {guestDiscount > 0 && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-success">
                       <span>Discount</span>
                       <span>−₹{guestDiscount.toLocaleString("en-IN")}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span className="text-green-600">FREE</span>
+                    <span className="text-success">FREE</span>
                   </div>
                   <div className="flex justify-between border-t pt-2 text-base font-bold">
                     <span>Total</span>
@@ -369,14 +369,14 @@ export default function CheckoutPage() {
               </div>
 
               {scriptState === "error" && (
-                <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+                <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="mt-0.5 size-4 shrink-0" />
                     <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                   </div>
                   <button
                     onClick={() => window.location.reload()}
-                    className="shrink-0 rounded p-1 hover:bg-red-100"
+                    className="shrink-0 rounded p-1 hover:bg-destructive/10"
                     title="Reload page"
                   >
                     <RefreshCw className="size-3.5" />
@@ -389,14 +389,14 @@ export default function CheckoutPage() {
                   type="checkbox"
                   checked={policyAgreed}
                   onChange={(e) => setPolicyAgreed(e.target.checked)}
-                  className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                  className="mt-0.5 size-4 shrink-0 accent-primary"
                 />
                 <span>
                   I have read and agree to the{" "}
                   <Link
                     href="/policies/return-policy"
                     target="_blank"
-                    className="font-medium text-rose-600 underline hover:text-rose-700"
+                    className="font-medium text-primary underline hover:text-primary/80"
                   >
                     Cancellation, Return, Refund &amp; Exchange Policy
                   </Link>
@@ -405,7 +405,7 @@ export default function CheckoutPage() {
               </label>
 
               <Button
-                className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+                className="w-full gap-2 bg-primary hover:bg-primary/90"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
                 disabled={isProcessing || scriptState === "error" || !guestAddressValid || !policyAgreed}
@@ -490,7 +490,7 @@ export default function CheckoutPage() {
           email: orderData.customerEmail,
           contact: orderData.customerPhone,
         },
-        theme: { color: "#e11d48" },
+        theme: { color: "#9e3b50" },
         handler: async (response) => {
           try {
             const confirmedOrder = await verifyPayment({
@@ -547,13 +547,13 @@ export default function CheckoutPage() {
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-lg font-semibold">
-                  <MapPin className="size-5 text-rose-600" />
+                  <MapPin className="size-5 text-primary" />
                   Delivery Address
                 </h2>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-1 text-rose-600"
+                  className="gap-1 text-primary"
                   onClick={() => setAddAddrOpen(true)}
                 >
                   <Plus className="size-3.5" /> Add New
@@ -584,7 +584,7 @@ export default function CheckoutPage() {
                         className={cn(
                           "w-full rounded-xl border p-4 text-left transition-colors",
                           isSelected
-                            ? "border-rose-600 bg-rose-50 dark:bg-rose-950/20"
+                            ? "border-primary bg-accent"
                             : "border-border hover:border-muted-foreground/40"
                         )}
                       >
@@ -593,7 +593,7 @@ export default function CheckoutPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">{address.fullName}</span>
                               {address.isDefault && (
-                                <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
+                                <span className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-medium text-primary">
                                   Default
                                 </span>
                               )}
@@ -607,7 +607,7 @@ export default function CheckoutPage() {
                             className={cn(
                               "mt-1 size-4 shrink-0 rounded-full border-2 transition-colors",
                               isSelected
-                                ? "border-rose-600 bg-rose-600"
+                                ? "border-primary bg-primary"
                                 : "border-muted-foreground/40"
                             )}
                           />
@@ -624,7 +624,7 @@ export default function CheckoutPage() {
           <div className="order-1 space-y-4 lg:order-2">
             <div className="rounded-xl border p-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <Package className="size-5 text-rose-600" />
+                <Package className="size-5 text-primary" />
                 Order Summary
               </h2>
 
@@ -648,11 +648,11 @@ export default function CheckoutPage() {
                         {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
                       </p>
                       {item.availableQty !== undefined && item.quantity > item.availableQty && (
-                        <p className="text-xs font-medium text-red-600">
+                        <p className="text-xs font-medium text-destructive">
                           Only {item.availableQty} left
                         </p>
                       )}
-                      <p className="text-sm font-semibold text-rose-600">
+                      <p className="text-sm font-semibold text-primary">
                         ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -666,14 +666,14 @@ export default function CheckoutPage() {
                   <span>₹{cart.subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-success">
                     <span>Discount</span>
                     <span>−₹{cart.totalDiscount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span className="text-green-600">FREE</span>
+                  <span className="text-success">FREE</span>
                 </div>
                 <div className="flex justify-between border-t pt-2 text-base font-bold">
                   <span>Total</span>
@@ -683,14 +683,14 @@ export default function CheckoutPage() {
             </div>
 
             {!activeAddress && addresses.length > 0 && (
-              <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+              <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-foreground/80">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>Please select a delivery address.</span>
               </div>
             )}
 
             {stockIssues.length > 0 && (
-              <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <div>
                   <p className="font-semibold">Insufficient stock:</p>
@@ -705,14 +705,14 @@ export default function CheckoutPage() {
             )}
 
             {scriptState === "error" && (
-              <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+              <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                 </div>
                 <button
                   onClick={() => window.location.reload()}
-                  className="shrink-0 rounded p-1 hover:bg-red-100"
+                  className="shrink-0 rounded p-1 hover:bg-destructive/10"
                   title="Reload page"
                 >
                   <RefreshCw className="size-3.5" />
@@ -725,14 +725,14 @@ export default function CheckoutPage() {
                 type="checkbox"
                 checked={policyAgreed}
                 onChange={(e) => setPolicyAgreed(e.target.checked)}
-                className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                className="mt-0.5 size-4 shrink-0 accent-primary"
               />
               <span>
                 I have read and agree to the{" "}
                 <Link
                   href="/policies/return-policy"
                   target="_blank"
-                  className="font-medium text-rose-600 underline hover:text-rose-700"
+                  className="font-medium text-primary underline hover:text-primary/80"
                 >
                   Cancellation, Return, Refund &amp; Exchange Policy
                 </Link>
@@ -741,7 +741,7 @@ export default function CheckoutPage() {
             </label>
 
             <Button
-              className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+              className="w-full gap-2 bg-primary hover:bg-primary/90"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || !activeAddressId || scriptState === "error" || stockIssues.length > 0 || !policyAgreed}

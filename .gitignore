@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# marketing/data assets
+/marketing/
+*.mp4
+*.xlsx
+sample-products.json

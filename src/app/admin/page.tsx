@@ -17,12 +17,12 @@ import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/types/order";
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING:   "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PAID:      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  SHIPPED:   "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  PENDING:   "bg-warning/15 text-warning",
+  PAID:      "bg-success/15 text-success",
+  CONFIRMED: "bg-secondary text-secondary-foreground",
+  SHIPPED:   "bg-accent text-accent-foreground",
+  DELIVERED: "bg-success/15 text-success",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 function StatCard({
@@ -40,8 +40,8 @@ function StatCard({
 }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border bg-card p-5">
-      <div className={cn("flex size-11 items-center justify-center rounded-full", accent ?? "bg-rose-100 dark:bg-rose-950/40")}>
-        <Icon className="size-5 text-rose-600" />
+      <div className={cn("flex size-11 items-center justify-center rounded-full", accent ?? "bg-accent")}>
+        <Icon className="size-5 text-primary" />
       </div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
@@ -75,10 +75,10 @@ export default function AdminDashboard() {
       {/* Order status breakdown */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
         {[
-          { label: "Pending",   value: stats?.pendingOrders,   icon: Clock,        color: "text-amber-600" },
+          { label: "Pending",   value: stats?.pendingOrders,   icon: Clock,        color: "text-warning" },
           { label: "Confirmed", value: stats?.confirmedOrders, icon: CheckCircle2, color: "text-blue-600"  },
           { label: "Shipped",   value: stats?.shippedOrders,   icon: Truck,        color: "text-indigo-600"},
-          { label: "Delivered", value: stats?.deliveredOrders, icon: CheckCircle2, color: "text-green-600" },
+          { label: "Delivered", value: stats?.deliveredOrders, icon: CheckCircle2, color: "text-success" },
           { label: "Cancelled", value: stats?.cancelledOrders, icon: XCircle,      color: "text-red-500"   },
         ].map(({ label, value, icon: Icon, color }) => (
           <Link
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       <div className="rounded-xl border">
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h2 className="font-semibold">Recent Orders</h2>
-          <Link href="/admin/orders" className="text-sm text-rose-600 hover:underline">
+          <Link href="/admin/orders" className="text-sm text-primary hover:underline">
             View all →
           </Link>
         </div>
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
               <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", STATUS_STYLES[order.status])}>
                 {order.status.charAt(0) + order.status.slice(1).toLowerCase()}
               </span>
-              <span className="w-20 text-right text-sm font-semibold text-rose-600">
+              <span className="w-20 text-right text-sm font-semibold text-primary">
                 ₹{order.total.toLocaleString("en-IN")}
               </span>
             </Link>

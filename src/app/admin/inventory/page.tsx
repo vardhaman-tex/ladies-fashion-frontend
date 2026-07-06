@@ -93,7 +93,7 @@ export default function AdminInventoryPage() {
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:border-rose-400 hover:text-rose-600 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:border-primary/50 hover:text-primary disabled:opacity-50"
           >
             <Download className="size-4" />
             {exporting ? "Exporting…" : "Export Excel"}
@@ -101,7 +101,7 @@ export default function AdminInventoryPage() {
           <button
             onClick={() => importRef.current?.click()}
             disabled={importing}
-            className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
           >
             <Upload className="size-4" />
             {importing ? "Importing…" : "Import Excel"}
@@ -109,7 +109,7 @@ export default function AdminInventoryPage() {
         </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
           <div
-            className={cn("relative h-5 w-9 rounded-full transition-colors", lowStockOnly ? "bg-rose-600" : "bg-muted-foreground/30")}
+            className={cn("relative h-5 w-9 rounded-full transition-colors", lowStockOnly ? "bg-primary" : "bg-muted-foreground/30")}
             onClick={() => { setLowStockOnly(!lowStockOnly); setPage(0); }}
           >
             <div className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform", lowStockOnly ? "translate-x-4" : "translate-x-0.5")} />
@@ -150,7 +150,7 @@ export default function AdminInventoryPage() {
                         className={cn(
                           "hover:bg-muted/20",
                           isLow && "bg-amber-50/40 dark:bg-amber-950/10",
-                          highlightProductId === item.productId && "ring-2 ring-inset ring-rose-400"
+                          highlightProductId === item.productId && "ring-2 ring-inset ring-primary/50"
                         )}
                       >
                         {/* Product identity */}
@@ -181,7 +181,7 @@ export default function AdminInventoryPage() {
                               onChange={(e) => setEditing({ ...editing, qty: Number(e.target.value) })}
                               className="w-20 rounded border px-2 py-1 text-sm" />
                           ) : (
-                            <span className={cn("font-semibold", isLow ? "text-amber-600" : "text-foreground")}>
+                            <span className={cn("font-semibold", isLow ? "text-warning" : "text-foreground")}>
                               {item.availableQty}
                             </span>
                           )}
@@ -202,8 +202,8 @@ export default function AdminInventoryPage() {
                         <td className="px-4 py-3">
                           <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold",
                             item.inStock
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              ? "bg-success/15 text-success"
+                              : "bg-destructive/10 text-destructive"
                           )}>
                             {item.inStock ? "In Stock" : "Out"}
                           </span>
@@ -214,17 +214,17 @@ export default function AdminInventoryPage() {
                           {isEditing ? (
                             <div className="flex gap-1">
                               <button onClick={handleSave} disabled={updateInventory.isPending}
-                                className="rounded bg-rose-600 px-2 py-1 text-xs text-white hover:bg-rose-700 disabled:opacity-50">
+                                className="rounded bg-primary px-2 py-1 text-xs text-white hover:bg-primary/90 disabled:opacity-50">
                                 Save
                               </button>
-                              <button onClick={() => setEditing(null)} className="rounded border px-2 py-1 text-xs hover:border-rose-400">
+                              <button onClick={() => setEditing(null)} className="rounded border px-2 py-1 text-xs hover:border-primary/50">
                                 Cancel
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => setEditing({ skuId: item.skuId, qty: item.availableQty, threshold: item.lowStockThreshold })}
-                              className="rounded border px-2 py-1 text-xs hover:border-rose-400 hover:text-rose-600"
+                              className="rounded border px-2 py-1 text-xs hover:border-primary/50 hover:text-primary"
                             >
                               Edit
                             </button>
@@ -242,9 +242,9 @@ export default function AdminInventoryPage() {
             <span className="text-muted-foreground">Page {page + 1} of {totalPages}</span>
             <div className="flex gap-2">
               <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Prev</button>
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50">Prev</button>
               <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages - 1}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Next</button>
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50">Next</button>
             </div>
           </div>
         )}

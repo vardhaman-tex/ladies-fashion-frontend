@@ -85,7 +85,7 @@ function SocialIconBar({ links, size }: { links: SocialLink[]; size: "sm" | "md"
           target="_blank"
           rel="noopener noreferrer"
           aria-label={link.label}
-          className={`flex ${dim} items-center justify-center rounded-full border border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600 transition-colors`}
+          className={`flex ${dim} items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors`}
         >
           <SocialIcon platform={link.platform} className={icon} />
         </a>
@@ -133,7 +133,7 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li><Link href="/products" className="text-sm font-medium text-rose-600">View all →</Link></li>
+              <li><Link href="/products" className="text-sm font-medium text-primary">View all →</Link></li>
             </ul>
           </div>
           <div className="px-4 py-4">
@@ -190,7 +190,7 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li><Link href="/products" className="text-sm font-medium text-rose-600 hover:text-rose-700">View all →</Link></li>
+              <li><Link href="/products" className="text-sm font-medium text-primary hover:text-primary/80">View all →</Link></li>
             </ul>
           </div>
 

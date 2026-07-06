@@ -85,7 +85,7 @@ function PolicyForm({
           type="checkbox"
           checked={visible}
           onChange={(e) => setVisible(e.target.checked)}
-          className="accent-rose-600"
+          className="accent-primary"
         />
         Visible to customers
       </label>
@@ -166,7 +166,7 @@ export default function AdminPoliciesPage() {
               <div>
                 <p className="font-semibold">{p.title}</p>
                 <p className="text-sm text-muted-foreground">
-                  /policies/{p.slug} · {p.visible ? "Visible" : "Hidden"}
+                  /policies/{p.slug} Â· {p.visible ? "Visible" : "Hidden"}
                 </p>
               </div>
               <div className="flex items-center gap-2">

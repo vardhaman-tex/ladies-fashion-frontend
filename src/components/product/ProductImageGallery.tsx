@@ -84,8 +84,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                 className={cn(
                   "relative size-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition-colors",
                   idx === selectedIdx
-                    ? "border-rose-600"
-                    : "border-transparent hover:border-rose-300"
+                    ? "border-primary"
+                    : "border-transparent hover:border-primary/40"
                 )}
               >
                 <Image
@@ -172,7 +172,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                     onClick={() => setSelectedIdx(idx)}
                     className={cn(
                       "size-1.5 rounded-full transition-all",
-                      idx === selectedIdx ? "w-4 bg-rose-600" : "bg-background/70"
+                      idx === selectedIdx ? "w-4 bg-primary" : "bg-background/70"
                     )}
                   />
                 ))}
@@ -192,8 +192,8 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
               className={cn(
                 "relative size-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors",
                 idx === selectedIdx
-                  ? "border-rose-600"
-                  : "border-transparent hover:border-rose-300"
+                  ? "border-primary"
+                  : "border-transparent hover:border-primary/40"
               )}
             >
               <Image

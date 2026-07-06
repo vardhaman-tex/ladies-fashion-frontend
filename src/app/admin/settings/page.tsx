@@ -76,8 +76,8 @@ function SocialLinkForm({
                 onClick={() => handlePlatformSelect(p)}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   platform === p.platform
-                    ? "border-rose-600 bg-rose-600 text-white"
-                    : "border-border hover:border-rose-400"
+                    ? "border-primary bg-primary text-white"
+                    : "border-border hover:border-primary/50"
                 }`}
               >
                 {p.label}
@@ -105,7 +105,7 @@ function SocialLinkForm({
 
       <div className="flex items-center justify-between">
         <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-rose-600" />
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-primary" />
           Show in footer
         </label>
         <div className="flex items-center gap-2">

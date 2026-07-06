@@ -98,7 +98,7 @@ export default function AccountPage() {
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <span className="truncate text-xs sm:text-sm">{user.email}</span>
               {user.isEmailVerified && (
-                <CheckCircle2 className="size-3 sm:size-3.5 shrink-0 text-emerald-500" />
+                <CheckCircle2 className="size-3 sm:size-3.5 shrink-0 text-success" />
               )}
             </div>
             {user.mobile && (

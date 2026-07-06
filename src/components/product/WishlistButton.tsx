@@ -52,9 +52,9 @@ export function WishlistButton({
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         onClick={handleClick}
         disabled={isPending}
-        className={cn(isWishlisted && "text-rose-600 border-rose-200 bg-rose-50", className)}
+        className={cn(isWishlisted && "text-primary border-primary/25 bg-accent", className)}
       >
-        <HeartIcon className={cn("size-5", isWishlisted && "fill-rose-600")} />
+        <HeartIcon className={cn("size-5", isWishlisted && "fill-primary")} />
       </Button>
     );
   }
@@ -68,11 +68,11 @@ export function WishlistButton({
       disabled={isPending}
       className={cn(
         "rounded-full shadow-sm opacity-100 transition-all md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-        isWishlisted && "text-rose-600 bg-rose-50",
+        isWishlisted && "text-primary bg-accent",
         className
       )}
     >
-      <HeartIcon className={cn("size-4", isWishlisted && "fill-rose-600")} />
+      <HeartIcon className={cn("size-4", isWishlisted && "fill-primary")} />
     </Button>
   );
 }

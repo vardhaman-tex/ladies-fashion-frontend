@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-4 py-3">
                           {isAdmin ? (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-rose-600">
+                            <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                               <Shield className="size-3" /> Admin
                             </span>
                           ) : (
@@ -77,8 +77,8 @@ export default function AdminUsersPage() {
                             className={cn(
                               "rounded-full px-2.5 py-0.5 text-xs font-semibold",
                               user.isActive
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                ? "bg-success/15 text-success"
+                                : "bg-destructive/10 text-destructive"
                             )}
                           >
                             {user.isActive ? "Active" : "Inactive"}
@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
                                 "flex items-center gap-1 rounded border px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50",
                                 user.isActive
                                   ? "border-red-200 text-red-600 hover:bg-red-50"
-                                  : "border-green-200 text-green-600 hover:bg-green-50"
+                                  : "border-green-200 text-success hover:bg-green-50"
                               )}
                             >
                               <UserX className="size-3" />
@@ -122,9 +122,9 @@ export default function AdminUsersPage() {
             </span>
             <div className="flex gap-2">
               <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Prev</button>
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50">Prev</button>
               <button onClick={() => setPage((p) => Math.min(data.totalPages - 1, p + 1))} disabled={page >= data.totalPages - 1}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400">Next</button>
+                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-primary/50">Next</button>
             </div>
           </div>
         )}
