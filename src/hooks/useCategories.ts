@@ -1,14 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCategories, getCategory } from "@/services/categoryService";
 import { getAdminCategories } from "@/services/adminCategoryService";
+import type { Category } from "@/types/category";
 
 /**
  * Fetches all active categories with their sub-categories.
+ *
+ * `initialData` lets the server component hand down the category list so the
+ * home page's category tiles and the footer's category links are present in
+ * the server-rendered HTML — they are the main internal-linking path from the
+ * home page into the catalogue.
  */
-export function useCategories() {
+export function useCategories(initialData?: Category[]) {
   return useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
+    initialData,
   });
 }
 

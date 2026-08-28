@@ -1,170 +1,199 @@
-"use client";
-
-import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon, Lock, ShieldCheck, Truck } from "lucide-react";
-import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
-import { HeroCarousel } from "@/components/home/HeroCarousel";
-import { ProductStrip } from "@/components/product/ProductStrip";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCategories } from "@/hooks/useCategories";
-import { useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
+import HomeClient from "./HomeClient";
+import { JsonLd } from "@/components/seo/JsonLd";
+import {
+  breadcrumbSchema,
+  categoryListSchema,
+  faqSchema,
+  itemListSchema,
+  organizationSchema,
+  websiteSchema,
+  type FaqEntry,
+} from "@/lib/schema";
+import {
+  getCategoriesServer,
+  getFeaturedServer,
+  getNewArrivalsServer,
+  getSaleProductsServer,
+  getSiteSettingsServer,
+  getSocialLinksServer,
+  getTrendingServer,
+} from "@/lib/server-api";
+import {
+  DEFAULT_OG_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  absoluteUrl,
+} from "@/lib/seo";
 
-const TRUST_BADGES = [
-  { icon: Truck, label: "Free Shipping", sub: undefined, bg: "bg-orange-100 text-orange-600" },
-  { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics", bg: "bg-purple-100 text-purple-600" },
-  { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout", bg: "bg-amber-100 text-amber-600" },
+export const metadata: Metadata = {
+  // Home page overrides the "%s | Vardhman Textile" template — the brand name
+  // belongs at the front of the home page title, not appended to it.
+  title: {
+    absolute: `${SITE_NAME} — Ethnic & Contemporary Ladies Fashion Online`,
+  },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `${SITE_NAME} — Ethnic & Contemporary Ladies Fashion Online`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    type: "website",
+    images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Ethnic & Contemporary Ladies Fashion Online`,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl(DEFAULT_OG_IMAGE)],
+  },
+};
+
+/**
+ * Answer-engine content.
+ *
+ * Each answer is self-contained and sits in the 40-60 word band that featured
+ * snippets, People Also Ask panels and voice assistants extract cleanly. The
+ * same strings back the FAQPage markup below, so the visible copy and the
+ * structured data never drift apart — Google penalises FAQ markup that has no
+ * on-page counterpart.
+ *
+ * Every claim here restates something the store already commits to elsewhere
+ * on the site (the trust strip, the checkout flow, the policy pages). Keep it
+ * that way: an invented delivery window or returns figure is a support ticket
+ * and a trust problem, not an SEO win.
+ */
+const FAQS: FaqEntry[] = [
+  {
+    question: "What does Vardhman Textile sell?",
+    answer:
+      "Vardhman Textile is an online ladies fashion store specialising in ethnic and contemporary womenswear. The catalogue covers festive and occasion wear alongside everyday styles, organised by category, fabric, colour and occasion so you can shop for a specific function or browse the new season collection.",
+  },
+  {
+    question: "Does Vardhman Textile offer free shipping?",
+    answer:
+      "Yes. Free shipping is included on orders placed through the Vardhman Textile store, and delivery is available across India. Shipping is confirmed at checkout before payment, so you can see exactly what applies to your order before you pay.",
+  },
+  {
+    question: "How do I track my Vardhman Textile order?",
+    answer:
+      "Use the Track Order page and enter your order details to see the current status. If you placed the order while signed in, the same information appears under My Orders in your account, along with the full item list and delivery address for that order.",
+  },
+  {
+    question: "What payment methods are accepted?",
+    answer:
+      "Checkout is handled through an encrypted payment gateway that accepts credit cards, debit cards, UPI and net banking. Card and bank details are entered on the payment provider's secure form and are never stored by the store itself.",
+  },
+  {
+    question: "Can I order without creating an account?",
+    answer:
+      "Yes. Vardhman Textile supports guest checkout, so you can add items to your cart and complete an order without registering. Creating an account is optional and adds saved addresses, a wishlist and order history to your next visit.",
+  },
+  {
+    question: "How do returns and exchanges work?",
+    answer:
+      "Returns and exchanges are governed by the store's Return Policy, which sets out which items are eligible, the window to raise a request and how refunds are issued. Read the current terms on the Return Policy page before placing an order.",
+  },
 ];
 
-export default function HomePage() {
-  const { data: categories } = useCategories();
-  const { data: featured, isLoading: loadingFeatured } = useFeaturedProducts({ size: 8 });
-  const { data: trending, isLoading: loadingTrending } = useTrending({ size: 8 });
-  const { data: newArrivals, isLoading: loadingNewArrivals } = useNewArrivals({ size: 8 });
-  const { data: sale, isLoading: loadingSale } = useSaleProducts({ size: 8 });
+export default async function HomePage() {
+  // Fetched in parallel; each helper degrades to null rather than throwing, so
+  // a slow backend costs the page its seed data, never the render itself.
+  const [categories, featured, trending, newArrivals, sale, settings, socialLinks] =
+    await Promise.all([
+      getCategoriesServer(),
+      getFeaturedServer(8),
+      getTrendingServer(8),
+      getNewArrivalsServer(8),
+      getSaleProductsServer(8),
+      getSiteSettingsServer(),
+      getSocialLinksServer(),
+    ]);
 
-  const heroImages = Array.from(
-    new Set(
-      [...(featured?.content ?? []), ...(newArrivals?.content ?? [])]
-        .map((p) => p.thumbnail)
-        .filter((url): url is string => Boolean(url))
-    )
-  ).slice(0, 6);
+  const sameAs = (socialLinks ?? [])
+    .filter((link) => link.enabled && link.url)
+    .map((link) => link.url);
+
+  const graph: object[] = [
+    organizationSchema({ logoUrl: settings?.logoUrl, sameAs }),
+    websiteSchema(),
+    breadcrumbSchema([{ name: "Home" }]),
+    faqSchema(FAQS),
+  ];
+
+  if (categories?.length) {
+    graph.push(categoryListSchema(categories));
+  }
+
+  if (featured?.content?.length) {
+    graph.push(
+      itemListSchema({
+        products: featured.content,
+        name: "Featured picks",
+        path: "/",
+      })
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-10 pb-10 sm:gap-16 sm:pb-16 lg:gap-24 lg:pb-24">
-      {/* Hero */}
-      <section className="relative overflow-hidden px-4 py-14 text-center sm:py-24 lg:py-36">
-        <HeroCarousel images={heroImages} />
+    <>
+      <JsonLd data={graph} />
 
-        <div className="relative mx-auto max-w-2xl">
-          <p className="text-xs font-semibold tracking-[0.2em] text-white/80 uppercase">New Season Collection</p>
-          <h1 className="mt-3 font-heading text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-7xl">
-            Celebrate Every Occasion in Style
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-white/90 sm:mt-5 sm:text-lg">
-            Discover the latest collections of ethnic and contemporary fashion — curated for every festival, function, and everyday moment.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button size="lg" className="bg-white text-rose-600 hover:bg-white/90" render={<Link href="/products" />}>
-              Shop Now
-              <ArrowRightIcon />
-            </Button>
-            <Button size="lg" variant="outline" className="border-white/60 bg-transparent text-white hover:bg-white/10" render={<Link href="/products" />}>
-              Explore Categories
-            </Button>
-          </div>
-        </div>
-      </section>
+      <HomeClient
+        initialCategories={categories ?? undefined}
+        initialFeatured={featured ?? undefined}
+        initialTrending={trending ?? undefined}
+        initialNewArrivals={newArrivals ?? undefined}
+        initialSale={sale ?? undefined}
+      />
 
-      {/* Category showcase */}
-      <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>
-            <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Shop by Category</h2>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-          {categories?.slice(0, 6).map((category) => (
-            <Link
-              key={category.id}
-              href={`/products?categorySlug=${category.slug}`}
-              className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted shadow-sm transition-shadow hover:shadow-xl"
-            >
-              {category.imageUrl ? (
-                <Image
-                  src={category.imageUrl}
-                  alt={category.name}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-                  {category.name}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-colors group-hover:from-black/80" />
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-3 sm:p-4">
-                <span className="text-xs font-bold text-white sm:text-sm">{category.name}</span>
-                <ArrowRightIcon className="size-4 shrink-0 -translate-x-1 text-white opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Server-rendered answer block. This is the only substantial prose on
+          the home page, and because it is server-rendered it is visible to
+          crawlers that never run JavaScript — which is how most AI answer
+          engines see the site. */}
+      <section
+        aria-labelledby="faq-heading"
+        className="mx-auto w-full max-w-3xl px-4 pb-16"
+      >
+        <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">
+          Good to know
+        </p>
+        <h2
+          id="faq-heading"
+          className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl"
+        >
+          Frequently asked questions
+        </h2>
 
-      {/* Featured products — only show once loaded and non-empty */}
-      {!loadingFeatured && (featured?.content?.length ?? 0) > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
-              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
-            </div>
-            <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              View All
-              <ArrowRightIcon className="size-4" />
-            </Link>
-          </div>
-          <div className="mt-4 sm:mt-6">
-            {loadingFeatured ? <ProductGridSkeleton count={4} /> : <ProductStrip products={featured?.content ?? []} />}
-          </div>
-        </section>
-      )}
-
-      {/* Trending / New Arrivals / Sale — hidden when all empty */}
-      {(() => {
-        const tabs = [
-          { value: "trending", label: "Trending", loading: loadingTrending, data: trending },
-          { value: "new-arrivals", label: "New Arrivals", loading: loadingNewArrivals, data: newArrivals },
-          { value: "sale", label: "Sale", loading: loadingSale, data: sale },
-        ];
-        const visibleTabs = tabs.filter((t) => !t.loading && (t.data?.content?.length ?? 0) > 0);
-        if (visibleTabs.length === 0) return null;
-        const defaultTab = visibleTabs[0].value;
-        return (
-          <section className="mx-auto w-full max-w-7xl px-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
-            <Tabs defaultValue={defaultTab} className="mt-1">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
-                <TabsList className="w-full sm:w-auto">
-                  {visibleTabs.map((t) => (
-                    <TabsTrigger key={t.value} value={t.value} className="flex-1 sm:flex-none">
-                      {t.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-              {visibleTabs.map((t) => (
-                <TabsContent key={t.value} value={t.value} className="mt-4 sm:mt-6">
-                  {t.loading ? <ProductGridSkeleton count={4} /> : <ProductStrip products={t.data?.content ?? []} />}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </section>
-        );
-      })()}
-
-      {/* Trust strip */}
-      <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="grid grid-cols-3 gap-3 sm:divide-x sm:divide-border sm:gap-0">
-          {TRUST_BADGES.map(({ icon: Icon, label, sub, bg }) => (
-            <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
-              <div className={`flex size-10 items-center justify-center rounded-full sm:size-12 ${bg}`}>
-                <Icon className="size-4 sm:size-5" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-foreground sm:text-sm">{label}</p>
-                {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
-              </div>
+        <dl className="mt-6 flex flex-col divide-y divide-border border-t border-border">
+          {FAQS.map((faq) => (
+            <div key={faq.question} className="py-5">
+              <dt className="text-base font-semibold text-foreground">
+                {faq.question}
+              </dt>
+              <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {faq.answer}
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
+
+        <p className="mt-8 text-sm text-muted-foreground">
+          Still deciding?{" "}
+          <Link href="/products" className="font-medium text-rose-600 hover:underline">
+            Browse the full collection
+          </Link>{" "}
+          or read our{" "}
+          <Link
+            href="/policies/return-policy"
+            className="font-medium text-rose-600 hover:underline"
+          >
+            return policy
+          </Link>
+          .
+        </p>
       </section>
-    </div>
+    </>
   );
 }
