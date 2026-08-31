@@ -35,6 +35,21 @@ export const SITE_LANG = "en-IN";
 
 export const DEFAULT_OG_IMAGE = "/og-default.png";
 
+/**
+ * Meta (Facebook) domain-verification token for vardhmantextile.com.
+ *
+ * Rendered as <meta name="facebook-domain-verification"> on every page. Meta
+ * requires the domain to be verified before it will approve Instagram product
+ * tagging, and it re-checks periodically — so this tag has to stay on the site,
+ * not be removed once verification passes.
+ *
+ * Not a secret: it is public in the page source by design, and is only
+ * meaningful for this one domain. Overridable per environment all the same.
+ */
+export const FACEBOOK_DOMAIN_VERIFICATION =
+  process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION ??
+  "sy7oo5q5xj8k4g6nfw9to5oj2qq5zi";
+
 export const CURRENCY = "INR";
 
 export const COUNTRY = "IN";

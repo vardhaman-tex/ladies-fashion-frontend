@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { getSiteSettingsServer } from "@/lib/server-api";
 import {
   DEFAULT_OG_IMAGE,
+  FACEBOOK_DOMAIN_VERIFICATION,
   SITE_DESCRIPTION,
   SITE_LANG,
   SITE_LOCALE,
@@ -100,6 +101,14 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     category: "shopping",
+    verification: {
+      // Meta checks for this on the root domain before approving Instagram
+      // product tagging, and re-checks after. Emitted site-wide via the root
+      // layout so it is present wherever their crawler lands.
+      other: {
+        "facebook-domain-verification": FACEBOOK_DOMAIN_VERIFICATION,
+      },
+    },
     formatDetection: {
       telephone: false,
       address: false,
