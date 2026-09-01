@@ -4,6 +4,25 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 /**
+ * Extra hosts allowed to serve product images.
+ *
+ * Admins can attach a product image by URL instead of uploading a file, but
+ * `next/image` refuses to optimise any host not listed in `remotePatterns` —
+ * an unlisted host renders as a broken image rather than a slow one. Rather
+ * than opening the optimizer to the whole web (which makes it a free image
+ * proxy for anyone who can guess the URL shape), the hosts you actually link
+ * from go in NEXT_PUBLIC_EXTRA_IMAGE_HOSTS as a comma-separated list, e.g.
+ *
+ *   NEXT_PUBLIC_EXTRA_IMAGE_HOSTS=cdn.supplier.com,images.othersite.in
+ *
+ * Wildcards work too — `**.supplier.com` covers every subdomain.
+ */
+const EXTRA_IMAGE_HOSTS = (process.env.NEXT_PUBLIC_EXTRA_IMAGE_HOSTS ?? "")
+  .split(",")
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+/**
  * Routes that must never appear in a search index.
  *
  * These are per-shopper or transactional pages: they carry no ranking value,
@@ -48,6 +67,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "picsum.photos",
       },
+      ...EXTRA_IMAGE_HOSTS.map((hostname) => ({
+        protocol: "https" as const,
+        hostname,
+      })),
     ],
   },
   // Proxy all /api/** requests to the backend.
