@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUrlInput } from "@/components/admin/ImageUrlInput";
 import { useCategories } from "@/hooks/useCategories";
 import { createProduct, createVariant, type SizeInventoryEntry } from "@/services/adminProductService";
 import type { ApiError } from "@/types/api";
@@ -58,6 +59,7 @@ export default function NewProductPage() {
   const [colorHex, setColorHex] = useState("");
   const [sizeRows, setSizeRows] = useState<SizeRow[]>([emptySizeRow()]);
   const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const selectedCategory = categories?.find((c) => c.id === categoryId);
 
@@ -143,7 +145,12 @@ export default function NewProductPage() {
     try {
       const product = await createVariant(
         createdProduct.id,
-        { color: color.trim(), colorHex: colorHex || undefined, sizes: entries },
+        {
+          color: color.trim(),
+          colorHex: colorHex || undefined,
+          sizes: entries,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        },
         images
       );
       toast.success("Product created successfully");
@@ -395,6 +402,11 @@ export default function NewProductPage() {
               <ImagePlus className="size-4" />
               {images.length === 0 ? "Add images" : "Add more images"}
             </button>
+
+            <div className="mt-2">
+              <Label className="mb-1.5 block">…or link an image</Label>
+              <ImageUrlInput urls={imageUrls} onChange={setImageUrls} />
+            </div>
           </div>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">

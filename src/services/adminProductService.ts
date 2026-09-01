@@ -32,13 +32,20 @@ export interface SizeInventoryEntry {
   lowStockThreshold?: number;
 }
 
-/** Creates/updates one color of a product, including its per-size stock. */
+/**
+ * Creates/updates one color of a product, including its per-size stock.
+ *
+ * Images can arrive two ways in the same save: `images` (files) are uploaded
+ * to Cloudinary, while `imageUrls` are already-hosted pictures the backend
+ * stores by reference — no upload, no copy.
+ */
 export interface ProductVariantRequest {
   color: string;
   colorHex?: string;
   sortOrder?: number;
   isActive?: boolean;
   sizes: SizeInventoryEntry[];
+  imageUrls?: string[];
 }
 
 function toJsonPart(data: unknown): Blob {

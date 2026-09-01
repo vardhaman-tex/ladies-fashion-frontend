@@ -12,6 +12,7 @@ import type { Category } from "@/types/category";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
+import { ImageUrlInput } from "@/components/admin/ImageUrlInput";
 import {
   getAdminProductBySlug,
   updateProduct,
@@ -69,6 +70,7 @@ function VariantEditor({
     }))
   );
   const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImageUrls, setNewImageUrls] = useState<string[]>([]);
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -119,11 +121,18 @@ function VariantEditor({
       const updated = await updateVariant(
         productId,
         variant.id,
-        { color: color.trim(), colorHex: colorHex || undefined, isActive, sizes: entries },
+        {
+          color: color.trim(),
+          colorHex: colorHex || undefined,
+          isActive,
+          sizes: entries,
+          imageUrls: newImageUrls.length > 0 ? newImageUrls : undefined,
+        },
         newImages
       );
       onUpdated(updated);
       setNewImages([]);
+      setNewImageUrls([]);
       toast.success(`"${color}" saved`);
     } catch {
       toast.error("Failed to save color variant");
@@ -274,6 +283,15 @@ function VariantEditor({
             {newImages.length} new image{newImages.length !== 1 ? "s" : ""} will upload when you save this color
           </p>
         )}
+
+        <div className="mt-3">
+          <label className="mb-1.5 block text-sm font-medium">…or link an image</label>
+          <ImageUrlInput
+            urls={newImageUrls}
+            onChange={setNewImageUrls}
+            existingUrls={variant.images.map((img) => img.imageUrl)}
+          />
+        </div>
       </div>
 
       <div className="flex gap-3 pt-1">
@@ -302,6 +320,7 @@ function AddVariantForm({
   const [colorHex, setColorHex] = useState("");
   const [sizeRows, setSizeRows] = useState<SizeRow[]>([emptySizeRow()]);
   const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   function updateRow(index: number, patch: Partial<SizeRow>) {
@@ -327,6 +346,7 @@ function AddVariantForm({
     setColorHex("");
     setSizeRows([emptySizeRow()]);
     setImages([]);
+    setImageUrls([]);
     setOpen(false);
   }
 
@@ -344,7 +364,12 @@ function AddVariantForm({
     try {
       const updated = await createVariant(
         productId,
-        { color: color.trim(), colorHex: colorHex || undefined, sizes: entries },
+        {
+          color: color.trim(),
+          colorHex: colorHex || undefined,
+          sizes: entries,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        },
         images
       );
       onCreated(updated);
@@ -452,6 +477,11 @@ function AddVariantForm({
         >
           <ImagePlus className="size-4" /> Add images
         </button>
+
+        <div className="mt-3">
+          <label className="mb-1.5 block text-sm font-medium">…or link an image</label>
+          <ImageUrlInput urls={imageUrls} onChange={setImageUrls} />
+        </div>
       </div>
 
       <div className="flex gap-3 pt-1">
@@ -490,6 +520,7 @@ export default function EditProductPage({
   const [description, setDesc]  = useState("");
   const [status, setStatus]     = useState<ProductStatus>("ACTIVE");
   const [categoryId, setCatId]  = useState("");
+  const [subCategoryId, setSubCatId] = useState("");
   const [featured, setFeatured] = useState(false);
 
   function applyProduct(p: ProductDetail) {
@@ -503,7 +534,21 @@ export default function EditProductPage({
     setDesc(p.description ?? "");
     setStatus(p.status);
     setCatId(p.category?.id ?? "");
+    setSubCatId(p.subCategory?.id ?? "");
     setFeatured(p.isFeatured);
+  }
+
+  /** Sub-categories belong to one category, so the list follows the selection. */
+  const subCategories = categories.find((c) => c.id === categoryId)?.subCategories ?? [];
+
+  /**
+   * Changing the category invalidates the current sub-category — it belongs to
+   * the category being navigated away from, and saving it would attach the
+   * product to a sub-category of a different parent.
+   */
+  function handleCategoryChange(nextCategoryId: string) {
+    setCatId(nextCategoryId);
+    setSubCatId("");
   }
 
   useEffect(() => {
@@ -537,7 +582,7 @@ export default function EditProductPage({
         price: parseFloat(price) || 0,
         discountAmount: parseFloat(discount) || 0,
         categoryId,
-        subCategoryId: product.subCategory?.id ?? undefined,
+        subCategoryId: subCategoryId || undefined,
         fabric: fabric || undefined,
         occasion: occasion || undefined,
         status,
@@ -602,7 +647,7 @@ export default function EditProductPage({
             <label className="mb-1 block text-sm font-medium">Category</label>
             <select
               value={categoryId}
-              onChange={(e) => setCatId(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
               <option value="">— select —</option>
@@ -612,6 +657,28 @@ export default function EditProductPage({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Sub-category</label>
+            <select
+              value={subCategoryId}
+              onChange={(e) => setSubCatId(e.target.value)}
+              disabled={!categoryId || subCategories.length === 0}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-50"
+            >
+              <option value="">— none —</option>
+              {subCategories.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {categoryId && subCategories.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                This category has no sub-categories yet.
+              </p>
+            )}
           </div>
 
           <div>
