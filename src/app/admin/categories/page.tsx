@@ -234,6 +234,7 @@ export default function AdminCategoriesPage() {
                 description: editingCategory.description,
                 sortOrder: editingCategory.sortOrder,
                 isActive: editingCategory.isActive,
+                imageUrl: editingCategory.imageUrl,
               }
             : undefined
         }

@@ -26,6 +26,17 @@ export async function adminUpdateLogo(image: File): Promise<SiteSettings> {
 }
 
 /**
+ * Points the site logo at an already-hosted image instead of uploading one.
+ * Admin only.
+ */
+export async function adminUpdateLogoUrl(imageUrl: string): Promise<SiteSettings> {
+  const response = await api.put<ApiResponse<SiteSettings>>("/api/v1/admin/settings/site/logo/url", {
+    imageUrl,
+  });
+  return response.data.data;
+}
+
+/**
  * Removes the site logo, reverting to the text wordmark. Admin only.
  */
 export async function adminRemoveLogo(): Promise<SiteSettings> {

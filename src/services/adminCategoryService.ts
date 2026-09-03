@@ -2,11 +2,21 @@ import { api } from "@/lib/api";
 import type { ApiResponse } from "@/types/api";
 import type { Category, SubCategory } from "@/types/category";
 
+/**
+ * Create/update payload for a category or sub-category.
+ *
+ * The image can be supplied three ways, resolved by the backend in this order:
+ * an uploaded file (passed separately to these functions) wins, then a
+ * non-blank `imageUrl` stores an already-hosted picture by reference, then
+ * `removeImage` clears it. With none of them the existing image is untouched.
+ */
 export interface CategoryRequest {
   name: string;
   description?: string;
   sortOrder?: number;
   isActive?: boolean;
+  imageUrl?: string;
+  removeImage?: boolean;
 }
 
 function buildFormData(data: CategoryRequest, image?: File): FormData {
