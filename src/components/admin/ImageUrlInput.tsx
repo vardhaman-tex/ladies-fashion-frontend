@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LinkIcon, XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { parseImageUrl } from "@/lib/imageUrl";
 
 /**
  * Collects already-hosted image URLs to attach to a colour variant alongside
@@ -14,8 +15,6 @@ import { Input } from "@/components/ui/input";
  * URLs are staged locally and only persisted when the surrounding variant form
  * is saved, matching how pending file uploads already behave on these screens.
  */
-
-const IMAGE_URL_PATTERN = /^https?:\/\/\S+$/i;
 
 export function ImageUrlInput({
   urls,
@@ -32,11 +31,9 @@ export function ImageUrlInput({
   const [error, setError] = useState<string | null>(null);
 
   function addUrl() {
-    const value = draft.trim();
-    if (!value) return;
-
-    if (!IMAGE_URL_PATTERN.test(value)) {
-      setError("Enter a full image address starting with http:// or https://");
+    const { url: value, error: parseError } = parseImageUrl(draft);
+    if (!value) {
+      if (parseError) setError(parseError);
       return;
     }
     if (urls.includes(value) || existingUrls.includes(value)) {

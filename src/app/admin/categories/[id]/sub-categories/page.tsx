@@ -210,6 +210,7 @@ export default function AdminSubCategoriesPage() {
                 description: editingSubCategory.description,
                 sortOrder: editingSubCategory.sortOrder,
                 isActive: editingSubCategory.isActive,
+                imageUrl: editingSubCategory.imageUrl,
               }
             : undefined
         }

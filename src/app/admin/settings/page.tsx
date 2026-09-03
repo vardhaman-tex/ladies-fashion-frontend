@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup, Upload, ImageIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup, Upload, ImageIcon, LinkIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +22,9 @@ import {
   type SocialLinkRequest,
 } from "@/services/socialLinkService";
 import { exportFullBackup, importFullBackup } from "@/services/adminService";
-import { adminUpdateLogo, adminRemoveLogo } from "@/services/siteSettingsService";
+import { adminUpdateLogo, adminUpdateLogoUrl, adminRemoveLogo } from "@/services/siteSettingsService";
 import { useSiteSettings, SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
+import { parseImageUrl, IMAGE_URL_HINT } from "@/lib/imageUrl";
 
 const QUERY_KEY = ["admin", "social-links"];
 
@@ -132,12 +133,34 @@ function LogoSection() {
   const qc = useQueryClient();
   const { data: siteSettings, isLoading } = useSiteSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   const uploadMut = useMutation({
     mutationFn: adminUpdateLogo,
     onSuccess: () => { qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY }); toast.success("Logo updated"); },
     onError: () => toast.error("Failed to upload logo"),
   });
+
+  const urlMut = useMutation({
+    mutationFn: adminUpdateLogoUrl,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY });
+      setLogoUrl("");
+      toast.success("Logo updated");
+    },
+    onError: () => toast.error("Failed to set logo from URL"),
+  });
+
+  function handleUseUrl() {
+    const { url, error } = parseImageUrl(logoUrl);
+    if (!url) {
+      setUrlError(error ?? IMAGE_URL_HINT);
+      return;
+    }
+    setUrlError(null);
+    urlMut.mutate(url);
+  }
 
   const removeMut = useMutation({
     mutationFn: adminRemoveLogo,
@@ -189,6 +212,36 @@ function LogoSection() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Linking an already-hosted logo skips the upload entirely — useful when
+          the brand mark already lives on a CDN or the designer sent a link. */}
+      <div className="mt-4 flex flex-col gap-1.5 border-t pt-4">
+        <Label htmlFor="logo-url" className="text-xs text-muted-foreground">
+          …or use an image URL
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="logo-url"
+            type="url"
+            inputMode="url"
+            value={logoUrl}
+            placeholder="https://cdn.example.com/logo.png"
+            onChange={(e) => { setLogoUrl(e.target.value); if (urlError) setUrlError(null); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleUseUrl(); } }}
+            disabled={urlMut.isPending}
+          />
+          <Button
+            variant="outline"
+            onClick={handleUseUrl}
+            disabled={!logoUrl.trim() || urlMut.isPending}
+            className="shrink-0 gap-1.5"
+          >
+            {urlMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
+            Use URL
+          </Button>
+        </div>
+        {urlError && <p className="text-xs text-red-500">{urlError}</p>}
       </div>
     </div>
   );

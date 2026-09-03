@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageSourceField } from "@/components/admin/ImageSourceField";
 import type { CategoryRequest } from "@/services/adminCategoryService";
 
 export interface CategoryFormInitialValues {
@@ -18,6 +19,8 @@ export interface CategoryFormInitialValues {
   description: string | null;
   sortOrder: number;
   isActive: boolean;
+  /** The image already saved on this record, so the form can preview and clear it. */
+  imageUrl?: string | null;
 }
 
 interface CategoryFormDialogProps {
@@ -28,7 +31,13 @@ interface CategoryFormDialogProps {
   onSubmit: (data: CategoryRequest, image?: File) => Promise<void>;
 }
 
-const EMPTY_VALUES: CategoryFormInitialValues = { name: "", description: "", sortOrder: 0, isActive: true };
+const EMPTY_VALUES: CategoryFormInitialValues = {
+  name: "",
+  description: "",
+  sortOrder: 0,
+  isActive: true,
+  imageUrl: null,
+};
 
 /**
  * Shared create/edit form for categories and sub-categories.
@@ -39,7 +48,11 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
   const [sortOrder, setSortOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<File | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState("");
+  const [removeImage, setRemoveImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const currentImageUrl = initialValues?.imageUrl ?? null;
 
   useEffect(() => {
     if (open) {
@@ -49,6 +62,8 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
       setSortOrder(String(values.sortOrder));
       setIsActive(values.isActive);
       setImage(undefined);
+      setImageUrl("");
+      setRemoveImage(false);
     }
   }, [open, initialValues]);
 
@@ -64,6 +79,8 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
           description: description.trim() || undefined,
           sortOrder: sortOrder ? Number(sortOrder) : undefined,
           isActive,
+          imageUrl: imageUrl.trim() || undefined,
+          removeImage: removeImage || undefined,
         },
         image
       );
@@ -109,12 +126,16 @@ export function CategoryFormDialog({ open, onOpenChange, title, initialValues, o
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="category-image">Image</Label>
-            <Input
-              id="category-image"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImage(e.target.files?.[0])}
+            <Label>Image</Label>
+            <ImageSourceField
+              currentUrl={currentImageUrl}
+              file={image}
+              onFileChange={setImage}
+              url={imageUrl}
+              onUrlChange={setImageUrl}
+              removed={removeImage}
+              onRemovedChange={setRemoveImage}
+              disabled={isSubmitting}
             />
           </div>
 
