@@ -7,11 +7,12 @@ import Image from "next/image";
 import Script from "next/script";
 import {
   MapPin, Package, ChevronRight, AlertCircle,
-  Plus, ShoppingBag, Loader2, RefreshCw, User,
+  Plus, ShoppingBag, Loader2, RefreshCw, User, Banknote, CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCart } from "@/hooks/useCart";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAddresses } from "@/hooks/useAddresses";
 import { useAuthStore } from "@/stores/authStore";
 import { useGuestCartStore } from "@/stores/cartStore";
@@ -29,11 +30,105 @@ import {
   verifyGuestPayment,
 } from "@/services/paymentService";
 import { cancelOrder } from "@/services/orderService";
+import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
+import type { PaymentMethod } from "@/types/payment";
 
 function formatAddress(a: AddressData) {
   return [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode]
     .filter(Boolean)
     .join(", ");
+}
+
+/**
+ * How the customer wants to pay.
+ *
+ * COD is shown even when it is unavailable, with the reason, rather than being
+ * hidden: "why can't I pay on delivery?" is a question people otherwise ask
+ * support, and the answer is usually something they can act on by adding an
+ * item or removing one.
+ */
+function PaymentMethodChoice({
+  value,
+  onChange,
+  orderTotal,
+  advanceAmount,
+  availability,
+  disabled,
+}: {
+  value: PaymentMethod;
+  onChange: (method: PaymentMethod) => void;
+  orderTotal: number;
+  advanceAmount: number;
+  availability: CodAvailability;
+  disabled?: boolean;
+}) {
+  const dueOnDelivery = Math.max(orderTotal - Math.min(advanceAmount, orderTotal), 0);
+
+  return (
+    <div className="rounded-xl border p-4">
+      <h2 className="mb-3 text-sm font-semibold">Payment method</h2>
+      <div className="space-y-2">
+        <label
+          className={cn(
+            "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+            value === "PREPAID" ? "border-rose-600 bg-rose-50/50 dark:bg-rose-950/20" : "hover:border-rose-300"
+          )}
+        >
+          <input
+            type="radio"
+            name="paymentMethod"
+            checked={value === "PREPAID"}
+            onChange={() => onChange("PREPAID")}
+            disabled={disabled}
+            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 text-sm font-medium">
+              <CreditCard className="size-4 shrink-0 text-muted-foreground" />
+              Pay now
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Pay ₹{orderTotal.toLocaleString("en-IN")} online and you are done.
+            </span>
+          </span>
+        </label>
+
+        <label
+          className={cn(
+            "flex items-start gap-3 rounded-lg border p-3 transition-colors",
+            !availability.available
+              ? "cursor-not-allowed opacity-60"
+              : value === "COD_PARTIAL"
+                ? "cursor-pointer border-rose-600 bg-rose-50/50 dark:bg-rose-950/20"
+                : "cursor-pointer hover:border-rose-300"
+          )}
+        >
+          <input
+            type="radio"
+            name="paymentMethod"
+            checked={value === "COD_PARTIAL"}
+            onChange={() => onChange("COD_PARTIAL")}
+            disabled={disabled || !availability.available}
+            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 text-sm font-medium">
+              <Banknote className="size-4 shrink-0 text-muted-foreground" />
+              Cash on delivery
+            </span>
+            {availability.available ? (
+              <span className="block text-xs text-muted-foreground">
+                Pay ₹{Math.min(advanceAmount, orderTotal).toLocaleString("en-IN")} now to confirm the order,
+                then ₹{dueOnDelivery.toLocaleString("en-IN")} in cash when it arrives.
+              </span>
+            ) : (
+              <span className="block text-xs text-muted-foreground">{availability.reason}</span>
+            )}
+          </span>
+        </label>
+      </div>
+    </div>
+  );
 }
 
 export default function CheckoutPage() {
@@ -45,6 +140,9 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [scriptState, setScriptState] = useState<null | "ready" | "error">(null);
   const [policyAgreed, setPolicyAgreed] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PREPAID");
+  const { data: siteSettings } = useSiteSettings();
+  const codAdvance = siteSettings?.codAdvanceAmount ?? 0;
 
   const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0] ?? null;
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -96,6 +194,13 @@ export default function CheckoutPage() {
     const guestSubtotal = cart!.subtotal;
     const guestDiscount = cart!.totalDiscount;
     const guestTotal = cart!.total;
+    const guestCodAvailability = getCodAvailability(siteSettings, guestTotal);
+    // If the cart changed after the choice was made and COD no longer qualifies,
+    // fall back rather than sending the server a choice it will refuse.
+    const guestMethod: PaymentMethod =
+      paymentMethod === "COD_PARTIAL" && guestCodAvailability.available ? "COD_PARTIAL" : "PREPAID";
+    const guestPayableNow = amountPayableNow(guestMethod, guestTotal, codAdvance);
+    const guestDueOnDelivery = guestTotal - guestPayableNow;
 
     const guestAddressValid =
       guestForm.fullName.trim() !== "" &&
@@ -138,6 +243,7 @@ export default function CheckoutPage() {
             color: item.color,
             quantity: item.quantity,
           })),
+          paymentMethod: guestMethod,
         });
 
         const rzp = new window.Razorpay({
@@ -162,7 +268,11 @@ export default function CheckoutPage() {
                 razorpaySignature: response.razorpay_signature,
               });
               clearGuestCart();
-              toast.success("Payment successful!");
+              toast.success(
+                guestMethod === "COD_PARTIAL"
+                  ? `Order confirmed — ₹${guestDueOnDelivery.toLocaleString("en-IN")} to pay on delivery.`
+                  : "Payment successful!"
+              );
               // orderRef: swap confirmed.id → confirmed.orderNumber once backend ships that field
               const orderRef = confirmed.id;
               router.push(`/guest-order-confirmed?orderRef=${orderRef}`);
@@ -365,8 +475,29 @@ export default function CheckoutPage() {
                     <span>Total</span>
                     <span>₹{guestTotal.toLocaleString("en-IN")}</span>
                   </div>
+                  {guestMethod === "COD_PARTIAL" && (
+                    <div className="space-y-1 border-t pt-2">
+                      <div className="flex justify-between font-medium">
+                        <span>Paying now</span>
+                        <span>₹{guestPayableNow.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Cash on delivery</span>
+                        <span>₹{guestDueOnDelivery.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              <PaymentMethodChoice
+                value={guestMethod}
+                onChange={setPaymentMethod}
+                orderTotal={guestTotal}
+                advanceAmount={codAdvance}
+                availability={guestCodAvailability}
+                disabled={isProcessing}
+              />
 
               {scriptState === "error" && (
                 <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
@@ -422,7 +553,9 @@ export default function CheckoutPage() {
                   </>
                 ) : (
                   <>
-                    Pay ₹{guestTotal.toLocaleString("en-IN")}
+                    {guestMethod === "COD_PARTIAL"
+                      ? `Pay ₹${guestPayableNow.toLocaleString("en-IN")} now`
+                      : `Pay ₹${guestPayableNow.toLocaleString("en-IN")}`}
                     <ChevronRight className="size-4" />
                   </>
                 )}
@@ -456,6 +589,13 @@ export default function CheckoutPage() {
     (item) => item.availableQty !== undefined && item.quantity > item.availableQty
   ) ?? [];
 
+  const codAvailability = getCodAvailability(siteSettings, cart.total);
+  // Same fallback as the guest path: never send a choice the server will refuse.
+  const activeMethod: PaymentMethod =
+    paymentMethod === "COD_PARTIAL" && codAvailability.available ? "COD_PARTIAL" : "PREPAID";
+  const payableNow = amountPayableNow(activeMethod, cart.total, codAdvance);
+  const dueOnDelivery = cart.total - payableNow;
+
   async function handlePlaceOrder() {
     if (!activeAddressId) {
       toast.error("Please select a delivery address");
@@ -476,7 +616,10 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      const orderData = await createRazorpayOrder({ addressId: activeAddressId });
+      const orderData = await createRazorpayOrder({
+        addressId: activeAddressId,
+        paymentMethod: activeMethod,
+      });
 
       const rzp = new window.Razorpay({
         key: orderData.keyId,
@@ -500,7 +643,11 @@ export default function CheckoutPage() {
               razorpaySignature: response.razorpay_signature,
             });
             clearGuestCart();
-            toast.success("Payment successful!");
+            toast.success(
+              activeMethod === "COD_PARTIAL"
+                ? `Order confirmed — ₹${dueOnDelivery.toLocaleString("en-IN")} to pay on delivery.`
+                : "Payment successful!"
+            );
             router.push(`/orders/${confirmedOrder.id}?confirmed=true`);
           } catch {
             toast.error("Payment verification failed. Contact support.");
@@ -679,8 +826,29 @@ export default function CheckoutPage() {
                   <span>Total</span>
                   <span>₹{cart.total.toLocaleString("en-IN")}</span>
                 </div>
+                {activeMethod === "COD_PARTIAL" && (
+                  <div className="space-y-1 border-t pt-2">
+                    <div className="flex justify-between font-medium">
+                      <span>Paying now</span>
+                      <span>₹{payableNow.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Cash on delivery</span>
+                      <span>₹{dueOnDelivery.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+
+            <PaymentMethodChoice
+              value={activeMethod}
+              onChange={setPaymentMethod}
+              orderTotal={cart.total}
+              advanceAmount={codAdvance}
+              availability={codAvailability}
+              disabled={isProcessing}
+            />
 
             {!activeAddress && addresses.length > 0 && (
               <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
@@ -758,7 +926,9 @@ export default function CheckoutPage() {
                 </>
               ) : (
                 <>
-                  Pay ₹{cart.total.toLocaleString("en-IN")}
+                  {activeMethod === "COD_PARTIAL"
+                    ? `Pay ₹${payableNow.toLocaleString("en-IN")} now`
+                    : `Pay ₹${payableNow.toLocaleString("en-IN")}`}
                   <ChevronRight className="size-4" />
                 </>
               )}

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup, Upload, ImageIcon, LinkIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, GripVertical, DatabaseBackup, Upload, ImageIcon, LinkIcon, X, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ import {
   type SocialLinkRequest,
 } from "@/services/socialLinkService";
 import { exportFullBackup, importFullBackup } from "@/services/adminService";
-import { adminUpdateLogo, adminUpdateLogoUrl, adminRemoveLogo } from "@/services/siteSettingsService";
+import { adminUpdateLogo, adminUpdateLogoUrl, adminRemoveLogo, adminUpdateCodSettings } from "@/services/siteSettingsService";
 import { useSiteSettings, SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
 import { parseImageUrl, IMAGE_URL_HINT } from "@/lib/imageUrl";
 
@@ -342,6 +342,164 @@ function DataBackupSection() {
   );
 }
 
+
+/**
+ * Cash-on-delivery rules. Every field here changes what customers are offered
+ * at checkout, so the form states the effect rather than just naming the field.
+ */
+function CodSection() {
+  const queryClient = useQueryClient();
+  const { data: settings, isLoading } = useSiteSettings();
+
+  const [enabled, setEnabled] = useState(false);
+  const [advance, setAdvance] = useState("100");
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  // Seed the form from the server once, then leave it alone — refetching must
+  // not wipe out edits an admin is part-way through typing.
+  if (settings && !hydrated) {
+    setEnabled(settings.codEnabled);
+    setAdvance(String(settings.codAdvanceAmount ?? 100));
+    setMinValue(settings.codMinOrderValue == null ? "" : String(settings.codMinOrderValue));
+    setMaxValue(settings.codMaxOrderValue == null ? "" : String(settings.codMaxOrderValue));
+    setHydrated(true);
+  }
+
+  const save = useMutation({
+    mutationFn: adminUpdateCodSettings,
+    onSuccess: (updated) => {
+      queryClient.setQueryData(SITE_SETTINGS_QUERY_KEY, updated);
+      toast.success("COD settings saved");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message ??
+             "Could not save COD settings")
+          : "Could not save COD settings";
+      toast.error(message);
+    },
+  });
+
+  function handleSave() {
+    const advanceAmount = Number(advance);
+    const minOrderValue = minValue.trim() === "" ? null : Number(minValue);
+    const maxOrderValue = maxValue.trim() === "" ? null : Number(maxValue);
+
+    if (!Number.isFinite(advanceAmount) || advanceAmount < 1) {
+      toast.error("The advance must be at least ₹1");
+      return;
+    }
+    // The same combinations the server refuses, caught here so the admin gets
+    // the reason immediately rather than after a round trip.
+    if (minOrderValue != null && minOrderValue <= advanceAmount) {
+      toast.error("Minimum order value must be above the advance — below it there is no balance to collect.");
+      return;
+    }
+    if (maxOrderValue != null && maxOrderValue <= advanceAmount) {
+      toast.error("Maximum order value must be above the advance, or COD can never be offered.");
+      return;
+    }
+    if (minOrderValue != null && maxOrderValue != null && maxOrderValue < minOrderValue) {
+      toast.error("Maximum order value cannot be below the minimum.");
+      return;
+    }
+
+    save.mutate({ enabled, advanceAmount, minOrderValue, maxOrderValue });
+  }
+
+  return (
+    <div className="mb-8 rounded-xl border p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Banknote className="size-4 text-muted-foreground" />
+        <div>
+          <h2 className="font-semibold">Cash on Delivery</h2>
+          <p className="text-xs text-muted-foreground">
+            Customers pay a small advance online and the courier collects the rest on delivery.
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <label className="flex items-start gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-rose-600"
+            />
+            <span>
+              <span className="font-medium">Offer cash on delivery at checkout</span>
+              <span className="block text-xs text-muted-foreground">
+                Turn this off to hide the option immediately. Orders already placed are unaffected.
+              </span>
+            </span>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="cod-advance">Advance paid online (₹)</Label>
+              <Input
+                id="cod-advance"
+                type="number"
+                min={1}
+                step="1"
+                value={advance}
+                onChange={(e) => setAdvance(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Charged at checkout. Existing orders keep the advance they were quoted.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="cod-min">Minimum order (₹)</Label>
+              <Input
+                id="cod-min"
+                type="number"
+                min={0}
+                step="1"
+                placeholder="No minimum"
+                value={minValue}
+                onChange={(e) => setMinValue(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Leave blank for no floor.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="cod-max">Maximum order (₹)</Label>
+              <Input
+                id="cod-max"
+                type="number"
+                min={0}
+                step="1"
+                placeholder="No maximum"
+                value={maxValue}
+                onChange={(e) => setMaxValue(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Worth setting — an unpaid high-value return is the expensive kind.
+              </p>
+            </div>
+          </div>
+
+          <Button onClick={handleSave} disabled={save.isPending} className="gap-1.5">
+            {save.isPending && <Loader2 className="size-4 animate-spin" />}
+            Save COD settings
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminSettingsPage() {
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -386,6 +544,8 @@ export default function AdminSettingsPage() {
       <DataBackupSection />
 
       <LogoSection />
+
+      <CodSection />
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-semibold">Social Media Links</h2>
