@@ -1,4 +1,4 @@
-import type { OrderStatus } from "./order";
+import type { OrderStatus, OrderPaymentMethod, OrderPaymentStatus } from "./order";
 
 export interface AdminStats {
   totalOrders: number;
@@ -7,7 +7,12 @@ export interface AdminStats {
   shippedOrders: number;
   deliveredOrders: number;
   cancelledOrders: number;
+  /** Booked value of every non-cancelled order — what has been sold. */
   totalRevenue: number;
+  /** Cash actually collected. Diverges from booked value once COD balances are outstanding. */
+  collectedRevenue: number;
+  /** What live orders still owe — for COD, the money out with couriers. */
+  outstandingAmount: number;
   totalUsers: number;
   totalProducts: number;
 }
@@ -20,6 +25,10 @@ export interface AdminOrderSummary {
   subtotal: number;
   totalDiscount: number;
   total: number;
+  paymentMethod: OrderPaymentMethod;
+  paymentStatus: OrderPaymentStatus;
+  amountPaid: number;
+  amountDue: number;
   firstItemThumbnail: string | null;
   firstItemName: string | null;
   addrFullName: string;

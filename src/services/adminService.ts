@@ -4,6 +4,7 @@ import type { AdminStats, AdminOrderSummary, AdminUser, AdminDataImportResult, I
 import type { OrderData } from "@/types/order";
 import type { OrderStatus } from "@/types/order";
 import type { ProductSummary } from "@/types/product";
+import type { PaymentLink, CreatePaymentLinkRequest } from "@/types/paymentLink";
 
 // Stats
 export const getAdminStats = async (): Promise<AdminStats> => {
@@ -58,6 +59,36 @@ export const editAdminOrder = async (
   const { data } = await api.put<ApiResponse<OrderData>>(
     `/api/v1/admin/orders/${id}/edit`,
     payload
+  );
+  return data.data;
+};
+
+// Payment links — generated against an order to recover a failed checkout, take
+// payment for a phone order, or collect a COD balance before dispatch.
+export const getOrderPaymentLinks = async (orderId: string): Promise<PaymentLink[]> => {
+  const { data } = await api.get<ApiResponse<PaymentLink[]>>(
+    `/api/v1/admin/orders/${orderId}/payment-links`
+  );
+  return data.data;
+};
+
+export const createOrderPaymentLink = async (
+  orderId: string,
+  payload: CreatePaymentLinkRequest = {}
+): Promise<PaymentLink> => {
+  const { data } = await api.post<ApiResponse<PaymentLink>>(
+    `/api/v1/admin/orders/${orderId}/payment-links`,
+    payload
+  );
+  return data.data;
+};
+
+export const cancelOrderPaymentLink = async (
+  orderId: string,
+  linkId: string
+): Promise<PaymentLink> => {
+  const { data } = await api.post<ApiResponse<PaymentLink>>(
+    `/api/v1/admin/orders/${orderId}/payment-links/${linkId}/cancel`
   );
   return data.data;
 };

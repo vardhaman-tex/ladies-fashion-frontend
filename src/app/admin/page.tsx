@@ -4,6 +4,8 @@ import Link from "next/link";
 import {
   ShoppingBag,
   TrendingUp,
+  Banknote,
+  HandCoins,
   Users,
   Package,
   Clock,
@@ -65,8 +67,10 @@ export default function AdminDashboard() {
       <p className="mb-6 text-sm text-muted-foreground">Overview of your store</p>
 
       {/* Stat cards */}
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total Revenue" value={stats ? `₹${stats.totalRevenue.toLocaleString("en-IN")}` : "—"} icon={TrendingUp} loading={statsLoading} />
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <StatCard label="Booked Revenue" value={stats ? `₹${stats.totalRevenue.toLocaleString("en-IN")}` : "—"} icon={TrendingUp} loading={statsLoading} />
+        <StatCard label="Cash Collected" value={stats ? `₹${stats.collectedRevenue.toLocaleString("en-IN")}` : "—"} icon={Banknote} loading={statsLoading} />
+        <StatCard label="Awaiting Collection" value={stats ? `₹${stats.outstandingAmount.toLocaleString("en-IN")}` : "—"} icon={HandCoins} loading={statsLoading} />
         <StatCard label="Total Orders" value={stats?.totalOrders ?? "—"} icon={ShoppingBag} loading={statsLoading} />
         <StatCard label="Total Users" value={stats?.totalUsers ?? "—"} icon={Users} loading={statsLoading} accent="bg-blue-100 dark:bg-blue-950/40" />
         <StatCard label="Total Products" value={stats?.totalProducts ?? "—"} icon={Package} loading={statsLoading} accent="bg-green-100 dark:bg-green-950/40" />
