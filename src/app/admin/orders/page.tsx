@@ -135,6 +135,11 @@ function OrdersContent() {
                       <td className="px-4 py-3 text-muted-foreground">{order.itemCount}</td>
                       <td className="px-4 py-3 font-semibold text-rose-600">
                         ₹{order.total.toLocaleString("en-IN")}
+                        {order.amountDue > 0 && order.status !== "CANCELLED" && (
+                          <span className="block text-[11px] font-medium text-amber-600">
+                            ₹{order.amountDue.toLocaleString("en-IN")} due
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", STATUS_STYLES[order.status])}>

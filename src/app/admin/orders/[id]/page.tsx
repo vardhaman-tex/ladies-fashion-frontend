@@ -3,12 +3,26 @@
 import { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Pencil, X } from "lucide-react";
+import {
+  ArrowLeft, Pencil, X, Banknote, Link2, Copy, Check,
+  Loader2, ExternalLink, AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useAdminOrder, useUpdateOrderStatus, useEditAdminOrder } from "@/hooks/useAdmin";
+import {
+  useAdminOrder,
+  useUpdateOrderStatus,
+  useEditAdminOrder,
+  useOrderPaymentLinks,
+  useCreatePaymentLink,
+  useCancelPaymentLink,
+} from "@/hooks/useAdmin";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { OrderData, OrderStatus } from "@/types/order";
+import type { OrderData, OrderStatus, OrderPaymentStatus } from "@/types/order";
+import type { PaymentLink, PaymentLinkStatus } from "@/types/paymentLink";
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   PENDING:   "bg-amber-100 text-amber-800",
@@ -27,6 +41,310 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   DELIVERED: [],
   CANCELLED: [],
 };
+
+const PAYMENT_STATUS_LABELS: Record<OrderPaymentStatus, string> = {
+  UNPAID: "Unpaid",
+  ADVANCE_PAID: "Advance paid",
+  PAID_IN_FULL: "Paid in full",
+  REFUNDED: "Refunded",
+};
+
+const LINK_STATUS_STYLES: Record<PaymentLinkStatus, string> = {
+  CREATED:   "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  PAID:      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  CANCELLED: "bg-muted text-muted-foreground",
+  EXPIRED:   "bg-muted text-muted-foreground",
+};
+
+function inr(amount: number) {
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function titleCase(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ");
+}
+
+/** Surfaces the server's own message — these carry the actionable reason. */
+function errorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "response" in err) {
+    const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+    if (message) return message;
+  }
+  return fallback;
+}
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error("Could not copy — select the link and copy it manually.");
+        }
+      }}
+      className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+      title="Copy link"
+    >
+      {copied ? <Check className="size-3.5 text-green-600" /> : <Copy className="size-3.5" />}
+    </button>
+  );
+}
+
+/* ── Payment breakdown ──────────────────────────────────────────────────────
+   What the order is worth, what has arrived, and what is still owed. Three
+   separate facts once an order can be part-paid, so they are shown rather than
+   inferred from the fulfilment status. */
+function PaymentBreakdownCard({ order }: { order: OrderData }) {
+  return (
+    <div className="rounded-xl border p-4 text-sm">
+      <h3 className="mb-3 flex items-center gap-1.5 font-semibold">
+        <Banknote className="size-4 text-rose-600" /> Payment
+      </h3>
+      <dl className="space-y-1.5">
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Method</dt>
+          <dd className="font-medium">
+            {order.paymentMethod === "PREPAID" ? "Paid online" : "Cash on delivery"}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Status</dt>
+          <dd className="font-medium">{PAYMENT_STATUS_LABELS[order.paymentStatus]}</dd>
+        </div>
+        <div className="flex justify-between border-t pt-1.5">
+          <dt className="text-muted-foreground">Order total</dt>
+          <dd className="font-medium">{inr(order.total)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Collected</dt>
+          <dd className="font-medium text-green-600">{inr(order.amountPaid)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Outstanding</dt>
+          <dd className={cn("font-semibold", order.amountDue > 0 ? "text-amber-600" : "text-muted-foreground")}>
+            {inr(order.amountDue)}
+          </dd>
+        </div>
+        {order.codCollectedAmount != null && (
+          <div className="flex justify-between border-t pt-1.5">
+            <dt className="text-muted-foreground">Courier collected</dt>
+            <dd className="text-right font-medium">
+              {inr(order.codCollectedAmount)}
+              {order.codCollectedAt && (
+                <span className="block text-xs font-normal text-muted-foreground">
+                  {new Date(order.codCollectedAt).toLocaleDateString("en-IN", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })}
+                </span>
+              )}
+            </dd>
+          </div>
+        )}
+      </dl>
+
+      {order.paymentMethod !== "PREPAID" && order.amountDue > 0 && order.status !== "CANCELLED" && (
+        <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+          The courier collects {inr(order.amountDue)} on delivery. Marking this order delivered
+          records that cash automatically.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Payment links ──────────────────────────────────────────────────────────
+   For recovering a failed checkout, taking payment on a phone order, or
+   collecting a COD balance before dispatch. */
+function PaymentLinksCard({ order }: { order: OrderData }) {
+  const { data: links = [], isLoading } = useOrderPaymentLinks(order.id);
+  const createLink = useCreatePaymentLink(order.id);
+  const cancelLink = useCancelPaymentLink(order.id);
+
+  const [amount, setAmount] = useState("");
+  const [expiryHours, setExpiryHours] = useState("72");
+  const [notifySms, setNotifySms] = useState(true);
+  const [notifyEmail, setNotifyEmail] = useState(true);
+
+  const canCollect = order.amountDue > 0 && order.status !== "CANCELLED";
+  const hasLiveLink = links.some((l) => l.status === "CREATED");
+
+  function handleCreate() {
+    const parsedAmount = amount.trim() === "" ? undefined : Number(amount);
+    if (parsedAmount != null && (!Number.isFinite(parsedAmount) || parsedAmount <= 0)) {
+      toast.error("Enter a valid amount, or leave it blank to collect the full balance.");
+      return;
+    }
+    if (parsedAmount != null && parsedAmount > order.amountDue) {
+      toast.error(`A link cannot charge more than the ${inr(order.amountDue)} outstanding.`);
+      return;
+    }
+
+    createLink.mutate(
+      {
+        amount: parsedAmount,
+        expiryHours: expiryHours.trim() === "" ? undefined : Number(expiryHours),
+        notifyBySms: notifySms,
+        notifyByEmail: notifyEmail,
+      },
+      {
+        onSuccess: () => {
+          setAmount("");
+          toast.success("Payment link created");
+        },
+        onError: (err) => toast.error(errorMessage(err, "Could not create the payment link")),
+      }
+    );
+  }
+
+  function handleCancel(link: PaymentLink) {
+    cancelLink.mutate(link.id, {
+      onSuccess: () => toast.success("Payment link cancelled"),
+      onError: (err) => toast.error(errorMessage(err, "Could not cancel the link")),
+    });
+  }
+
+  return (
+    <div className="rounded-xl border p-4 text-sm">
+      <h3 className="mb-1 flex items-center gap-1.5 font-semibold">
+        <Link2 className="size-4 text-rose-600" /> Payment links
+      </h3>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Razorpay hosts the page and can text or email it to the customer.
+      </p>
+
+      {isLoading ? (
+        <Skeleton className="h-16 w-full" />
+      ) : links.length === 0 ? (
+        <p className="mb-3 text-muted-foreground">No links generated yet.</p>
+      ) : (
+        <ul className="mb-4 space-y-2">
+          {links.map((link) => (
+            <li key={link.id} className="rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">{inr(link.amount)}</span>
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", LINK_STATUS_STYLES[link.status])}>
+                  {titleCase(link.status)}
+                </span>
+              </div>
+
+              <div className="mt-1.5 flex items-center gap-1">
+                <a
+                  href={link.shortUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-w-0 flex-1 items-center gap-1 truncate font-mono text-xs text-rose-600 hover:underline"
+                >
+                  <span className="truncate">{link.shortUrl}</span>
+                  <ExternalLink className="size-3 shrink-0" />
+                </a>
+                <CopyButton value={link.shortUrl} />
+              </div>
+
+              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {link.status === "PAID" && link.paidAt
+                    ? `Paid ${new Date(link.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                    : link.expiresAt
+                      ? `Expires ${new Date(link.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+                      : `Created ${new Date(link.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                </span>
+                {link.status === "CREATED" && (
+                  <button
+                    type="button"
+                    onClick={() => handleCancel(link)}
+                    disabled={cancelLink.isPending}
+                    className="font-medium text-red-600 hover:underline disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!canCollect ? (
+        <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+          {order.status === "CANCELLED"
+            ? "This order is cancelled — it cannot take a payment."
+            : "Nothing outstanding to collect on this order."}
+        </p>
+      ) : hasLiveLink ? (
+        <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+          A link is already active. Resend it, or cancel it before creating another — two live
+          links is how a customer ends up paying twice.
+        </p>
+      ) : (
+        <div className="space-y-3 border-t pt-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="link-amount">Amount (₹)</Label>
+            <Input
+              id="link-amount"
+              type="number"
+              min={1}
+              max={order.amountDue}
+              placeholder={String(order.amountDue)}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Blank collects the full {inr(order.amountDue)}.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="link-expiry">Valid for (hours)</Label>
+            <Input
+              id="link-expiry"
+              type="number"
+              min={1}
+              max={720}
+              value={expiryHours}
+              onChange={(e) => setExpiryHours(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={notifySms}
+                onChange={(e) => setNotifySms(e.target.checked)}
+                className="size-4 accent-rose-600"
+              />
+              Text the customer
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={notifyEmail}
+                onChange={(e) => setNotifyEmail(e.target.checked)}
+                className="size-4 accent-rose-600"
+              />
+              Email the customer
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Email is skipped when no address is on file, common for guest orders.
+            </p>
+          </div>
+
+          <Button onClick={handleCreate} disabled={createLink.isPending} className="w-full gap-1.5">
+            {createLink.isPending && <Loader2 className="size-4 animate-spin" />}
+            Create payment link
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── Edit Order Modal ───────────────────────────────────────────────────── */
 function EditOrderModal({
@@ -372,6 +690,10 @@ export default function AdminOrderDetailPage({
               </a>
             </div>
           </div>
+
+          <PaymentBreakdownCard order={order} />
+
+          <PaymentLinksCard order={order} />
 
           {/* Payment Info */}
           {(order.razorpayOrderId || order.razorpayPaymentId) && (
