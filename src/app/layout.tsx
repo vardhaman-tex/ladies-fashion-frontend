@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
@@ -160,6 +161,10 @@ export default async function RootLayout({
             </CartProvider>
           </AuthProvider>
         </QueryProvider>
+        {/* Page views and Web Vitals. Renders nothing and injects its script
+            only when deployed to Vercel, so local and self-hosted runs are
+            unaffected. */}
+        <Analytics />
       </body>
     </html>
   );
