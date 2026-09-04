@@ -19,8 +19,8 @@ import { useGuestCartStore } from "@/stores/cartStore";
 import { AddressFormDialog } from "@/components/address/AddressFormDialog";
 import { AddressCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { CheckoutSection } from "@/components/checkout/CheckoutSection";
+import { GuestAddressFields, guestFieldId } from "@/components/checkout/GuestAddressFields";
 import { cn } from "@/lib/utils";
 import type { AddressData } from "@/types/address";
 import {
@@ -31,7 +31,32 @@ import {
 } from "@/services/paymentService";
 import { cancelOrder } from "@/services/orderService";
 import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
+import {
+  firstErrorField,
+  formatGuestAddress,
+  isGuestAddressComplete,
+  normalisePhone,
+  validateGuestAddress,
+  type GuestAddressErrors,
+  type GuestAddressField,
+  type GuestAddressForm,
+} from "@/lib/checkoutAddress";
 import type { PaymentMethod } from "@/types/payment";
+
+/**
+ * Sends the customer to the thing that is wrong with their order.
+ *
+ * Deferred by a tick because the handler that calls this may have just expanded
+ * a collapsed section, and the field it wants to focus is not in the DOM until
+ * React has committed that render.
+ */
+function focusAfterRender(elementId: string) {
+  window.setTimeout(() => {
+    const element = document.getElementById(elementId);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (element instanceof HTMLElement) element.focus({ preventScroll: true });
+  }, 0);
+}
 
 function formatAddress(a: AddressData) {
   return [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode]
@@ -150,6 +175,15 @@ export default function CheckoutPage() {
   const [scriptState, setScriptState] = useState<null | "ready" | "error">(null);
   const [policyAgreed, setPolicyAgreed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PREPAID");
+  // Whether the address step is expanded. null means "not decided yet", which
+  // each path resolves for itself: a guest starts open on an empty form, a
+  // returning customer starts collapsed on the address they already saved.
+  const [addressOpen, setAddressOpen] = useState<boolean | null>(null);
+  // Errors stay hidden until the customer has actually tried to pay. Turning a
+  // form red before they have typed anything is its own kind of friction.
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<GuestAddressErrors>({});
+  const [policyError, setPolicyError] = useState(false);
   const { data: siteSettings } = useSiteSettings();
   const codAdvance = siteSettings?.codAdvanceAmount ?? 0;
 
@@ -161,7 +195,7 @@ export default function CheckoutPage() {
   const activeAddress = addresses.find((a) => a.id === activeAddressId) ?? null;
 
   // Guest form state — only used when !isAuthenticated
-  const [guestForm, setGuestForm] = useState({
+  const [guestForm, setGuestForm] = useState<GuestAddressForm>({
     fullName: "",
     phone: "",
     email: "",
@@ -172,8 +206,12 @@ export default function CheckoutPage() {
     pincode: "",
   });
 
-  function setField(field: keyof typeof guestForm, value: string) {
-    setGuestForm((prev) => ({ ...prev, [field]: value }));
+  function setField(field: GuestAddressField, value: string) {
+    const next = { ...guestForm, [field]: value };
+    setGuestForm(next);
+    // After a failed attempt, errors clear as the customer fixes them rather
+    // than waiting for them to fail again.
+    if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
   }
 
   // ─── Auth loading ───────────────────────────────────────────────────────────
@@ -211,34 +249,57 @@ export default function CheckoutPage() {
     const guestPayableNow = amountPayableNow(guestMethod, guestTotal, codAdvance);
     const guestDueOnDelivery = guestTotal - guestPayableNow;
 
-    const guestAddressValid =
-      guestForm.fullName.trim() !== "" &&
-      guestForm.phone.trim() !== "" &&
-      guestForm.addressLine1.trim() !== "" &&
-      guestForm.city.trim() !== "" &&
-      guestForm.state.trim() !== "" &&
-      guestForm.pincode.trim() !== "";
+    const guestAddressOpen = addressOpen ?? true;
+    // No summary until the address is actually usable, which is also what stops
+    // the section folding away into a half-answer.
+    const guestSummary = isGuestAddressComplete(guestForm) ? (
+      <>
+        <p className="font-medium text-foreground">{guestForm.fullName.trim()}</p>
+        <p>{formatGuestAddress(guestForm)}</p>
+        <p>
+          {normalisePhone(guestForm.phone)}
+          {guestForm.email.trim() ? ` \u00b7 ${guestForm.email.trim()}` : ""}
+        </p>
+      </>
+    ) : undefined;
+
+    /** Validates, and sends the customer to the first problem. True when clean. */
+    function checkGuestAddress(): boolean {
+      const errors = validateGuestAddress(guestForm);
+      setHasSubmitted(true);
+      setFieldErrors(errors);
+      const firstBad = firstErrorField(errors);
+      if (!firstBad) return true;
+      setAddressOpen(true);
+      focusAfterRender(guestFieldId(firstBad));
+      return false;
+    }
 
     async function handleGuestPlaceOrder() {
-      const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
-      if (!fullName.trim() || !phone.trim() || !addressLine1.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
-        toast.error("Please fill in all required fields");
+      if (!checkGuestAddress()) {
+        toast.error("Please complete your delivery details.");
         return;
       }
       if (!policyAgreed) {
-        toast.error("Please agree to the Cancellation, Return, Refund & Exchange Policy");
+        setPolicyError(true);
+        focusAfterRender("checkout-policy");
         return;
       }
+      setPolicyError(false);
       if (!window.Razorpay) {
-        toast.error("Payment gateway not ready. Please refresh the page.");
+        toast.error("Payment is still loading \u2014 please try again in a moment.");
         return;
       }
+
+      const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
 
       setIsProcessing(true);
       try {
         const orderData = await createGuestRazorpayOrder({
           fullName: fullName.trim(),
-          phone: phone.trim(),
+          // Stored as bare digits so "+91 98765 43210" and "9876543210" are not
+          // two different customers.
+          phone: normalisePhone(phone),
           // email is optional — only include it when the user provided one
           ...(email.trim() && { email: email.trim() }),
           addressLine1: addressLine1.trim(),
@@ -329,109 +390,36 @@ export default function CheckoutPage() {
 
           <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
             {/* Left: Guest delivery details form */}
-            <div className="order-2 space-y-6 lg:order-1">
-              <section>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <MapPin className="size-5 text-rose-600" />
-                  Delivery Details
-                </h2>
-
-                <div className="space-y-4 rounded-xl border p-5">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="g-fullName">Full Name *</Label>
-                      <Input
-                        id="g-fullName"
-                        placeholder="Jane Doe"
-                        value={guestForm.fullName}
-                        onChange={(e) => setField("fullName", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="g-phone">Phone *</Label>
-                      <Input
-                        id="g-phone"
-                        type="tel"
-                        placeholder="9876543210"
-                        value={guestForm.phone}
-                        onChange={(e) => setField("phone", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="g-email">
-                      Email{" "}
-                      <span className="font-normal text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Input
-                      id="g-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={guestForm.email}
-                      onChange={(e) => setField("email", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="g-addr1">Address Line 1 *</Label>
-                    <Input
-                      id="g-addr1"
-                      placeholder="House / Flat no., Street"
-                      value={guestForm.addressLine1}
-                      onChange={(e) => setField("addressLine1", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="g-addr2">
-                      Address Line 2{" "}
-                      <span className="text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Input
-                      id="g-addr2"
-                      placeholder="Landmark, Area"
-                      value={guestForm.addressLine2}
-                      onChange={(e) => setField("addressLine2", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="g-city">City *</Label>
-                      <Input
-                        id="g-city"
-                        placeholder="Mumbai"
-                        value={guestForm.city}
-                        onChange={(e) => setField("city", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="g-state">State *</Label>
-                      <Input
-                        id="g-state"
-                        placeholder="Maharashtra"
-                        value={guestForm.state}
-                        onChange={(e) => setField("state", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="g-pincode">Pincode *</Label>
-                      <Input
-                        id="g-pincode"
-                        placeholder="400001"
-                        maxLength={6}
-                        value={guestForm.pincode}
-                        onChange={(e) => setField("pincode", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </section>
+            <div className="space-y-6">
+              <CheckoutSection
+                title="Delivery Details"
+                icon={<MapPin className="size-5" />}
+                open={guestAddressOpen}
+                onOpenChange={setAddressOpen}
+                summary={guestSummary}
+              >
+                <GuestAddressFields
+                  form={guestForm}
+                  errors={fieldErrors}
+                  onChange={setField}
+                  disabled={isProcessing}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4 w-full"
+                  disabled={isProcessing}
+                  onClick={() => {
+                    if (checkGuestAddress()) setAddressOpen(false);
+                  }}
+                >
+                  Continue
+                </Button>
+              </CheckoutSection>
             </div>
 
             {/* Right: Order Summary */}
-            <div className="order-1 space-y-4 lg:order-2">
+            <div className="space-y-4">
               <div className="rounded-xl border p-5">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <Package className="size-5 text-rose-600" />
@@ -524,31 +512,42 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              <label className="flex items-start gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={policyAgreed}
-                  onChange={(e) => setPolicyAgreed(e.target.checked)}
-                  className="mt-0.5 size-4 shrink-0 accent-rose-600"
-                />
-                <span>
-                  I have read and agree to the{" "}
-                  <Link
-                    href="/policies/return-policy"
-                    target="_blank"
-                    className="font-medium text-rose-600 underline hover:text-rose-700"
-                  >
-                    Cancellation, Return, Refund &amp; Exchange Policy
-                  </Link>
-                  .
-                </span>
-              </label>
+              <div>
+                <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <input
+                    id="checkout-policy"
+                    type="checkbox"
+                    checked={policyAgreed}
+                    onChange={(e) => {
+                      setPolicyAgreed(e.target.checked);
+                      if (e.target.checked) setPolicyError(false);
+                    }}
+                    className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                  />
+                  <span>
+                    I have read and agree to the{" "}
+                    <Link
+                      href="/policies/return-policy"
+                      target="_blank"
+                      className="font-medium text-rose-600 underline hover:text-rose-700"
+                    >
+                      Cancellation, Return, Refund &amp; Exchange Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+                {policyError && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                    Please accept the policy to place your order.
+                  </p>
+                )}
+              </div>
 
               <Button
                 className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
-                disabled={isProcessing || scriptState === "error" || !guestAddressValid || !policyAgreed}
+                disabled={isProcessing || scriptState === "error"}
               >
                 {isProcessing ? (
                   <>
@@ -605,21 +604,37 @@ export default function CheckoutPage() {
   const payableNow = amountPayableNow(activeMethod, cart.total, codAdvance);
   const dueOnDelivery = cart.total - payableNow;
 
+  // A returning customer has already answered this step, so it opens collapsed
+  // on their default address and gets out of the way of the pay button.
+  const authAddressOpen = addressOpen ?? !defaultAddress;
+  const authSummary = activeAddress ? (
+    <>
+      <p className="font-medium text-foreground">{activeAddress.fullName}</p>
+      <p>{formatAddress(activeAddress)}</p>
+      <p>{activeAddress.phone}</p>
+    </>
+  ) : undefined;
+
   async function handlePlaceOrder() {
     if (!activeAddressId) {
-      toast.error("Please select a delivery address");
+      setAddressOpen(true);
+      focusAfterRender("checkout-address");
+      toast.error("Please select a delivery address.");
       return;
     }
     if (stockIssues.length > 0) {
+      focusAfterRender("checkout-stock-issues");
       toast.error("Some items exceed available stock. Please update your cart.");
       return;
     }
     if (!policyAgreed) {
-      toast.error("Please agree to the Cancellation, Return, Refund & Exchange Policy");
+      setPolicyError(true);
+      focusAfterRender("checkout-policy");
       return;
     }
+    setPolicyError(false);
     if (!window.Razorpay) {
-      toast.error("Payment gateway not ready. Please refresh the page.");
+      toast.error("Payment is still loading \u2014 please try again in a moment.");
       return;
     }
 
@@ -699,13 +714,16 @@ export default function CheckoutPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
           {/* Left: Delivery Address */}
-          <div className="order-2 space-y-6 lg:order-1">
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-lg font-semibold">
-                  <MapPin className="size-5 text-rose-600" />
-                  Delivery Address
-                </h2>
+          <div className="space-y-6">
+            <CheckoutSection
+              id="checkout-address"
+              title="Delivery Address"
+              icon={<MapPin className="size-5" />}
+              open={authAddressOpen}
+              onOpenChange={setAddressOpen}
+              summary={authSummary}
+              editLabel="Change"
+              headerAction={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -714,8 +732,8 @@ export default function CheckoutPage() {
                 >
                   <Plus className="size-3.5" /> Add New
                 </Button>
-              </div>
-
+              }
+            >
               {addressesLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
@@ -736,7 +754,12 @@ export default function CheckoutPage() {
                     return (
                       <button
                         key={address.id}
-                        onClick={() => setSelectedAddressId(address.id)}
+                        onClick={() => {
+                          setSelectedAddressId(address.id);
+                          // Picking an address answers the step, so fold it away
+                          // rather than making them scroll past the list again.
+                          setAddressOpen(false);
+                        }}
                         className={cn(
                           "w-full rounded-xl border p-4 text-left transition-colors",
                           isSelected
@@ -773,11 +796,11 @@ export default function CheckoutPage() {
                   })}
                 </div>
               )}
-            </section>
+            </CheckoutSection>
           </div>
 
           {/* Right: Order Summary */}
-          <div className="order-1 space-y-4 lg:order-2">
+          <div className="space-y-4">
             <div className="rounded-xl border p-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <Package className="size-5 text-rose-600" />
@@ -867,7 +890,10 @@ export default function CheckoutPage() {
             )}
 
             {stockIssues.length > 0 && (
-              <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+              <div
+                id="checkout-stock-issues"
+                className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400"
+              >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <div>
                   <p className="font-semibold">Insufficient stock:</p>
@@ -897,31 +923,42 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <label className="flex items-start gap-2 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={policyAgreed}
-                onChange={(e) => setPolicyAgreed(e.target.checked)}
-                className="mt-0.5 size-4 shrink-0 accent-rose-600"
-              />
-              <span>
-                I have read and agree to the{" "}
-                <Link
-                  href="/policies/return-policy"
-                  target="_blank"
-                  className="font-medium text-rose-600 underline hover:text-rose-700"
-                >
-                  Cancellation, Return, Refund &amp; Exchange Policy
-                </Link>
-                .
-              </span>
-            </label>
+            <div>
+              <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                <input
+                  id="checkout-policy"
+                  type="checkbox"
+                  checked={policyAgreed}
+                  onChange={(e) => {
+                    setPolicyAgreed(e.target.checked);
+                    if (e.target.checked) setPolicyError(false);
+                  }}
+                  className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                />
+                <span>
+                  I have read and agree to the{" "}
+                  <Link
+                    href="/policies/return-policy"
+                    target="_blank"
+                    className="font-medium text-rose-600 underline hover:text-rose-700"
+                  >
+                    Cancellation, Return, Refund &amp; Exchange Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+              {policyError && (
+                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  Please accept the policy to place your order.
+                </p>
+              )}
+            </div>
 
             <Button
               className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
               size="lg"
               onClick={handlePlaceOrder}
-              disabled={isProcessing || !activeAddressId || scriptState === "error" || stockIssues.length > 0 || !policyAgreed}
+              disabled={isProcessing || scriptState === "error"}
             >
               {isProcessing ? (
                 <>
