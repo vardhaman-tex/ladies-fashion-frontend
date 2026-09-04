@@ -83,7 +83,12 @@ const FAQS: FaqEntry[] = [
   {
     question: "What payment methods are accepted?",
     answer:
-      "Checkout is handled through an encrypted payment gateway that accepts credit cards, debit cards, UPI and net banking. Card and bank details are entered on the payment provider's secure form and are never stored by the store itself.",
+      "Checkout is handled through an encrypted payment gateway that accepts credit cards, debit cards, UPI and net banking. Cash on Delivery is also available on eligible orders. Card and bank details are entered on the payment provider's secure form and are never stored by the store itself.",
+  },
+  {
+    question: "Does Vardhman Textile offer Cash on Delivery (COD)?",
+    answer:
+      "Yes. Cash on Delivery is available on eligible orders across supported locations. A ₹100 advance payment is required to confirm a COD order, and the remaining amount is payable at the time of delivery. The ₹100 advance is non-refundable if the customer refuses, fails to collect, or returns the order for reasons attributable to the customer.",
   },
   {
     question: "Can I order without creating an account?",
