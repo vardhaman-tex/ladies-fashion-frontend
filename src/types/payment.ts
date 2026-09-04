@@ -1,5 +1,14 @@
+/**
+ * COD_FULL exists on the server's enum but is refused at checkout — nothing
+ * collects money for it and nothing deducts stock without a first payment — so
+ * it is deliberately not in this union.
+ */
+export type PaymentMethod = "PREPAID" | "COD_PARTIAL";
+
 export interface CreatePaymentOrderRequest {
   addressId: string;
+  /** Omitted means PREPAID. */
+  paymentMethod?: PaymentMethod;
 }
 
 export interface GuestOrderItem {
@@ -19,6 +28,8 @@ export interface GuestCreatePaymentOrderRequest {
   state: string;
   pincode: string;
   items: GuestOrderItem[];
+  /** Omitted means PREPAID. */
+  paymentMethod?: PaymentMethod;
 }
 
 export type GuestCreatePaymentOrderResponse = CreatePaymentOrderResponse;
@@ -32,13 +43,20 @@ export interface GuestPaymentVerifyRequest {
 
 export interface CreatePaymentOrderResponse {
   internalOrderId: string;
+  orderNumber: string;
   razorpayOrderId: string;
+  /** What Razorpay charges now — the full total when prepaid, the advance on COD. */
   amountPaise: number;
   currency: string;
   keyId: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  paymentMethod: PaymentMethod;
+  /** The order's full value, whatever is being charged right now. */
+  orderTotal: number;
+  /** What the courier will collect. Zero when prepaid. */
+  amountDueOnDelivery: number;
 }
 
 export interface PaymentVerifyRequest {
