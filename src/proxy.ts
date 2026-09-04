@@ -4,13 +4,19 @@ export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
   const razorpay = "https://*.razorpay.com";
+  // Vercel Analytics is served same-origin in production (/_vercel/insights/…),
+  // so 'self' already covers both its script and its beacons there. In
+  // development it loads the debug build from va.vercel-scripts.com instead,
+  // which has to be named explicitly or CSP blocks it and no events are
+  // recorded. Production CSP is deliberately left unchanged.
+  const vercelAnalytics = isDev ? " https://va.vercel-scripts.com" : "";
 
   const csp = [
     "default-src 'self'",
     // 'nonce-…' lets Next.js stamp its own inline RSC-payload scripts.
     // The razorpay domain is kept for the <Script> component on checkout.
     // 'unsafe-eval' is required in dev — React uses eval for better error stacks.
-    `script-src 'self' 'nonce-${nonce}' ${razorpay}${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' ${razorpay}${vercelAnalytics}${isDev ? " 'unsafe-eval'" : ""}`,
     // 'unsafe-inline' for styles is fine — CSS injection can't steal cookies.
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: https://res.cloudinary.com https://picsum.photos`,
