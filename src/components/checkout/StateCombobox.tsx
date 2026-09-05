@@ -32,6 +32,7 @@ export function StateCombobox({
   disabled,
   invalid,
   describedBy,
+  className,
   placeholder = "Start typing, e.g. Maha",
 }: {
   id: string;
@@ -40,6 +41,12 @@ export function StateCombobox({
   disabled?: boolean;
   invalid?: boolean;
   describedBy?: string;
+  /**
+   * Passed in rather than imported: GuestAddressFields owns the form's
+   * placeholder tone and already imports this component, so reaching back for
+   * it would close an import cycle.
+   */
+  className?: string;
   placeholder?: string;
 }) {
   const listId = useId();
@@ -94,12 +101,12 @@ export function StateCombobox({
   }
 
   /**
-   * Focus handling sits on the wrapper rather than the input.
+   * Focus handling lives on the wrapper, not the input.
    *
-   * React's onFocus/onBlur are focusin/focusout underneath, so the container
-   * sees them whichever element inside gains or loses focus — which is what
-   * makes the relatedTarget check below possible, and what keeps this working
-   * without depending on Base UI's Input forwarding handlers of its own.
+   * The Input is Base UI's, which manages its own focus and does not pass an
+   * onFocus/onBlur through to us — so handlers placed on it silently never
+   * ran. React's onFocus/onBlur are focusin/focusout underneath, which do
+   * bubble, so the container sees them either way.
    */
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
     // Moving between the input and its own list is not leaving the field.
@@ -133,7 +140,7 @@ export function StateCombobox({
         disabled={disabled}
         placeholder={placeholder}
         value={value}
-        className="pr-9"
+        className={cn("pr-9", className)}
         onChange={(event) => {
           onChange(event.target.value);
           setOpen(true);

@@ -423,9 +423,13 @@ export default function CheckoutPage() {
                   onChange={setField}
                   disabled={isProcessing}
                 />
+                {/* Solid, not outlined. As an outline button it read as part
+                    of the form's chrome and people did not see it as the thing
+                    to press. Deliberately not rose: that is reserved for Pay,
+                    and two identical-looking primary buttons on one screen is
+                    its own kind of confusing. */}
                 <Button
                   type="button"
-                  variant="outline"
                   className="mt-4 w-full"
                   disabled={isProcessing}
                   onClick={() => {

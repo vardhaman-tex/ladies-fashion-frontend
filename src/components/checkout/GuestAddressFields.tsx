@@ -12,6 +12,14 @@ import type {
 } from "@/lib/checkoutAddress";
 
 /**
+ * Placeholders sit a shade lighter than muted text.
+ *
+ * They are hints, not content — every field here has a visible label — and at
+ * full muted weight an example value reads as something already filled in.
+ */
+export const PLACEHOLDER_TONE = "placeholder:text-muted-foreground/70";
+
+/**
  * Field ids are stable and predictable (`g-pincode`) because the pay button
  * focuses the first failing one by id after a failed submit.
  */
@@ -98,6 +106,7 @@ function Field({
         autoComplete={autoComplete}
         maxLength={maxLength}
         placeholder={placeholder}
+        className={PLACEHOLDER_TONE}
         value={form[field]}
         disabled={disabled}
         required={!optional}
@@ -129,7 +138,7 @@ export function GuestAddressFields({
           {...shared}
           field="fullName"
           label="Full Name"
-          placeholder="Jane Doe"
+          placeholder="Full Name"
           autoComplete="name"
         />
         <Field
@@ -138,7 +147,7 @@ export function GuestAddressFields({
           label="Phone"
           type="tel"
           inputMode="tel"
-          placeholder="9876543210"
+          placeholder="Phone"
           autoComplete="tel"
         />
       </div>
@@ -176,7 +185,7 @@ export function GuestAddressFields({
           {...shared}
           field="city"
           label="City"
-          placeholder="Mumbai"
+          placeholder="City"
           autoComplete="address-level2"
         />
 
@@ -186,6 +195,7 @@ export function GuestAddressFields({
         <FieldShell field="state" label="State" error={errors.state}>
           <StateCombobox
             id={guestFieldId("state")}
+            className={PLACEHOLDER_TONE}
             value={form.state}
             disabled={disabled}
             invalid={Boolean(errors.state)}
@@ -199,7 +209,7 @@ export function GuestAddressFields({
           field="pincode"
           label="Pincode"
           inputMode="numeric"
-          placeholder="400001"
+          placeholder="Pincode"
           maxLength={6}
           autoComplete="postal-code"
         />
