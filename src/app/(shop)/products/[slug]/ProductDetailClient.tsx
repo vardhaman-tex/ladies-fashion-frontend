@@ -22,6 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
+import { ProductTrustBox } from "@/components/product/ProductTrustBox";
+import { trackAddToCart, trackViewContent } from "@/lib/pixel";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import type { ProductDetail } from "@/types/product";
@@ -311,6 +313,18 @@ export default function ProductDetailClient({
     }
   }, [product]);
 
+  // Read out as primitives so the effect keys on the values rather than the
+  // object: a refetch that returns an identical product must not report a
+  // second view of the same page.
+  const viewedId = product?.id;
+  const viewedName = product?.name;
+  const viewedPrice = product?.finalPrice;
+
+  useEffect(() => {
+    if (!viewedId || !viewedName || viewedPrice == null) return;
+    trackViewContent({ id: viewedId, name: viewedName, value: viewedPrice });
+  }, [viewedId, viewedName, viewedPrice]);
+
   if (isLoading) return <PDPSkeleton />;
 
   // Distinguish "the request actually failed/timed out" from "the product
@@ -364,6 +378,11 @@ export default function ProductDetailClient({
       toast.error("Please select a size before adding to cart");
       return;
     }
+    trackAddToCart({
+      id: product!.id,
+      name: product!.name,
+      value: product!.finalPrice,
+    });
     addToCart({
       productId: product!.id,
       productName: product!.name,
@@ -392,6 +411,14 @@ export default function ProductDetailClient({
       toast.error("Please select a size before buying");
       return;
     }
+    // Buy Now still adds to the cart, so it is still an AddToCart as far as
+    // the funnel is concerned — leaving it out would make the express path
+    // look like it converts from nowhere.
+    trackAddToCart({
+      id: product!.id,
+      name: product!.name,
+      value: product!.finalPrice,
+    });
     // The button itself swaps to "Go to Cart" (-> router.push("/cart")) once
     // cartItem exists, so this function is only ever invoked pre-add-to-cart.
     addToCart(
@@ -630,6 +657,12 @@ export default function ProductDetailClient({
                 discountAmount={product.discountAmount}
               />
             </div>
+
+            {/* Directly under the buy buttons: this is where someone decides
+                whether to trust an unfamiliar brand with ₹1,399, and until now
+                the answer — cash on delivery — was only visible at checkout,
+                which under 1% of ad visitors ever reached. */}
+            <ProductTrustBox productName={product.name} />
 
             {/* Tabs */}
             <Tabs defaultValue="description">
