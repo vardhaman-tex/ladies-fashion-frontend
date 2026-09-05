@@ -20,6 +20,7 @@ import { AddressFormDialog } from "@/components/address/AddressFormDialog";
 import { AddressCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { CheckoutSection } from "@/components/checkout/CheckoutSection";
+import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
 import { GuestAddressFields, guestFieldId } from "@/components/checkout/GuestAddressFields";
 import { cn } from "@/lib/utils";
 import type { AddressData } from "@/types/address";
@@ -32,6 +33,7 @@ import {
 import { cancelOrder } from "@/services/orderService";
 import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
 import {
+  canonicalState,
   firstErrorField,
   formatGuestAddress,
   isGuestAddressComplete,
@@ -148,12 +150,6 @@ function PaymentMethodChoice({
                   confirm and process the COD order. The remaining
                   ₹{dueOnDelivery.toLocaleString("en-IN")} is payable at the time of delivery.
                 </span>
-                {/* A material term, shown before the customer commits rather
-                    than only in the policy they tick past. */}
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  The advance is non-refundable if the order is refused, not collected, or returned for
-                  reasons attributable to the customer.
-                </span>
               </>
             ) : (
               <span className="block text-xs text-muted-foreground">{availability.reason}</span>
@@ -249,19 +245,33 @@ export default function CheckoutPage() {
     const guestPayableNow = amountPayableNow(guestMethod, guestTotal, codAdvance);
     const guestDueOnDelivery = guestTotal - guestPayableNow;
 
-    const guestAddressOpen = addressOpen ?? true;
+    // Starts closed on the dashed placeholder, so the first screenful is the
+    // order rather than eight empty fields. One extra tap before a guest can
+    // type — worth watching in the funnel once events are wired.
+    const guestAddressOpen = addressOpen ?? false;
     // No summary until the address is actually usable, which is also what stops
     // the section folding away into a half-answer.
     const guestSummary = isGuestAddressComplete(guestForm) ? (
       <>
         <p className="font-medium text-foreground">{guestForm.fullName.trim()}</p>
-        <p>{formatGuestAddress(guestForm)}</p>
         <p>
           {normalisePhone(guestForm.phone)}
-          {guestForm.email.trim() ? ` \u00b7 ${guestForm.email.trim()}` : ""}
+          {guestForm.email.trim() ? ` · ${guestForm.email.trim()}` : ""}
         </p>
+        <p>{formatGuestAddress(guestForm)}</p>
       </>
     ) : undefined;
+
+    /**
+     * Why the order cannot be placed yet, in the order the customer would hit
+     * the problems. Shown under the pay button so the answer is readable
+     * without clicking; the click itself still jumps to the offending field.
+     */
+    const guestBlockReason = !isGuestAddressComplete(guestForm)
+      ? "Add your delivery address above to continue."
+      : !policyAgreed
+        ? "Tick the policy checkbox above to continue."
+        : null;
 
     /** Validates, and sends the customer to the first problem. True when clean. */
     function checkGuestAddress(): boolean {
@@ -291,7 +301,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
+      // `state` is deliberately absent: it goes through canonicalState below
+      // rather than being sent as typed.
+      const { fullName, phone, email, addressLine1, city, pincode } = guestForm;
 
       setIsProcessing(true);
       try {
@@ -305,7 +317,9 @@ export default function CheckoutPage() {
           addressLine1: addressLine1.trim(),
           addressLine2: guestForm.addressLine2.trim() || undefined,
           city: city.trim(),
-          state: state.trim(),
+          // Canonical spelling, not whatever shorthand was typed — the courier
+          // manifest is downstream of this.
+          state: canonicalState(guestForm),
           pincode: pincode.trim(),
           items: guestItems.map((item) => ({
             productId: item.productId,
@@ -375,7 +389,11 @@ export default function CheckoutPage() {
         />
 
         <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
-          <h1 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl">Checkout</h1>
+          <h1 className="mb-6 text-xl font-bold sm:text-2xl">Checkout</h1>
+
+          <CheckoutSteps
+            current={isProcessing ? 3 : isGuestAddressComplete(guestForm) ? 2 : 1}
+          />
 
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
             <User className="size-4 shrink-0" />
@@ -397,6 +415,7 @@ export default function CheckoutPage() {
                 open={guestAddressOpen}
                 onOpenChange={setAddressOpen}
                 summary={guestSummary}
+                placeholder="Add delivery address"
               >
                 <GuestAddressFields
                   form={guestForm}
@@ -404,16 +423,20 @@ export default function CheckoutPage() {
                   onChange={setField}
                   disabled={isProcessing}
                 />
+                {/* Solid, not outlined. As an outline button it read as part
+                    of the form's chrome and people did not see it as the thing
+                    to press. Deliberately not rose: that is reserved for Pay,
+                    and two identical-looking primary buttons on one screen is
+                    its own kind of confusing. */}
                 <Button
                   type="button"
-                  variant="outline"
                   className="mt-4 w-full"
                   disabled={isProcessing}
                   onClick={() => {
                     if (checkGuestAddress()) setAddressOpen(false);
                   }}
                 >
-                  Continue
+                  Confirm address
                 </Button>
               </CheckoutSection>
             </div>
@@ -569,6 +592,12 @@ export default function CheckoutPage() {
                 )}
               </Button>
 
+              {guestBlockReason && (
+                <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+                  {guestBlockReason}
+                </p>
+              )}
+
               <p className="text-center text-xs text-muted-foreground">
                 Secured by Razorpay · 256-bit SSL encryption
               </p>
@@ -607,11 +636,21 @@ export default function CheckoutPage() {
   // A returning customer has already answered this step, so it opens collapsed
   // on their default address and gets out of the way of the pay button.
   const authAddressOpen = addressOpen ?? !defaultAddress;
+  // Same three reasons the click handler checks, in the same order, so the
+  // line under the button and the jump-to-problem never disagree.
+  const authBlockReason = !activeAddressId
+    ? "Add your delivery address above to continue."
+    : stockIssues.length > 0
+      ? "Update the quantities in your cart to continue."
+      : !policyAgreed
+        ? "Tick the policy checkbox above to continue."
+        : null;
+
   const authSummary = activeAddress ? (
     <>
       <p className="font-medium text-foreground">{activeAddress.fullName}</p>
-      <p>{formatAddress(activeAddress)}</p>
       <p>{activeAddress.phone}</p>
+      <p>{formatAddress(activeAddress)}</p>
     </>
   ) : undefined;
 
@@ -710,7 +749,9 @@ export default function CheckoutPage() {
       />
 
       <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
-        <h1 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl">Checkout</h1>
+        <h1 className="mb-6 text-xl font-bold sm:text-2xl">Checkout</h1>
+
+        <CheckoutSteps current={isProcessing ? 3 : activeAddress ? 2 : 1} />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
           {/* Left: Delivery Address */}
@@ -722,6 +763,7 @@ export default function CheckoutPage() {
               open={authAddressOpen}
               onOpenChange={setAddressOpen}
               summary={authSummary}
+              placeholder="Add delivery address"
               editLabel="Change"
               headerAction={
                 <Button
@@ -882,13 +924,6 @@ export default function CheckoutPage() {
               disabled={isProcessing}
             />
 
-            {!activeAddress && addresses.length > 0 && (
-              <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
-                <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                <span>Please select a delivery address.</span>
-              </div>
-            )}
-
             {stockIssues.length > 0 && (
               <div
                 id="checkout-stock-issues"
@@ -979,6 +1014,12 @@ export default function CheckoutPage() {
                 </>
               )}
             </Button>
+
+            {authBlockReason && (
+              <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+                {authBlockReason}
+              </p>
+            )}
 
             <p className="text-center text-xs text-muted-foreground">
               Secured by Razorpay · 256-bit SSL encryption

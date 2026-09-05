@@ -7,6 +7,8 @@
  * created, and that check is the one that decides.
  */
 
+import { isKnownState, matchState } from "@/lib/indianStates";
+
 export interface GuestAddressForm {
   fullName: string;
   phone: string;
@@ -89,8 +91,13 @@ export function validateGuestAddress(form: GuestAddressForm): GuestAddressErrors
     errors.city = "Enter your city.";
   }
 
+  // The one field with a fixed set of right answers. Accepting "Maharastra"
+  // here means a parcel routed to the wrong sorting hub and a delivery that
+  // fails days later, so an unrecognised state is refused at the form.
   if (!form.state.trim()) {
-    errors.state = "Enter your state.";
+    errors.state = "Choose your state.";
+  } else if (!isKnownState(form.state)) {
+    errors.state = "Choose your state from the list.";
   }
 
   const pincode = form.pincode.trim();
@@ -112,9 +119,20 @@ export function firstErrorField(errors: GuestAddressErrors): GuestAddressField |
   return GUEST_ADDRESS_FIELD_ORDER.find((field) => errors[field]) ?? null;
 }
 
+/**
+ * The state as it should leave the browser.
+ *
+ * "MH", "orissa" and "jammu & kashmir" all describe one place; the courier's
+ * manifest should not have to. Falls back to what was typed, since validation
+ * has already refused anything unrecognised.
+ */
+export function canonicalState(form: GuestAddressForm): string {
+  return matchState(form.state) ?? form.state.trim();
+}
+
 /** One-line rendering of the address, for the collapsed section header. */
 export function formatGuestAddress(form: GuestAddressForm): string {
-  return [form.addressLine1, form.addressLine2, form.city, form.state, form.pincode]
+  return [form.addressLine1, form.addressLine2, form.city, canonicalState(form), form.pincode]
     .map((part) => part.trim())
     .filter(Boolean)
     .join(", ");
