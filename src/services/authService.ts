@@ -1,6 +1,15 @@
 import { api, type AuthRequestOptions } from "@/lib/api";
 import type { ApiResponse } from "@/types/api";
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from "@/types/auth";
+import type {
+  AuthResponse,
+  CompleteSignupRequest,
+  LoginRequest,
+  OtpRequestedResponse,
+  OtpVerifiedResponse,
+  RegisterRequest,
+  User,
+  VerifyOtpRequest,
+} from "@/types/auth";
 
 /**
  * Registers a new user account.
@@ -15,6 +24,42 @@ export async function register(payload: RegisterRequest): Promise<AuthResponse> 
  */
 export async function login(payload: LoginRequest): Promise<AuthResponse> {
   const response = await api.post<ApiResponse<AuthResponse>>("/api/v1/auth/login", payload);
+  return response.data.data;
+}
+
+/**
+ * Asks for a one-time code. Says nothing about whether the number is
+ * registered — that only comes back from verifyOtp, and only to someone who
+ * entered the right code.
+ */
+export async function requestOtp(mobile: string): Promise<OtpRequestedResponse> {
+  const response = await api.post<ApiResponse<OtpRequestedResponse>>(
+    "/api/v1/auth/otp/request",
+    { mobile }
+  );
+  return response.data.data;
+}
+
+/**
+ * Proves the code. A known number is signed in here — the session cookies come
+ * back on this response — while an unknown one gets a token to sign up with.
+ */
+export async function verifyOtp(payload: VerifyOtpRequest): Promise<OtpVerifiedResponse> {
+  const response = await api.post<ApiResponse<OtpVerifiedResponse>>(
+    "/api/v1/auth/otp/verify",
+    payload
+  );
+  return response.data.data;
+}
+
+/**
+ * Finishes a signup whose number has already been verified.
+ */
+export async function completeSignup(payload: CompleteSignupRequest): Promise<AuthResponse> {
+  const response = await api.post<ApiResponse<AuthResponse>>(
+    "/api/v1/auth/otp/complete-signup",
+    payload
+  );
   return response.data.data;
 }
 
