@@ -9,8 +9,8 @@ import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/sup
  * The three things a stranger from an ad needs to know before they will risk
  * ₹1,399 on a brand they have never heard of, plus a way to reach a person.
  *
- * Every line is a fact taken from somewhere real — the COD terms from live site
- * settings, the timings from the published Shipping Policy. Nothing here claims
+ * Every line is a fact taken from somewhere real — whether COD is on from live
+ * site settings, the timings from the published Shipping Policy. Nothing here claims
  * easy returns or guaranteed quality, because the Cancellation, Return, Refund
  * & Exchange Policy does not offer either, and a badge that promises what the
  * policy refuses turns a browse into a dispute rather than a sale.
@@ -18,19 +18,20 @@ import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/sup
 export function ProductTrustBox({ productName }: { productName: string }) {
   const { data: settings } = useSiteSettings();
 
-  // Only claim COD while the store is actually accepting it. The advance comes
-  // from the same settings the checkout enforces, so the two cannot drift.
-  const codAdvance = settings?.codEnabled ? settings.codAdvanceAmount : null;
+  // Only claim COD while the store is actually accepting it — the same setting
+  // the checkout enforces, so the promise and the form cannot drift apart. The
+  // advance is deliberately not named here; it is stated at checkout, where the
+  // buyer is deciding to pay rather than deciding to look.
+  const codEnabled = settings?.codEnabled === true;
 
   return (
     <section className="rounded-xl border bg-muted/30 p-4">
       <ul className="space-y-2.5 text-sm">
-        {codAdvance != null && (
+        {codEnabled && (
           <li className="flex items-start gap-2.5">
             <Wallet className="mt-0.5 size-4 shrink-0 text-rose-600" />
             <span>
-              <span className="font-medium">Cash on delivery</span> — ₹
-              {codAdvance.toLocaleString("en-IN")} to confirm, rest on delivery
+              <span className="font-medium">Cash on delivery</span> available
             </span>
           </li>
         )}
@@ -42,7 +43,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
         </li>
         <li className="flex items-start gap-2.5">
           <Truck className="mt-0.5 size-4 shrink-0 text-rose-600" />
-          <span>Dispatched in 1–2 days · delivered in 4–7</span>
+          <span>Dispatched in 1–2 days · Delivered in 4–7</span>
         </li>
       </ul>
 
