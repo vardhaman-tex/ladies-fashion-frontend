@@ -10,18 +10,26 @@ export function proxy(request: NextRequest) {
   // which has to be named explicitly or CSP blocks it and no events are
   // recorded. Production CSP is deliberately left unchanged.
   const vercelAnalytics = isDev ? " https://va.vercel-scripts.com" : "";
+  // The Meta Pixel needs three separate grants and fails silently without any
+  // one of them: the loader script comes from connect.facebook.net, and events
+  // leave as both a 1x1 image and a fetch to facebook.com. A blocked pixel
+  // reports nothing and logs nothing you would notice — it just looks like the
+  // campaign has no data. Only named when a pixel id is actually configured.
+  const metaPixel = process.env.NEXT_PUBLIC_META_PIXEL_ID
+    ? { script: " https://connect.facebook.net", endpoint: " https://www.facebook.com" }
+    : { script: "", endpoint: "" };
 
   const csp = [
     "default-src 'self'",
     // 'nonce-…' lets Next.js stamp its own inline RSC-payload scripts.
     // The razorpay domain is kept for the <Script> component on checkout.
     // 'unsafe-eval' is required in dev — React uses eval for better error stacks.
-    `script-src 'self' 'nonce-${nonce}' ${razorpay}${vercelAnalytics}${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' ${razorpay}${vercelAnalytics}${metaPixel.script}${isDev ? " 'unsafe-eval'" : ""}`,
     // 'unsafe-inline' for styles is fine — CSS injection can't steal cookies.
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: https://res.cloudinary.com https://picsum.photos`,
+    `img-src 'self' data: https://res.cloudinary.com https://picsum.photos${metaPixel.endpoint}`,
     "font-src 'self' data:",
-    `connect-src 'self' ${razorpay}`,
+    `connect-src 'self' ${razorpay}${metaPixel.endpoint}`,
     `frame-src ${razorpay}`,
     "object-src 'none'",
     "base-uri 'self'",

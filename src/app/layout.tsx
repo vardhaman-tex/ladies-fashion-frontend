@@ -7,6 +7,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { CartProvider } from "@/providers/CartProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { getSiteSettingsServer } from "@/lib/server-api";
 import {
   DEFAULT_OG_IMAGE,
@@ -139,7 +140,10 @@ export default async function RootLayout({
   // Reading request headers opts every route into dynamic rendering.
   // This is required so Next.js can stamp the per-request nonce (set by
   // proxy.ts) onto its own inline RSC-payload scripts at serve time.
-  await headers();
+  // proxy.ts puts the per-request nonce here so the pixel's inline init can be
+  // stamped with it — the CSP has no 'unsafe-inline' for scripts, so an
+  // unstamped inline script is simply dropped.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -165,6 +169,9 @@ export default async function RootLayout({
             only when deployed to Vercel, so local and self-hosted runs are
             unaffected. */}
         <Analytics />
+        {/* Renders nothing unless NEXT_PUBLIC_META_PIXEL_ID is set, so
+            previews and local runs stay out of the production dataset. */}
+        <MetaPixel nonce={nonce} />
       </body>
     </html>
   );

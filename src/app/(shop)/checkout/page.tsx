@@ -43,6 +43,7 @@ import {
   type GuestAddressField,
   type GuestAddressForm,
 } from "@/lib/checkoutAddress";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
 import type { PaymentMethod } from "@/types/payment";
 
 /**
@@ -301,6 +302,19 @@ export default function CheckoutPage() {
         return;
       }
 
+      // Fired on the attempt, not on page load: reaching /checkout is not
+      // intent, filling it in and pressing pay is. A pageview-based funnel
+      // counted every abandoned tab as an initiated checkout.
+      trackInitiateCheckout(
+        guestItems.map((item) => ({
+          id: item.productId,
+          name: item.productName,
+          value: item.finalPrice,
+          quantity: item.quantity,
+        })),
+        guestTotal
+      );
+
       // `state` is deliberately absent: it goes through canonicalState below
       // rather than being sent as typed.
       const { fullName, phone, email, addressLine1, city, pincode } = guestForm;
@@ -351,6 +365,20 @@ export default function CheckoutPage() {
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
               });
+              // Reports the full order value, not the ₹100 taken now, because
+              // that is the revenue the campaign should be optimising toward.
+              // Worth revisiting once the RTO rate on COD is known — if refused
+              // deliveries are common this systematically overstates ROAS.
+              trackPurchase(
+                confirmed.id,
+                guestTotal,
+                guestItems.map((item) => ({
+                  id: item.productId,
+                  name: item.productName,
+                  value: item.finalPrice,
+                  quantity: item.quantity,
+                }))
+              );
               clearGuestCart();
               toast.success(
                 guestMethod === "COD_PARTIAL"
@@ -644,6 +672,17 @@ export default function CheckoutPage() {
   const payableNow = amountPayableNow(activeMethod, cart.total, codAdvance);
   const dueOnDelivery = cart.total - payableNow;
 
+  // Captured here, where the early return above still has `cart` narrowed to
+  // non-null. The Razorpay callbacks further down are closures, and inside
+  // them TypeScript no longer knows that.
+  const pixelItems = cart.items.map((item) => ({
+    id: item.productId,
+    name: item.productName,
+    value: item.finalPrice,
+    quantity: item.quantity,
+  }));
+  const pixelTotal = cart.total;
+
   // A returning customer has already answered this step, so it opens collapsed
   // on their default address and gets out of the way of the pay button.
   const authAddressOpen = addressOpen ?? !defaultAddress;
@@ -688,6 +727,8 @@ export default function CheckoutPage() {
       return;
     }
 
+    trackInitiateCheckout(pixelItems, pixelTotal);
+
     setIsProcessing(true);
     try {
       const orderData = await createRazorpayOrder({
@@ -716,6 +757,7 @@ export default function CheckoutPage() {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
             });
+            trackPurchase(confirmedOrder.id, pixelTotal, pixelItems);
             clearGuestCart();
             toast.success(
               activeMethod === "COD_PARTIAL"
