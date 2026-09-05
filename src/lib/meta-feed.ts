@@ -18,6 +18,7 @@
  */
 import type { ProductDetail, ProductImage, ProductVariant, VariantSku } from "@/types/product";
 import { CURRENCY, SITE_NAME, SITE_URL, absoluteUrl, stripHtml, truncate } from "@/lib/seo";
+import { colourSlug, productPathWithColour } from "@/lib/variantUrl";
 
 /** Meta caps additional images per item at 20. */
 const MAX_ADDITIONAL_IMAGES = 20;
@@ -106,15 +107,15 @@ export function sanitizeText(value: string): string {
   return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim();
 }
 
-/** Builds a stable, URL-safe fragment from free text (a colour or size label). */
-function slugFragment(value: string): string {
-  return (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "na"
-  );
-}
+/**
+ * Builds a stable, URL-safe fragment from free text (a colour or size label).
+ *
+ * One implementation, shared with what resolves `?color=` on the product page.
+ * If the two ever diverged, a feed row's `g:id` and its own link would name
+ * different colourways, and every id in the catalog would shift the day someone
+ * "tidied" one of the copies.
+ */
+const slugFragment = colourSlug;
 
 /* ─── Mapping ─────────────────────────────────────────────────────────────── */
 
@@ -181,7 +182,6 @@ export function buildItemsForProduct(product: ProductDetail): {
     return { items: [], reason: "price is missing or not positive" };
   }
 
-  const link = absoluteUrl(`/products/${product.slug}`);
   const description = sanitizeText(buildDescription(product));
   const type = productType(product);
   const hasDiscount =
@@ -205,7 +205,12 @@ export function buildItemsForProduct(product: ProductDetail): {
       itemGroupId: product.id,
       title: sanitizeText(product.name),
       description,
-      link,
+      // Every row in this feed is one colourway, so the link has to be that
+      // colourway. Sending all of them to the bare product URL meant an ad for
+      // the rani suit landed the shopper on whichever variant happened to be
+      // first — the ad and the page disagreeing at the moment of arrival, which
+      // is the most expensive moment for them to disagree.
+      link: absoluteUrl(productPathWithColour(product.slug, variant.color)),
       imageLink: images[0],
       additionalImageLinks: images.slice(1, MAX_ADDITIONAL_IMAGES + 1),
       condition: "new" as const,
