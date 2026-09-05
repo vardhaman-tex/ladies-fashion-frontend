@@ -6,6 +6,7 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRemoveCartItem, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
+import { formatVariantSummary } from "@/lib/catalogueDisplay";
 import { useAuthStore } from "@/stores/authStore";
 import type { CartItemData } from "@/types/cart";
 
@@ -65,7 +66,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
 
         {(item.size || item.color) && (
           <p className="text-xs text-muted-foreground">
-            {[item.size, item.color].filter(Boolean).join(" · ")}
+            {formatVariantSummary(item.size, item.color)}
           </p>
         )}
 
