@@ -149,12 +149,6 @@ function PaymentMethodChoice({
                   confirm and process the COD order. The remaining
                   ₹{dueOnDelivery.toLocaleString("en-IN")} is payable at the time of delivery.
                 </span>
-                {/* A material term, shown before the customer commits rather
-                    than only in the policy they tick past. */}
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  The advance is non-refundable if the order is refused, not collected, or returned for
-                  reasons attributable to the customer.
-                </span>
               </>
             ) : (
               <span className="block text-xs text-muted-foreground">{availability.reason}</span>
