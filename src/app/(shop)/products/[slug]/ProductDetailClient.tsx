@@ -23,6 +23,8 @@ import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
+import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
+import { inr } from "@/lib/money";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
@@ -354,7 +356,11 @@ export default function ProductDetailClient({
   const activeVariants = product.variants.filter((v) => v.isActive);
   const displayVariants = activeVariants.length > 0 ? activeVariants : product.variants;
   const selectedVariant = displayVariants.find((v) => v.id === selectedVariantId) ?? displayVariants[0] ?? null;
-  const availableSizes = selectedVariant?.skus ?? [];
+  // Deduped for display only, as a guard: once `L (40)` and `L(40)` relabel to
+  // one thing, a variant holding both spellings would show two identical
+  // buttons. No variant does today. The raw `sku.size` is still what gets
+  // selected and sent, so the cart and the order are unaffected either way.
+  const availableSizes = dedupeSizes(selectedVariant?.skus ?? []);
   const selectedSku = selectedVariant?.skus.find((s) => s.size === selectedSize) ?? null;
   const needsSizeChoice = availableSizes.length > 1;
 
@@ -513,17 +519,17 @@ export default function ProductDetailClient({
               {hasDiscount ? (
                 <>
                   <span className="text-lg text-muted-foreground line-through">
-                    ₹{product.price.toFixed(2)}
+                    {inr(product.price)}
                   </span>
                   <span className="text-2xl font-bold text-destructive">
-                    ₹{product.finalPrice.toFixed(2)}
+                    {inr(product.finalPrice)}
                   </span>
                   <Badge variant="destructive">
                     {Math.round(product.discountPercent)}% OFF
                   </Badge>
                 </>
               ) : (
-                <span className="text-2xl font-bold">₹{product.price.toFixed(2)}</span>
+                <span className="text-2xl font-bold">{inr(product.price)}</span>
               )}
             </div>
 
@@ -531,7 +537,7 @@ export default function ProductDetailClient({
             {product.fabric && (
               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="rounded-full border px-3 py-0.5">
-                  Fabric: {product.fabric}
+                  Fabric: {formatFabric(product.fabric)}
                 </span>
               </div>
             )}
@@ -585,7 +591,7 @@ export default function ProductDetailClient({
             {needsSizeChoice && (
               <div ref={sizeRef}>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
+                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {availableSizes.map((sku) => (
@@ -602,7 +608,7 @@ export default function ProductDetailClient({
                             : "border-border text-foreground hover:border-rose-400"
                       }`}
                     >
-                      {sku.size}
+                      {formatSizeLabel(sku.size)}
                     </button>
                   ))}
                 </div>
@@ -721,10 +727,10 @@ export default function ProductDetailClient({
             </p>
             {hasDiscount ? (
               <p className="text-sm font-bold text-destructive">
-                ₹{product.finalPrice.toFixed(2)}
+                {inr(product.finalPrice)}
               </p>
             ) : (
-              <p className="text-sm font-bold">₹{product.price.toFixed(2)}</p>
+              <p className="text-sm font-bold">{inr(product.price)}</p>
             )}
           </div>
           {cartItem ? (

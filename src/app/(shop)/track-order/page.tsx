@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatVariantSummary } from "@/lib/catalogueDisplay";
 import { cn } from "@/lib/utils";
 import { trackOrder } from "@/services/orderService";
 import type { TrackOrderData, OrderStatus } from "@/types/order";
@@ -231,7 +232,7 @@ function TrackOrderForm() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{item.productName}</p>
                     <p className="mt-0.5 text-sm text-muted-foreground">
-                      {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
+                      {formatVariantSummary(item.size, item.color)} × {item.quantity}
                     </p>
                     <div className="mt-1 flex items-center gap-2 text-sm">
                       <span className="font-semibold text-rose-600">

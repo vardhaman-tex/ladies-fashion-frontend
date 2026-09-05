@@ -1,3 +1,4 @@
+import { inr } from "@/lib/money";
 import type { SiteSettings } from "@/services/siteSettingsService";
 
 /**
@@ -11,10 +12,6 @@ import type { SiteSettings } from "@/services/siteSettingsService";
 export type CodAvailability =
   | { available: true }
   | { available: false; reason: string };
-
-function inr(amount: number): string {
-  return `₹${amount.toLocaleString("en-IN")}`;
-}
 
 export function getCodAvailability(
   settings: Pick<
