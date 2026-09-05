@@ -33,6 +33,7 @@ import {
 import { cancelOrder } from "@/services/orderService";
 import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
 import {
+  canonicalState,
   firstErrorField,
   formatGuestAddress,
   isGuestAddressComplete,
@@ -300,7 +301,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const { fullName, phone, email, addressLine1, city, state, pincode } = guestForm;
+      // `state` is deliberately absent: it goes through canonicalState below
+      // rather than being sent as typed.
+      const { fullName, phone, email, addressLine1, city, pincode } = guestForm;
 
       setIsProcessing(true);
       try {
@@ -314,7 +317,9 @@ export default function CheckoutPage() {
           addressLine1: addressLine1.trim(),
           addressLine2: guestForm.addressLine2.trim() || undefined,
           city: city.trim(),
-          state: state.trim(),
+          // Canonical spelling, not whatever shorthand was typed — the courier
+          // manifest is downstream of this.
+          state: canonicalState(guestForm),
           pincode: pincode.trim(),
           items: guestItems.map((item) => ({
             productId: item.productId,

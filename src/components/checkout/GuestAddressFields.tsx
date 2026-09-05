@@ -1,7 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StateCombobox } from "@/components/checkout/StateCombobox";
 import type {
   GuestAddressErrors,
   GuestAddressField,
@@ -14,6 +17,47 @@ import type {
  */
 export function guestFieldId(field: GuestAddressField): string {
   return `g-${field}`;
+}
+
+function errorId(field: GuestAddressField): string {
+  return `${guestFieldId(field)}-error`;
+}
+
+/**
+ * Label, control and message. Shared so the state picker — which is not an
+ * <input> — sits in exactly the same scaffolding as everything else.
+ */
+function FieldShell({
+  field,
+  label,
+  optional = false,
+  error,
+  children,
+}: {
+  field: GuestAddressField;
+  label: string;
+  optional?: boolean;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={guestFieldId(field)}>
+        {label}
+        {optional ? (
+          <span className="font-normal text-muted-foreground">(optional)</span>
+        ) : (
+          <span aria-hidden>*</span>
+        )}
+      </Label>
+      {children}
+      {error && (
+        <p id={errorId(field)} className="text-xs font-medium text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function Field({
@@ -43,22 +87,12 @@ function Field({
   maxLength?: number;
   disabled?: boolean;
 }) {
-  const id = guestFieldId(field);
   const error = errors[field];
-  const errorId = `${id}-error`;
 
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>
-        {label}
-        {optional ? (
-          <span className="font-normal text-muted-foreground">(optional)</span>
-        ) : (
-          <span aria-hidden>*</span>
-        )}
-      </Label>
+    <FieldShell field={field} label={label} optional={optional} error={error}>
       <Input
-        id={id}
+        id={guestFieldId(field)}
         type={type}
         inputMode={inputMode}
         autoComplete={autoComplete}
@@ -69,14 +103,9 @@ function Field({
         required={!optional}
         onChange={(event) => onChange(field, event.target.value)}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={error ? errorId(field) : undefined}
       />
-      {error && (
-        <p id={errorId} className="text-xs font-medium text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-    </div>
+    </FieldShell>
   );
 }
 
@@ -150,13 +179,21 @@ export function GuestAddressFields({
           placeholder="Mumbai"
           autoComplete="address-level2"
         />
-        <Field
-          {...shared}
-          field="state"
-          label="State"
-          placeholder="Maharashtra"
-          autoComplete="address-level1"
-        />
+
+        {/* The one field with a fixed set of right answers, so it is the one
+            worth constraining — a mistyped state is a parcel that goes to the
+            wrong sorting hub. */}
+        <FieldShell field="state" label="State" error={errors.state}>
+          <StateCombobox
+            id={guestFieldId("state")}
+            value={form.state}
+            disabled={disabled}
+            invalid={Boolean(errors.state)}
+            describedBy={errors.state ? errorId("state") : undefined}
+            onChange={(next) => onChange("state", next)}
+          />
+        </FieldShell>
+
         <Field
           {...shared}
           field="pincode"
