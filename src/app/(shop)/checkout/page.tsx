@@ -406,7 +406,18 @@ export default function CheckoutPage() {
             </span>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
+          {/*
+          minmax(0, …) on both tracks, not a bare 1fr.
+
+          A grid track sized `auto` or `1fr` refuses to go below its content's
+          min-content width, and the product title in the order summary is
+          `truncate` — which is white-space: nowrap, so its min-content is the
+          whole untruncated name. A long product name therefore pushed the
+          track to 388px inside a 343px column and the entire page scrolled
+          sideways. minmax(0, …) lets the track shrink; the title still
+          ellipsises, which was the point of truncate in the first place.
+        */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8">
             {/* Left: Guest delivery details form */}
             <div className="space-y-6">
               <CheckoutSection
@@ -753,7 +764,18 @@ export default function CheckoutPage() {
 
         <CheckoutSteps current={isProcessing ? 3 : activeAddress ? 2 : 1} />
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
+        {/*
+          minmax(0, …) on both tracks, not a bare 1fr.
+
+          A grid track sized `auto` or `1fr` refuses to go below its content's
+          min-content width, and the product title in the order summary is
+          `truncate` — which is white-space: nowrap, so its min-content is the
+          whole untruncated name. A long product name therefore pushed the
+          track to 388px inside a 343px column and the entire page scrolled
+          sideways. minmax(0, …) lets the track shrink; the title still
+          ellipsises, which was the point of truncate in the first place.
+        */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8">
           {/* Left: Delivery Address */}
           <div className="space-y-6">
             <CheckoutSection
