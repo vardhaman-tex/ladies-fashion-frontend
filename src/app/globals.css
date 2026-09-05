@@ -49,6 +49,19 @@
 }
 
 :root {
+  /*
+   * Pins native form controls to the light appearance.
+   *
+   * Dark mode here is class-based (see @custom-variant above), so a phone in
+   * Dark Mode never gets the .dark class and every colour token stays light —
+   * but checkboxes, radios and selects are drawn by the browser, not by these
+   * tokens, and with no color-scheme declared iOS Safari draws them to match
+   * the system appearance. The result was an unchecked radio rendering as a
+   * solid black dot on an otherwise white page. Declaring the scheme is what
+   * keeps the browser's controls and our palette telling the same story.
+   */
+  color-scheme: light;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -84,6 +97,9 @@
 }
 
 .dark {
+  /* And back again wherever the app actually opts into dark. */
+  color-scheme: dark;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
