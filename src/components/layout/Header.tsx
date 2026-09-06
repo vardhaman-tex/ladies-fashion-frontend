@@ -21,6 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useCategories";
+import { categoryPath, usableSubCategories } from "@/lib/categories";
 import { useAuthStore } from "@/stores/authStore";
 
 export function Header() {
@@ -119,18 +120,36 @@ export function Header() {
                     Categories
                   </p>
                   {categories.map((category) => (
-                    <SheetClose
-                      key={category.id}
-                      render={
-                        <Link
-                          href={`/products?categorySlug=${category.slug}`}
-                          className="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
-                        />
-                      }
-                    >
-                      {category.name}
-                      <ChevronRight className="size-3.5 text-muted-foreground" />
-                    </SheetClose>
+                    <div key={category.id}>
+                      <SheetClose
+                        render={
+                          <Link
+                            href={categoryPath(category.slug)}
+                            className="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
+                          />
+                        }
+                      >
+                        {category.name}
+                        <ChevronRight className="size-3.5 text-muted-foreground" />
+                      </SheetClose>
+                      {/* Sub-categories inline rather than behind another tap.
+                          There are at most five per category, and a shopper who
+                          came for an Anarkali should not have to load Suits and
+                          then filter to find out we sell them. */}
+                      {usableSubCategories(category).map((sub) => (
+                        <SheetClose
+                          key={sub.id}
+                          render={
+                            <Link
+                              href={categoryPath(category.slug, sub.slug)}
+                              className="block py-2 pl-8 pr-4 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                            />
+                          }
+                        >
+                          {sub.name}
+                        </SheetClose>
+                      ))}
+                    </div>
                   ))}
                 </div>
               )}
@@ -248,15 +267,42 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
-          {categories?.map((category) => (
-            <Link
-              key={category.id}
-              href={`/products?categorySlug=${category.slug}`}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {category.name}
-            </Link>
-          ))}
+          {categories?.map((category) => {
+            const subs = usableSubCategories(category);
+            return (
+              <div key={category.id} className="group relative">
+                {/* The category itself stays a plain link. A menu primitive
+                    would capture the click, and "Suits" is a destination in its
+                    own right, not just a container for the list below. */}
+                <Link
+                  href={categoryPath(category.slug)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {category.name}
+                </Link>
+                {subs.length > 0 && (
+                  // `pt-3` is the hover bridge: without padding between the
+                  // link and the panel, moving the mouse down crosses a gap
+                  // where nothing is hovered and the panel closes underneath
+                  // the cursor. `focus-within` opens it for keyboard users,
+                  // which is why this is invisible/opacity rather than hidden.
+                  <div className="invisible absolute left-1/2 top-full z-50 w-52 -translate-x-1/2 pt-3 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    <div className="rounded-lg border bg-popover p-1 shadow-md">
+                      {subs.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={categoryPath(category.slug, sub.slug)}
+                          className="block rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Action icons */}

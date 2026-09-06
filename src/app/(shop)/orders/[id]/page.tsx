@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useOrder, useCancelOrder } from "@/hooks/useOrders";
 import { OrderDetailSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
+import { formatVariantSummary } from "@/lib/catalogueDisplay";
 import type { OrderStatus } from "@/types/order";
 
 const STATUS_STEPS: OrderStatus[] = ["PENDING", "PAID", "CONFIRMED", "SHIPPED", "DELIVERED"];
@@ -189,7 +190,7 @@ function OrderDetailContent({ id }: { id: string }) {
                   {item.productName}
                 </Link>
                 <p className="mt-0.5 text-sm text-muted-foreground">
-                  {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
+                  {formatVariantSummary(item.size, item.color)} × {item.quantity}
                 </p>
                 <div className="mt-1 flex items-center gap-2 text-sm">
                   <span className="font-semibold text-rose-600">

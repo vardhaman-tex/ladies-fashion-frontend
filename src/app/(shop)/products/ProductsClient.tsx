@@ -1,6 +1,7 @@
 "use client";
 
 import { SlidersHorizontalIcon } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/common/Breadcrumbs";
@@ -15,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useCategories";
 import { useProducts } from "@/hooks/useProducts";
+import { categoryPath, usableSubCategories } from "@/lib/categories";
+import { cn } from "@/lib/utils";
 import type { PageResponse } from "@/types/api";
 import type { Category } from "@/types/category";
 import type {
@@ -77,6 +80,7 @@ function ProductsPageContent({
 
   const category = categories?.find((c) => c.slug === categorySlug);
   const subCategory = category?.subCategories.find((sc) => sc.slug === subCategorySlug);
+  const siblingSubCategories = usableSubCategories(category);
 
   const title = subCategory?.name ?? category?.name ?? "All Products";
 
@@ -100,6 +104,43 @@ function ProductsPageContent({
     <div className="mx-auto max-w-7xl px-4 py-6">
       <Breadcrumbs items={breadcrumbs} />
       <h1 className="mt-2 font-heading text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>
+
+      {/* Sub-category chips. On mobile the filter panel is behind a button, so
+          without this a shopper who lands on Suits from an ad has no visible
+          sign that Anarkali, A-Line and Straight are separate things to look
+          at. Horizontally scrollable rather than wrapping, so a category with
+          five sub-categories does not push the products off the first screen. */}
+      {category && siblingSubCategories.length > 0 && (
+        <div className="-mx-4 mt-3 overflow-x-auto px-4">
+          <div className="flex w-max gap-2 pb-1">
+            <Link
+              href={categoryPath(category.slug)}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                subCategory
+                  ? "border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                  : "border-rose-600 bg-rose-600 text-white"
+              )}
+            >
+              All {category.name}
+            </Link>
+            {siblingSubCategories.map((sub) => (
+              <Link
+                key={sub.id}
+                href={categoryPath(category.slug, sub.slug)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                  subCategory?.id === sub.id
+                    ? "border-rose-600 bg-rose-600 text-white"
+                    : "border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                )}
+              >
+                {sub.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
         <aside className="hidden lg:block">

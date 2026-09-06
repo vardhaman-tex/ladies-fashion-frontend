@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -23,7 +23,10 @@ import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
+import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
+import { inr } from "@/lib/money";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
+import { colourSlug, findVariantByColourSlug } from "@/lib/variantUrl";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
 import type { ProductDetail } from "@/types/product";
@@ -244,6 +247,8 @@ export default function ProductDetailClient({
 }: ProductDetailClientProps) {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const colourParam = searchParams.get("color");
   const { data: product, isLoading, isError, refetch, isRefetching } = useProduct(
     params.slug,
     initialProduct?.slug === params.slug ? initialProduct : undefined
@@ -264,15 +269,33 @@ export default function ProductDetailClient({
   // calling a hook only on some renders (e.g. only once `product` has
   // loaded) violates the Rules of Hooks and throws "Rendered fewer/more
   // hooks than expected" the moment the page transitions out of the loading
-  // skeleton. That's why this uses safe `?.` chaining into `product`
-  // instead of the `selectedVariant` derived value (which isn't computed
-  // until after those early returns).
+  // skeleton. That's why everything below uses safe `?.` chaining into
+  // `product` rather than assuming it has loaded.
+  //
+  // Variant resolution lives above the early returns so `cartItem` can use the
+  // same answer the page renders. It used to look the id up on its own and get
+  // `null` whenever nothing had been clicked yet — which is every arrival from
+  // an ad — so a product already in the cart showed "Add to Cart" again.
+  //
+  // Order matters: an explicit click wins, then `?color=` from the link that
+  // brought them here, then the product's first variant. A colour that no
+  // longer exists falls through to the default rather than being honoured
+  // halfway.
+  const allVariants = product?.variants ?? [];
+  const activeVariants = allVariants.filter((v) => v.isActive);
+  const displayVariants = activeVariants.length > 0 ? activeVariants : allVariants;
+  const selectedVariant =
+    displayVariants.find((v) => v.id === selectedVariantId) ??
+    findVariantByColourSlug(displayVariants, colourParam) ??
+    displayVariants[0] ??
+    null;
+
   const cartItem =
     cart?.items.find(
       (i) =>
         i.productId === product?.id &&
         i.size === selectedSize &&
-        i.color === (product?.variants?.find((v) => v.id === selectedVariantId)?.color ?? null)
+        i.color === (selectedVariant?.color ?? null)
     ) ?? null;
   const { quantity: displayCartQty, change: changeCartQtyDebounced } = useDebouncedQuantity(
     cartItem?.quantity ?? 1,
@@ -302,16 +325,23 @@ export default function ProductDetailClient({
     return () => obs.disconnect();
   }, [product]);
 
-  // Initialize the selected color to the first active variant once the product loads
+  // Settle the selected colour once the product loads: the one the link asked
+  // for, else the first active variant.
+  //
+  // This used to unconditionally pick the first variant, which quietly beat the
+  // `?color=` resolution below — the page painted the right colour and then an
+  // effect changed it back. Anything arriving with a colour in the URL (a
+  // catalog ad, a shared WhatsApp link) landed on the wrong one.
   useEffect(() => {
     if (!product) return;
     const active = product.variants.filter((v) => v.isActive);
-    const first = (active.length > 0 ? active : product.variants)[0];
-    if (first) {
-      setSelectedVariantId(first.id);
-      setSelectedSize(first.skus.length === 1 ? first.skus[0].size : null);
+    const pool = active.length > 0 ? active : product.variants;
+    const wanted = findVariantByColourSlug(pool, colourParam) ?? pool[0];
+    if (wanted) {
+      setSelectedVariantId(wanted.id);
+      setSelectedSize(wanted.skus.length === 1 ? wanted.skus[0].size : null);
     }
-  }, [product]);
+  }, [product, colourParam]);
 
   // Read out as primitives so the effect keys on the values rather than the
   // object: a refetch that returns an identical product must not report a
@@ -351,10 +381,11 @@ export default function ProductDetailClient({
   }
 
   const hasDiscount = product.discountAmount > 0;
-  const activeVariants = product.variants.filter((v) => v.isActive);
-  const displayVariants = activeVariants.length > 0 ? activeVariants : product.variants;
-  const selectedVariant = displayVariants.find((v) => v.id === selectedVariantId) ?? displayVariants[0] ?? null;
-  const availableSizes = selectedVariant?.skus ?? [];
+  // Deduped for display only, as a guard: once `L (40)` and `L(40)` relabel to
+  // one thing, a variant holding both spellings would show two identical
+  // buttons. No variant does today. The raw `sku.size` is still what gets
+  // selected and sent, so the cart and the order are unaffected either way.
+  const availableSizes = dedupeSizes(selectedVariant?.skus ?? []);
   const selectedSku = selectedVariant?.skus.find((s) => s.size === selectedSize) ?? null;
   const needsSizeChoice = availableSizes.length > 1;
 
@@ -365,6 +396,17 @@ export default function ProductDetailClient({
     setSelectedVariantId(variantId);
     const variant = displayVariants.find((v) => v.id === variantId);
     setSelectedSize(variant && variant.skus.length === 1 ? variant.skus[0].size : null);
+
+    // Put the colour in the address so the page can be shared, reloaded and
+    // returned to. `replace` rather than `push`: flipping through four
+    // colourways should not fill the back button with four entries the shopper
+    // has to click through to leave. `scroll: false` keeps them looking at the
+    // swatches they just clicked.
+    const next = new URLSearchParams(searchParams.toString());
+    if (variant?.color) next.set("color", colourSlug(variant.color));
+    else next.delete("color");
+    const query = next.toString();
+    router.replace(query ? `?${query}` : `/products/${params.slug}`, { scroll: false });
   }
 
   const galleryImages = selectedVariant?.images ?? [];
@@ -513,17 +555,17 @@ export default function ProductDetailClient({
               {hasDiscount ? (
                 <>
                   <span className="text-lg text-muted-foreground line-through">
-                    ₹{product.price.toFixed(2)}
+                    {inr(product.price)}
                   </span>
                   <span className="text-2xl font-bold text-destructive">
-                    ₹{product.finalPrice.toFixed(2)}
+                    {inr(product.finalPrice)}
                   </span>
                   <Badge variant="destructive">
                     {Math.round(product.discountPercent)}% OFF
                   </Badge>
                 </>
               ) : (
-                <span className="text-2xl font-bold">₹{product.price.toFixed(2)}</span>
+                <span className="text-2xl font-bold">{inr(product.price)}</span>
               )}
             </div>
 
@@ -531,7 +573,7 @@ export default function ProductDetailClient({
             {product.fabric && (
               <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="rounded-full border px-3 py-0.5">
-                  Fabric: {product.fabric}
+                  Fabric: {formatFabric(product.fabric)}
                 </span>
               </div>
             )}
@@ -585,7 +627,7 @@ export default function ProductDetailClient({
             {needsSizeChoice && (
               <div ref={sizeRef}>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {selectedSize}</span> : ""}
+                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {availableSizes.map((sku) => (
@@ -602,7 +644,7 @@ export default function ProductDetailClient({
                             : "border-border text-foreground hover:border-rose-400"
                       }`}
                     >
-                      {sku.size}
+                      {formatSizeLabel(sku.size)}
                     </button>
                   ))}
                 </div>
@@ -721,10 +763,10 @@ export default function ProductDetailClient({
             </p>
             {hasDiscount ? (
               <p className="text-sm font-bold text-destructive">
-                ₹{product.finalPrice.toFixed(2)}
+                {inr(product.finalPrice)}
               </p>
             ) : (
-              <p className="text-sm font-bold">₹{product.price.toFixed(2)}</p>
+              <p className="text-sm font-bold">{inr(product.price)}</p>
             )}
           </div>
           {cartItem ? (

@@ -31,6 +31,7 @@ import {
   verifyGuestPayment,
 } from "@/services/paymentService";
 import { cancelOrder } from "@/services/orderService";
+import { formatSizeLabel, formatVariantSummary } from "@/lib/catalogueDisplay";
 import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
 import {
   canonicalState,
@@ -505,7 +506,7 @@ export default function CheckoutPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{item.productName}</p>
                         <p className="text-xs text-muted-foreground">
-                          {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
+                          {formatVariantSummary(item.size, item.color)} × {item.quantity}
                         </p>
                         <p className="text-sm font-semibold text-rose-600">
                           ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
@@ -930,7 +931,7 @@ export default function CheckoutPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{item.productName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {[item.size, item.color].filter(Boolean).join(" · ")} × {item.quantity}
+                        {formatVariantSummary(item.size, item.color)} × {item.quantity}
                       </p>
                       {item.availableQty !== undefined && item.quantity > item.availableQty && (
                         <p className="text-xs font-medium text-red-600">
@@ -998,7 +999,7 @@ export default function CheckoutPage() {
                   <p className="font-semibold">Insufficient stock:</p>
                   {stockIssues.map((item) => (
                     <p key={item.id}>
-                      {item.productName}{item.size ? ` (${item.size})` : ""} — only {item.availableQty} left, you have {item.quantity} in cart.
+                      {item.productName}{item.size ? ` (${formatSizeLabel(item.size)})` : ""} — only {item.availableQty} left, you have {item.quantity} in cart.
                     </p>
                   ))}
                   <p className="mt-1">Please update quantities in your cart before proceeding.</p>

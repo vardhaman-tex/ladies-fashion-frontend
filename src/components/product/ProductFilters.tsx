@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usableSubCategories } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/useCategories";
 
@@ -69,6 +70,7 @@ export function ProductFilters() {
   const { data: categories } = useCategories();
 
   const currentCategory = searchParams.get("categorySlug");
+  const currentSubCategory = searchParams.get("subCategorySlug");
   const currentColors = searchParams.get("color")?.toLowerCase().split(",").filter(Boolean) ?? [];
   const currentFabrics = searchParams.get("fabric")?.toLowerCase().split(",").filter(Boolean) ?? [];
   const currentOccasions = searchParams.get("occasion")?.toLowerCase().split(",").filter(Boolean) ?? [];
@@ -144,25 +146,61 @@ export function ProductFilters() {
             >
               All
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                className={cn(
-                  "rounded px-2 py-1.5 text-left text-sm transition-colors",
-                  currentCategory === cat.slug
-                    ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() =>
-                  updateParam({
-                    categorySlug: currentCategory === cat.slug ? null : cat.slug,
-                    subCategorySlug: null,
-                  })
-                }
-              >
-                {cat.name}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const isOpen = currentCategory === cat.slug;
+              const subs = isOpen ? usableSubCategories(cat) : [];
+              return (
+                <div key={cat.id}>
+                  <button
+                    className={cn(
+                      "w-full rounded px-2 py-1.5 text-left text-sm transition-colors",
+                      isOpen
+                        ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() =>
+                      updateParam({
+                        categorySlug: isOpen ? null : cat.slug,
+                        subCategorySlug: null,
+                      })
+                    }
+                  >
+                    {cat.name}
+                  </button>
+
+                  {/* Sub-categories appear only under the open category. Showing
+                      every sub-category of every category at once would be a
+                      wall of options; showing them on selection turns the
+                      filter into a path the shopper is already walking. */}
+                  {subs.length > 0 && (
+                    <div className="mt-0.5 flex flex-col gap-0.5 border-l pl-3">
+                      {subs.map((sub) => {
+                        const active = currentSubCategory === sub.slug;
+                        return (
+                          <button
+                            key={sub.id}
+                            className={cn(
+                              "rounded px-2 py-1 text-left text-sm transition-colors",
+                              active
+                                ? "font-semibold text-rose-700 dark:text-rose-400"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                            onClick={() =>
+                              updateParam({
+                                categorySlug: cat.slug,
+                                subCategorySlug: active ? null : sub.slug,
+                              })
+                            }
+                          >
+                            {sub.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </FilterSection>
       )}
