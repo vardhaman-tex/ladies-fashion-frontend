@@ -25,7 +25,7 @@ import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
 import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
 import { inr } from "@/lib/money";
-import { trackAddToCart, trackViewContent } from "@/lib/pixel";
+import { trackViewContent } from "@/lib/pixel";
 import { colourSlug, findVariantByColourSlug } from "@/lib/variantUrl";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
@@ -355,11 +355,8 @@ export default function ProductDetailClient({
       toast.error("Please select a size before adding to cart");
       return;
     }
-    trackAddToCart({
-      id: product!.id,
-      name: product!.name,
-      value: product!.finalPrice,
-    });
+    // AddToCart is reported by useAddToCart now, so every add — here, the grid
+    // quick-adds, the wishlist — is counted once and counted the same way.
     addToCart({
       productId: product!.id,
       productName: product!.name,
@@ -390,12 +387,8 @@ export default function ProductDetailClient({
     }
     // Buy Now still adds to the cart, so it is still an AddToCart as far as
     // the funnel is concerned — leaving it out would make the express path
-    // look like it converts from nowhere.
-    trackAddToCart({
-      id: product!.id,
-      name: product!.name,
-      value: product!.finalPrice,
-    });
+    // look like it converts from nowhere. useAddToCart reports it, same as
+    // every other add.
     // The button itself swaps to "Go to Cart" (-> router.push("/cart")) once
     // cartItem exists, so this function is only ever invoked pre-add-to-cart.
     addToCart(

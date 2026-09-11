@@ -4,12 +4,13 @@ import {
   getFeatured,
   getNewArrivals,
   getProduct,
+  getProductFacets,
   getProducts,
   getSaleProducts,
   getTrending,
 } from "@/services/productService";
 import type { PageResponse } from "@/types/api";
-import type { ProductDetail, ProductFilter, ProductSummary } from "@/types/product";
+import type { ProductDetail, ProductFacets, ProductFilter, ProductSummary } from "@/types/product";
 
 /**
  * Every hook here takes an optional `initialData`.
@@ -26,6 +27,22 @@ import type { ProductDetail, ProductFilter, ProductSummary } from "@/types/produ
  */
 
 type ProductPage = PageResponse<ProductSummary>;
+
+/**
+ * The filter values the catalogue can actually be narrowed by.
+ *
+ * Cached for a good while: the set of fabrics and occasions in the catalogue
+ * changes when someone adds a product, not while a shopper is browsing, and
+ * refetching it on every filter click would be a request per keystroke of
+ * intent for data that did not move.
+ */
+export function useProductFacets() {
+  return useQuery<ProductFacets>({
+    queryKey: ["product-facets"],
+    queryFn: getProductFacets,
+    staleTime: 10 * 60_000,
+  });
+}
 
 /**
  * Fetches a paginated, filtered list of products.

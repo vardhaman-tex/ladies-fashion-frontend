@@ -3,14 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { usableSubCategories } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/useCategories";
+import { useProductFacets } from "@/hooks/useProducts";
+import type { ProductFacet } from "@/types/product";
 
-const COLORS = ["Red", "Pink", "Blue", "Green", "Black", "White", "Yellow", "Orange", "Purple", "Beige", "Brown", "Grey"];
-const FABRICS = ["Cotton", "Silk", "Georgette", "Chiffon", "Linen", "Polyester", "Rayon", "Velvet", "Net", "Crepe"];
-const OCCASIONS = ["Casual", "Festive", "Wedding", "Party", "Office", "Beach", "Traditional", "Bridal"];
 const PRICE_PRESETS = [
   { label: "Under ₹500", min: "", max: "500" },
   { label: "₹500–₹1000", min: "500", max: "1000" },
@@ -64,10 +62,51 @@ function Chip({
   );
 }
 
+/**
+ * One facet group, rendered only when the catalogue has something in it.
+ *
+ * The count is shown because "Cotton (14)" and "Velvet (1)" are different
+ * propositions, and a shopper deciding where to spend a click deserves to know
+ * which is which.
+ */
+function FacetSection({
+  title,
+  facets,
+  loading,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  facets: ProductFacet[] | undefined;
+  loading: boolean;
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  // While loading, nothing is shown rather than an empty section that would
+  // pop into existence a moment later and shift everything below it.
+  if (loading || !facets || facets.length === 0) return null;
+
+  return (
+    <FilterSection title={title} defaultOpen={false}>
+      <div className="flex flex-wrap gap-2">
+        {facets.map((facet) => (
+          <Chip
+            key={facet.value}
+            label={`${facet.value} (${facet.count})`}
+            active={selected.includes(facet.value.toLowerCase())}
+            onClick={() => onToggle(facet.value)}
+          />
+        ))}
+      </div>
+    </FilterSection>
+  );
+}
+
 export function ProductFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: categories } = useCategories();
+  const { data: facets, isLoading: facetsLoading } = useProductFacets();
 
   const currentCategory = searchParams.get("categorySlug");
   const currentSubCategory = searchParams.get("subCategorySlug");
@@ -222,47 +261,38 @@ export function ProductFilters() {
         </div>
       </FilterSection>
 
-      {/* Color */}
-      <FilterSection title="Color" defaultOpen={false}>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map((color) => (
-            <Chip
-              key={color}
-              label={color}
-              active={currentColors.includes(color.toLowerCase())}
-              onClick={() => toggleChip("color", color)}
-            />
-          ))}
-        </div>
-      </FilterSection>
+      {/*
+        Colour, fabric and occasion come from the catalogue.
 
-      {/* Fabric */}
-      <FilterSection title="Fabric" defaultOpen={false}>
-        <div className="flex flex-wrap gap-2">
-          {FABRICS.map((fabric) => (
-            <Chip
-              key={fabric}
-              label={fabric}
-              active={currentFabrics.includes(fabric.toLowerCase())}
-              onClick={() => toggleChip("fabric", fabric)}
-            />
-          ))}
-        </div>
-      </FilterSection>
+        Each was a hardcoded list — Velvet, Net, Bridal, Beach — with nothing
+        checking that a product matched, so picking one of them produced an
+        empty grid. A filter that leads nowhere reads as a broken shop rather
+        than an empty result, and it wastes the one bit of intent the shopper
+        gave us. A section with nothing behind it now does not render at all.
+      */}
+      <FacetSection
+        title="Color"
+        facets={facets?.colors}
+        loading={facetsLoading}
+        selected={currentColors}
+        onToggle={(value) => toggleChip("color", value)}
+      />
 
-      {/* Occasion */}
-      <FilterSection title="Occasion" defaultOpen={false}>
-        <div className="flex flex-wrap gap-2">
-          {OCCASIONS.map((occasion) => (
-            <Chip
-              key={occasion}
-              label={occasion}
-              active={currentOccasions.includes(occasion.toLowerCase())}
-              onClick={() => toggleChip("occasion", occasion)}
-            />
-          ))}
-        </div>
-      </FilterSection>
+      <FacetSection
+        title="Fabric"
+        facets={facets?.fabrics}
+        loading={facetsLoading}
+        selected={currentFabrics}
+        onToggle={(value) => toggleChip("fabric", value)}
+      />
+
+      <FacetSection
+        title="Occasion"
+        facets={facets?.occasions}
+        loading={facetsLoading}
+        selected={currentOccasions}
+        onToggle={(value) => toggleChip("occasion", value)}
+      />
 
       {/* In Stock */}
       <FilterSection title="Availability" defaultOpen={false}>

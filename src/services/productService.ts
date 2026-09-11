@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { ProductDetail, ProductFilter, ProductSummary } from "@/types/product";
+import type { ProductDetail, ProductFacets, ProductFilter, ProductSummary } from "@/types/product";
 
 function toParams(filter: ProductFilter = {}): Record<string, string | number | boolean> {
   const params: Record<string, string | number | boolean> = {};
@@ -16,6 +16,18 @@ function toParams(filter: ProductFilter = {}): Record<string, string | number | 
   if (filter.page !== undefined) params.page = filter.page;
   if (filter.size !== undefined) params.size = filter.size;
   return params;
+}
+
+/**
+ * The filter values the catalogue can actually be narrowed by, with counts.
+ *
+ * The panel used to offer hardcoded lists, so a shopper could pick a fabric no
+ * product had and get an empty grid — which reads as a broken shop rather than
+ * an empty filter.
+ */
+export async function getProductFacets(): Promise<ProductFacets> {
+  const response = await api.get<ApiResponse<ProductFacets>>("/api/v1/products/facets");
+  return response.data.data;
 }
 
 /**

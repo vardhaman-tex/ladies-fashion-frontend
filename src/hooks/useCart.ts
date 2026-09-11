@@ -12,6 +12,7 @@ import {
 } from "@/services/cartService";
 import { useGuestCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
+import { trackAddToCart } from "@/lib/pixel";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
@@ -67,9 +68,20 @@ export function useAddToCart() {
       guestAdd(guestItem);
       return null;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, payload) => {
       if (data) qc.setQueryData(CART_KEY, data);
       toast.success("Added to cart");
+      // Reported here rather than at each call site, because it was only ever
+      // fired from the product page. Every quick-add on the homepage, the
+      // collection grids and the wishlist was invisible to Meta, so campaigns
+      // optimising for AddToCart were learning from a fraction of the adds
+      // that actually happened.
+      trackAddToCart({
+        id: payload.productId,
+        name: payload.productName,
+        value: payload.price - payload.discountAmount,
+        quantity: payload.quantity,
+      });
     },
     onError: () => toast.error("Failed to add to cart"),
   });
