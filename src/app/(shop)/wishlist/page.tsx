@@ -10,7 +10,11 @@ import { useAddToCart } from "@/hooks/useCart";
 
 export default function WishlistPage() {
   const { items, itemCount, isLoading } = useWishlist();
-  const { mutate: addToCart, isPending: addingToCart } = useAddToCart();
+  // `variables` is the payload of the request currently in flight, which is
+  // what makes the spinner land on the card that was clicked. One shared
+  // isPending put every button on the page into a loading state at once, so
+  // the customer could not tell which item was being added.
+  const { mutate: addToCart, isPending: addingToCart, variables: adding } = useAddToCart();
 
   if (isLoading) {
     return (
@@ -95,10 +99,11 @@ export default function WishlistPage() {
                       color: null,
                     })
                   }
-                  disabled={addingToCart}
+                  loading={addingToCart && adding?.productId === item.productId}
+                  loadingText="Adding…"
                 >
                   <ShoppingBag className="size-3.5 mr-1" />
-                  {addingToCart ? "Adding…" : "Add to Cart"}
+                  Add to Cart
                 </Button>
               </div>
 

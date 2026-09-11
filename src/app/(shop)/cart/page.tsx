@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { useClearCart, useCart } from "@/hooks/useCart";
 
 export default function CartPage() {
-  const { cart, isLoading } = useCart();
+  const { cart, isLoading, isMerging } = useCart();
   const { mutate: clearCart, isPending: clearing } = useClearCart();
 
   if (isLoading) {
@@ -41,7 +41,24 @@ export default function CartPage() {
         </h1>
       </div>
 
-      {isEmpty ? (
+      {/*
+        A merge in flight outranks an empty cart.
+
+        Signing in fires the guest-cart merge from CartProvider, and until it
+        returns the server cart really is empty — so this page used to tell a
+        customer who had just signed in with a full cart that their cart was
+        empty, moments before the items appeared. "Empty" is only true once
+        nothing is on its way.
+      */}
+      {isMerging && isEmpty ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+          <Loader2 className="size-10 animate-spin text-rose-600" />
+          <p className="text-lg font-medium">Moving your items into your cart…</p>
+          <p className="text-sm text-muted-foreground">
+            The items you added before signing in are on their way.
+          </p>
+        </div>
+      ) : isEmpty ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
           <ShoppingBag className="size-16 text-muted-foreground/30" />
           <p className="text-lg font-medium">Your cart is empty</p>

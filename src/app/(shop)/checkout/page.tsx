@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 import {
   MapPin, Package, ChevronRight, AlertCircle,
   Plus, ShoppingBag, Loader2, RefreshCw, User, Banknote, CreditCard,
@@ -14,6 +13,7 @@ import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAddresses } from "@/hooks/useAddresses";
+import { useRazorpay } from "@/hooks/useRazorpay";
 import { useAuthStore } from "@/stores/authStore";
 import { useGuestCartStore } from "@/stores/cartStore";
 import { AddressFormDialog } from "@/components/address/AddressFormDialog";
@@ -170,7 +170,7 @@ export default function CheckoutPage() {
   const clearGuestCart = useGuestCartStore((state) => state.clearCart);
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scriptState, setScriptState] = useState<null | "ready" | "error">(null);
+  const { state: scriptState, retry: retryScript, ensureReady } = useRazorpay();
   const [policyAgreed, setPolicyAgreed] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PREPAID");
   // Whether the address step is expanded. null means "not decided yet", which
@@ -298,9 +298,17 @@ export default function CheckoutPage() {
         return;
       }
       setPolicyError(false);
+      // Wait for checkout.js rather than turning the customer away. They have
+      // filled the form in and pressed pay, and telling them to try again in
+      // a moment is the worst thing to say at that point in the funnel.
       if (!window.Razorpay) {
-        toast.error("Payment is still loading \u2014 please try again in a moment.");
-        return;
+        setIsProcessing(true);
+        const scriptReady = await ensureReady();
+        setIsProcessing(false);
+        if (!scriptReady) {
+          toast.error("Payment could not load. Disable any ad blocker and retry.");
+          return;
+        }
       }
 
       // Fired on the attempt, not on page load: reaching /checkout is not
@@ -345,7 +353,12 @@ export default function CheckoutPage() {
           paymentMethod: guestMethod,
         });
 
-        const rzp = new window.Razorpay({
+        // Re-read after the awaits above: the guard that made this safe ran
+        // before them, and a type that admits checkout.js might not be there
+        // is the honest one.
+        const RazorpayCtor = window.Razorpay;
+        if (!RazorpayCtor) throw new Error("Payment could not load. Please retry.");
+        const rzp = new RazorpayCtor({
           key: orderData.keyId,
           amount: orderData.amountPaise,
           currency: orderData.currency,
@@ -410,13 +423,8 @@ export default function CheckoutPage() {
 
     return (
       <>
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-          onLoad={() => setScriptState("ready")}
-          onError={() => setScriptState("error")}
-        />
-
+        {/* checkout.js is loaded by useRazorpay, which asks whether
+            window.Razorpay exists rather than trusting a one-shot onLoad. */}
         <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
           <h1 className="mb-6 text-xl font-bold sm:text-2xl">Checkout</h1>
 
@@ -566,9 +574,9 @@ export default function CheckoutPage() {
                     <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                   </div>
                   <button
-                    onClick={() => window.location.reload()}
+                    onClick={retryScript}
                     className="shrink-0 rounded p-1 hover:bg-red-100"
-                    title="Reload page"
+                    title="Retry loading payment"
                   >
                     <RefreshCw className="size-3.5" />
                   </button>
@@ -616,11 +624,6 @@ export default function CheckoutPage() {
                   <>
                     <Loader2 className="size-4 animate-spin" />
                     Processing…
-                  </>
-                ) : scriptState === null ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Loading payment…
                   </>
                 ) : (
                   <>
@@ -723,9 +726,17 @@ export default function CheckoutPage() {
       return;
     }
     setPolicyError(false);
+    // Wait for checkout.js rather than turning the customer away. They have
+    // filled the form in and pressed pay, and telling them to try again in
+    // a moment is the worst thing to say at that point in the funnel.
     if (!window.Razorpay) {
-      toast.error("Payment is still loading \u2014 please try again in a moment.");
-      return;
+      setIsProcessing(true);
+      const scriptReady = await ensureReady();
+      setIsProcessing(false);
+      if (!scriptReady) {
+        toast.error("Payment could not load. Disable any ad blocker and retry.");
+        return;
+      }
     }
 
     trackInitiateCheckout(pixelItems, pixelTotal);
@@ -737,7 +748,12 @@ export default function CheckoutPage() {
         paymentMethod: activeMethod,
       });
 
-      const rzp = new window.Razorpay({
+      // Re-read after the awaits above: the guard that made this safe ran
+      // before them, and a type that admits checkout.js might not be there
+      // is the honest one.
+      const RazorpayCtor = window.Razorpay;
+      if (!RazorpayCtor) throw new Error("Payment could not load. Please retry.");
+      const rzp = new RazorpayCtor({
         key: orderData.keyId,
         amount: orderData.amountPaise,
         currency: orderData.currency,
@@ -795,13 +811,8 @@ export default function CheckoutPage() {
   return (
     <>
       {/* Load Razorpay checkout.js via Next.js Script — more reliable than dynamic DOM insert */}
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-        onLoad={() => setScriptState("ready")}
-        onError={() => setScriptState("error")}
-      />
-
+      {/* checkout.js is loaded by useRazorpay, which asks whether
+          window.Razorpay exists rather than trusting a one-shot onLoad. */}
       <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
         <h1 className="mb-6 text-xl font-bold sm:text-2xl">Checkout</h1>
 
@@ -1014,9 +1025,9 @@ export default function CheckoutPage() {
                   <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                 </div>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={retryScript}
                   className="shrink-0 rounded p-1 hover:bg-red-100"
-                  title="Reload page"
+                  title="Retry loading payment"
                 >
                   <RefreshCw className="size-3.5" />
                 </button>
@@ -1064,11 +1075,6 @@ export default function CheckoutPage() {
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   Processing…
-                </>
-              ) : scriptState === null ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Loading payment…
                 </>
               ) : (
                 <>

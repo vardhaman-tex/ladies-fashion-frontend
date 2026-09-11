@@ -96,6 +96,9 @@ export interface RazorpaySuccessResponse {
 
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => { open(): void };
+    // Optional on purpose: checkout.js is loaded at runtime, so every caller
+    // has to cope with it not being there yet. Typing it as always present let
+    // a truthiness guard read as dead code.
+    Razorpay?: new (options: RazorpayOptions) => { open(): void };
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,7 +17,7 @@ import { CartItemRow } from "@/components/cart/CartItemRow";
 import { useCart } from "@/hooks/useCart";
 
 export function CartDrawer() {
-  const { cart } = useCart();
+  const { cart, isMerging } = useCart();
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const itemCount = cart?.itemCount ?? 0;
@@ -53,7 +53,13 @@ export function CartDrawer() {
 
         {/* Scrollable item list */}
         <div className="flex-1 overflow-y-auto px-4">
-          {!cart || cart.items.length === 0 ? (
+          {/* A merge in flight outranks "empty" — see the note on /cart. */}
+          {isMerging && (!cart || cart.items.length === 0) ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+              <Loader2 className="size-8 animate-spin text-rose-600" />
+              <p className="text-sm font-medium">Moving your items into your cart…</p>
+            </div>
+          ) : !cart || cart.items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
               <ShoppingBag className="size-12 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">Your cart is empty</p>
