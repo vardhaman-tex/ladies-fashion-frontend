@@ -3,12 +3,18 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+// AVG_RATING is deliberately absent.
+//
+// There is no Review entity anywhere in the backend: Product.avgRating and
+// reviewCount are plain columns an admin can type into, so this chip sorted
+// the catalogue by a hand-entered number and presented it as customer
+// opinion. The API still accepts the sort, so the chip can come back the day
+// real reviews land behind it.
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "RECOMMENDED", label: "Best Match" },
   { value: "NEWEST", label: "New" },
   { value: "PRICE_ASC", label: "Price ↑" },
   { value: "PRICE_DESC", label: "Price ↓" },
-  { value: "AVG_RATING", label: "Rating" },
 ];
 
 export function ProductSort({ className }: { className?: string }) {

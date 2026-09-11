@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -40,18 +41,51 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /**
+     * Set while the action behind this button is in flight.
+     *
+     * Puts a spinner in front of the label, disables the button so the request
+     * cannot be fired twice, and marks it aria-busy for screen readers. Pass
+     * `loading={mutation.isPending}` rather than hand-rolling the ternary at
+     * each call site — that is how buttons ended up looking idle mid-request,
+     * and how two of them ended up spelling the spinner differently.
+     *
+     * `loadingText` replaces the label while loading, for actions where the
+     * verb should change ("Placing order…"). Without it the label stays put,
+     * which is usually what you want on a short action.
+     */
+    loading?: boolean
+    loadingText?: React.ReactNode
+  }
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  loadingText,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
+  const isIconOnly = typeof size === "string" && size.startsWith("icon")
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      // An explicit disabled still wins: a button can be both unavailable and
+      // mid-flight, and the caller's reason is the more specific one.
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading && <Loader2 className="animate-spin" aria-hidden="true" />}
+      {/* An icon-only button has no room for both; the spinner replaces it. */}
+      {loading && isIconOnly ? null : loading && loadingText ? loadingText : children}
+    </ButtonPrimitive>
   )
 }
 

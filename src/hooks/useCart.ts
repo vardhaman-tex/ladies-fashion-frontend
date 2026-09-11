@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   addToCart,
@@ -15,6 +15,21 @@ import { useAuthStore } from "@/stores/authStore";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
+
+/**
+ * Keyed so anything rendering the cart can ask whether a merge is in flight.
+ *
+ * CartProvider fires the merge as a side effect of logging in, far from any
+ * component that shows a cart, so without a key the only thing the cart page
+ * could see was a server cart that is genuinely still empty — and it said so,
+ * on top of items that were about to arrive.
+ */
+export const MERGE_CART_KEY = ["cart", "merge"];
+
+/** Whether the guest cart is being merged into the server cart right now. */
+export function useIsMergingCart() {
+  return useIsMutating({ mutationKey: MERGE_CART_KEY }) > 0;
+}
 
 /** Server cart for authenticated users */
 export function useServerCart() {
@@ -143,10 +158,17 @@ export function useMergeCart() {
   const guestClear = useGuestCartStore((s) => s.clearCart);
 
   return useMutation({
+    mutationKey: MERGE_CART_KEY,
     mutationFn: () => mergeGuestCart(guestItems),
     onSuccess: (data) => {
       qc.setQueryData(CART_KEY, data);
       guestClear();
+    },
+    onError: () => {
+      // The guest items are deliberately left in localStorage: they are the
+      // only copy, and dropping them because one request failed would lose the
+      // cart outright. CartProvider retries on the next auth change.
+      toast.error("We could not move your saved items into your cart. Please refresh.");
     },
   });
 }
@@ -160,9 +182,10 @@ export function useCart() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: serverCart, isLoading } = useServerCart();
   const guestItems = useGuestCartStore((s) => s.items);
+  const isMerging = useIsMergingCart();
 
   if (isAuthenticated) {
-    return { cart: serverCart ?? null, isLoading };
+    return { cart: serverCart ?? null, isLoading, isMerging };
   }
 
   // Derive a CartData-like object from guest items
@@ -190,5 +213,5 @@ export function useCart() {
     total: subtotal - totalDiscount,
   };
 
-  return { cart: guestCart, isLoading: false };
+  return { cart: guestCart, isLoading: false, isMerging };
 }

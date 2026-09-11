@@ -140,70 +140,6 @@ function StockIndicator({
   );
 }
 
-/* ─── Size Guide Modal ────────────────────────────────────────────────────── */
-function SizeGuideModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Size Guide</h3>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground text-xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="pb-2 pr-4">Size</th>
-                <th className="pb-2 pr-4">Bust (in)</th>
-                <th className="pb-2 pr-4">Waist (in)</th>
-                <th className="pb-2">Hip (in)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {[
-                ["XS", "32", "26", "35"],
-                ["S", "34", "28", "37"],
-                ["M", "36", "30", "39"],
-                ["L", "38", "32", "41"],
-                ["XL", "40", "34", "43"],
-                ["XXL", "42", "36", "45"],
-              ].map(([size, bust, waist, hip]) => (
-                <tr key={size} className="text-foreground">
-                  <td className="py-2 pr-4 font-medium">{size}</td>
-                  <td className="py-2 pr-4">{bust}</td>
-                  <td className="py-2 pr-4">{waist}</td>
-                  <td className="py-2">{hip}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Measurements are in inches. If between sizes, size up.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Skeleton ────────────────────────────────────────────────────────────── */
 function PDPSkeleton() {
   return (
@@ -260,7 +196,6 @@ export default function ProductDetailClient({
   const ctaRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef<HTMLDivElement>(null);
   const [ctaVisible, setCtaVisible] = useState(true);
-  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
@@ -501,7 +436,6 @@ export default function ProductDetailClient({
 
   return (
     <>
-      {/* SizeGuideModal hidden for now */}
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         {/* Breadcrumb */}
