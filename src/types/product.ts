@@ -108,6 +108,28 @@ export interface ProductDetail {
 }
 
 /**
+ * One filter value that exists in the catalogue, and how many products carry it.
+ */
+export interface ProductFacet {
+  /** Stored value, passed back verbatim as the filter parameter. */
+  value: string;
+  count: number;
+}
+
+/**
+ * Every filter value the catalogue can actually be narrowed by.
+ *
+ * The filter panel used to ship its own hardcoded lists, so it offered fabrics
+ * and occasions no product had. Anything absent here has nothing behind it and
+ * should not be offered.
+ */
+export interface ProductFacets {
+  colors: ProductFacet[];
+  fabrics: ProductFacet[];
+  occasions: ProductFacet[];
+}
+
+/**
  * Sort options for product listings.
  */
 export type ProductSort = "NEWEST" | "PRICE_ASC" | "PRICE_DESC" | "AVG_RATING" | "BEST_SELLING";
