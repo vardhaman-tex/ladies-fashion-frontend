@@ -5,8 +5,15 @@ export interface SiteSettings {
   logoUrl: string | null;
   /** Whether the store offers cash on delivery at all. */
   codEnabled: boolean;
-  /** Collected online at checkout; the courier collects the rest. */
+  /**
+   * Collected online at checkout; the courier collects the rest.
+   *
+   * Zero means full cash on delivery — nothing is taken online and the courier
+   * collects the whole total. It is the switch between the two COD models.
+   */
   codAdvanceAmount: number;
+  /** Added to the order total when the customer chooses COD. */
+  codFeeAmount: number;
   /** Smallest order COD is offered on. Null means no floor. */
   codMinOrderValue: number | null;
   /** Largest order COD is offered on. Null means no cap. */
@@ -15,7 +22,10 @@ export interface SiteSettings {
 
 export interface UpdateCodSettingsRequest {
   enabled: boolean;
+  /** Zero for full cash on delivery. */
   advanceAmount: number;
+  /** Required by the server; zero for no fee. */
+  feeAmount: number;
   /** Null clears the floor. */
   minOrderValue: number | null;
   /** Null clears the cap. */
