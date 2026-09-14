@@ -39,6 +39,8 @@ export interface OrderData {
   subtotal: number;
   totalDiscount: number;
   adminDiscount: number;
+  /** The cash-on-delivery charge on this order, already counted inside `total`. */
+  codFee: number;
   total: number;
   // Payment split — an order can be part-paid, so these are not derivable from status
   paymentMethod: OrderPaymentMethod;

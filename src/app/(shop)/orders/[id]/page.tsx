@@ -224,10 +224,28 @@ function OrderDetailContent({ id }: { id: string }) {
             <span className="text-muted-foreground">Delivery</span>
             <span className="text-green-600">FREE</span>
           </div>
+          {/* Itemised because it is inside the total: without this row a
+              ₹1,500 subtotal and a ₹1,540 total look like a mistake. */}
+          {order.codFee > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Cash on delivery charge</span>
+              <span>₹{order.codFee.toLocaleString("en-IN")}</span>
+            </div>
+          )}
           <div className="flex justify-between border-t pt-2 text-base font-bold">
             <span>Total</span>
             <span>₹{order.total.toLocaleString("en-IN")}</span>
           </div>
+          {/* What the courier will collect, on an order that still owes money.
+              Cancelled orders owe nothing, whatever the balance says. */}
+          {order.paymentMethod !== "PREPAID" &&
+            order.amountDue > 0 &&
+            order.status !== "CANCELLED" && (
+              <div className="flex justify-between border-t pt-2 font-medium">
+                <span>Pay on delivery</span>
+                <span>₹{order.amountDue.toLocaleString("en-IN")}</span>
+              </div>
+            )}
         </div>
       </div>
 

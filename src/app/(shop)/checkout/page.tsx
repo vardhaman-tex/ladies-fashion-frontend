@@ -32,7 +32,12 @@ import {
 } from "@/services/paymentService";
 import { cancelOrder } from "@/services/orderService";
 import { formatSizeLabel, formatVariantSummary } from "@/lib/catalogueDisplay";
-import { getCodAvailability, amountPayableNow, type CodAvailability } from "@/lib/cod";
+import {
+  getCodAvailability,
+  quotePayment,
+  type CodAvailability,
+  type PaymentQuote,
+} from "@/lib/cod";
 import {
   canonicalState,
   firstErrorField,
@@ -70,6 +75,22 @@ function formatAddress(a: AddressData) {
 }
 
 /**
+ * "Pay on delivery", either flavour of it.
+ *
+ * The customer makes one choice — online or on delivery — and which COD model
+ * that becomes depends on whether the store is asking for an advance. Every
+ * check that cares about the choice rather than the model goes through here, so
+ * turning the advance off does not quietly unselect a customer's COD radio.
+ */
+function isCod(method: PaymentMethod) {
+  return method === "COD_PARTIAL" || method === "COD_FULL";
+}
+
+function rupees(amount: number) {
+  return amount.toLocaleString("en-IN");
+}
+
+/**
  * How the customer wants to pay.
  *
  * COD is shown even when it is unavailable, with the reason, rather than being
@@ -80,20 +101,26 @@ function formatAddress(a: AddressData) {
 function PaymentMethodChoice({
   value,
   onChange,
-  orderTotal,
-  advanceAmount,
+  codMethod,
+  merchandiseTotal,
+  codQuote,
   availability,
   disabled,
 }: {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
-  orderTotal: number;
-  advanceAmount: number;
+  /** Which COD model picking this option would produce, per the store's settings. */
+  codMethod: PaymentMethod;
+  merchandiseTotal: number;
+  /**
+   * What COD would cost, whether or not it is the current choice. An option has
+   * to describe the thing it offers, so this is the COD quote and not the quote
+   * for whatever is selected.
+   */
+  codQuote: PaymentQuote;
   availability: CodAvailability;
   disabled?: boolean;
 }) {
-  const dueOnDelivery = Math.max(orderTotal - Math.min(advanceAmount, orderTotal), 0);
-
   return (
     <div className="rounded-xl border p-4">
       <h2 className="mb-3 text-sm font-semibold">Payment method</h2>
@@ -118,7 +145,7 @@ function PaymentMethodChoice({
               Pay now
             </span>
             <span className="block text-xs text-muted-foreground">
-              Pay ₹{orderTotal.toLocaleString("en-IN")} online and you are done.
+              Pay ₹{rupees(merchandiseTotal)} online and you are done.
             </span>
           </span>
         </label>
@@ -128,7 +155,7 @@ function PaymentMethodChoice({
             "flex items-start gap-3 rounded-lg border p-3 transition-colors",
             !availability.available
               ? "cursor-not-allowed opacity-60"
-              : value === "COD_PARTIAL"
+              : isCod(value)
                 ? "cursor-pointer border-rose-600 bg-rose-50/50 dark:bg-rose-950/20"
                 : "cursor-pointer hover:border-rose-300"
           )}
@@ -136,8 +163,8 @@ function PaymentMethodChoice({
           <input
             type="radio"
             name="paymentMethod"
-            checked={value === "COD_PARTIAL"}
-            onChange={() => onChange("COD_PARTIAL")}
+            checked={isCod(value)}
+            onChange={() => onChange(codMethod)}
             disabled={disabled || !availability.available}
             className="mt-0.5 size-4 shrink-0 accent-rose-600"
           />
@@ -147,13 +174,17 @@ function PaymentMethodChoice({
               Cash on delivery
             </span>
             {availability.available ? (
-              <>
-                <span className="block text-xs text-muted-foreground">
-                  ₹{Math.min(advanceAmount, orderTotal).toLocaleString("en-IN")} advance payment required to
-                  confirm and process the COD order. The remaining
-                  ₹{dueOnDelivery.toLocaleString("en-IN")} is payable at the time of delivery.
-                </span>
-              </>
+              <span className="block text-xs text-muted-foreground">
+                {/* With no advance configured there is nothing to pay now, and
+                    saying "₹0 advance payment required" made the option read
+                    like a broken one. */}
+                {codQuote.isPlaceOnly
+                  ? `No advance payment. Pay ₹${rupees(codQuote.dueOnDelivery)} in cash when your order is delivered.`
+                  : `₹${rupees(codQuote.payableNow)} advance payment required to confirm and process the COD order. The remaining ₹${rupees(codQuote.dueOnDelivery)} is payable at the time of delivery.`}
+                {codQuote.fee > 0
+                  ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery charge.`
+                  : ""}
+              </span>
             ) : (
               <span className="block text-xs text-muted-foreground">{availability.reason}</span>
             )}
@@ -185,6 +216,13 @@ export default function CheckoutPage() {
   const [policyError, setPolicyError] = useState(false);
   const { data: siteSettings } = useSiteSettings();
   const codAdvance = siteSettings?.codAdvanceAmount ?? 0;
+  const codFee = siteSettings?.codFeeAmount ?? 0;
+  /**
+   * Which COD model the store is running, read from the same two settings the
+   * server reads. The server still decides — this is what lets the page label
+   * the button "Place order" instead of "Pay ₹0 now" before it has asked.
+   */
+  const codMethod: PaymentMethod = codAdvance > 0 ? "COD_PARTIAL" : "COD_FULL";
 
   const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0] ?? null;
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -244,9 +282,11 @@ export default function CheckoutPage() {
     // If the cart changed after the choice was made and COD no longer qualifies,
     // fall back rather than sending the server a choice it will refuse.
     const guestMethod: PaymentMethod =
-      paymentMethod === "COD_PARTIAL" && guestCodAvailability.available ? "COD_PARTIAL" : "PREPAID";
-    const guestPayableNow = amountPayableNow(guestMethod, guestTotal, codAdvance);
-    const guestDueOnDelivery = guestTotal - guestPayableNow;
+      isCod(paymentMethod) && guestCodAvailability.available ? codMethod : "PREPAID";
+    // Every figure on this page comes from one of these two: the quote for what
+    // is selected, and the quote for COD so the COD option can describe itself.
+    const guestQuote = quotePayment(guestMethod, guestTotal, codAdvance, codFee);
+    const guestCodQuote = quotePayment(codMethod, guestTotal, codAdvance, codFee);
 
     // Starts closed on the dashed placeholder, so the first screenful is the
     // order rather than eight empty fields. One extra tap before a guest can
@@ -302,7 +342,9 @@ export default function CheckoutPage() {
       // Wait for checkout.js rather than turning the customer away. They have
       // filled the form in and pressed pay, and telling them to try again in
       // a moment is the worst thing to say at that point in the funnel.
-      if (!window.Razorpay) {
+      // Under full COD nothing is collected online, so checkout.js is beside
+      // the point and an ad blocker holding it up must not stop the order.
+      if (!guestQuote.isPlaceOnly && !window.Razorpay) {
         setIsProcessing(true);
         const scriptReady = await ensureReady();
         setIsProcessing(false);
@@ -315,15 +357,17 @@ export default function CheckoutPage() {
       // Fired on the attempt, not on page load: reaching /checkout is not
       // intent, filling it in and pressing pay is. A pageview-based funnel
       // counted every abandoned tab as an initiated checkout.
-      trackInitiateCheckout(
-        guestItems.map((item) => ({
-          id: item.productId,
-          name: item.productName,
-          value: item.finalPrice,
-          quantity: item.quantity,
-        })),
-        guestTotal
-      );
+      // Built once and reused by the purchase event below, so initiate and
+      // purchase are reporting the same basket by construction.
+      const pixelGuestItems = guestItems.map((item) => ({
+        id: item.productId,
+        name: item.productName,
+        value: item.finalPrice,
+        quantity: item.quantity,
+      }));
+      // The order's value, COD charge included — that is what the customer
+      // pays and what the campaign should be optimising toward.
+      trackInitiateCheckout(pixelGuestItems, guestQuote.total);
 
       // The same moment, reported for GA4's funnel. add_payment_info carries
       // the method, which is the dimension worth having in this business: it is
@@ -335,8 +379,8 @@ export default function CheckoutPage() {
         price: item.finalPrice,
         quantity: item.quantity,
       }));
-      gaBeginCheckout(gaGuestItems, guestTotal);
-      gaAddPaymentInfo(gaGuestItems, guestTotal, guestMethod);
+      gaBeginCheckout(gaGuestItems, guestQuote.total);
+      gaAddPaymentInfo(gaGuestItems, guestQuote.total, guestMethod);
 
       // `state` is deliberately absent: it goes through canonicalState below
       // rather than being sent as typed.
@@ -366,6 +410,28 @@ export default function CheckoutPage() {
           })),
           paymentMethod: guestMethod,
         });
+
+        // Full cash on delivery: the server has already placed the order, and
+        // there is no ₹0 payment for the gateway to take. A null razorpayOrderId
+        // with zero paise is the agreed signal, so go straight to the
+        // confirmation rather than opening a sheet that cannot open.
+        if (!orderData.razorpayOrderId || !orderData.keyId || orderData.amountPaise === 0) {
+          trackPurchase(orderData.internalOrderId, orderData.orderTotal, pixelGuestItems);
+          gaPurchase(
+            orderData.internalOrderId,
+            orderData.orderTotal,
+            gaGuestItems,
+            orderData.paymentMethod
+          );
+          clearGuestCart();
+          toast.success(
+            `Order placed — ₹${rupees(orderData.amountDueOnDelivery)} to pay on delivery.`
+          );
+          // orderRef: swap internalOrderId → orderNumber once the confirmation
+          // page reads that field.
+          router.push(`/guest-order-confirmed?orderRef=${orderData.internalOrderId}`);
+          return;
+        }
 
         // Re-read after the awaits above: the guard that made this safe ran
         // before them, and a type that admits checkout.js might not be there
@@ -397,21 +463,12 @@ export default function CheckoutPage() {
               // that is the revenue the campaign should be optimising toward.
               // Worth revisiting once the RTO rate on COD is known — if refused
               // deliveries are common this systematically overstates ROAS.
-              trackPurchase(
-                confirmed.id,
-                guestTotal,
-                guestItems.map((item) => ({
-                  id: item.productId,
-                  name: item.productName,
-                  value: item.finalPrice,
-                  quantity: item.quantity,
-                }))
-              );
-              gaPurchase(confirmed.id, guestTotal, gaGuestItems, guestMethod);
+              trackPurchase(confirmed.id, guestQuote.total, pixelGuestItems);
+              gaPurchase(confirmed.id, guestQuote.total, gaGuestItems, guestMethod);
               clearGuestCart();
               toast.success(
-                guestMethod === "COD_PARTIAL"
-                  ? `Order confirmed — ₹${guestDueOnDelivery.toLocaleString("en-IN")} to pay on delivery.`
+                isCod(guestMethod)
+                  ? `Order confirmed — ₹${rupees(guestQuote.dueOnDelivery)} to pay on delivery.`
                   : "Payment successful!"
               );
               // orderRef: swap confirmed.id → confirmed.orderNumber once backend ships that field
@@ -554,20 +611,38 @@ export default function CheckoutPage() {
                     <span className="text-muted-foreground">Delivery</span>
                     <span className="text-green-600">FREE</span>
                   </div>
+                  {/* The COD charge is part of the order, so it belongs above
+                      the total and inside it — the summary used to show a total
+                      with no charge in it while the server charged one. */}
+                  {guestQuote.fee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cash on delivery charge</span>
+                      <span>₹{rupees(guestQuote.fee)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t pt-2 text-base font-bold">
                     <span>Total</span>
-                    <span>₹{guestTotal.toLocaleString("en-IN")}</span>
+                    <span>₹{rupees(guestQuote.total)}</span>
                   </div>
-                  {guestMethod === "COD_PARTIAL" && (
+                  {isCod(guestMethod) && (
                     <div className="space-y-1 border-t pt-2">
-                      <div className="flex justify-between font-medium">
-                        <span>Paying now</span>
-                        <span>₹{guestPayableNow.toLocaleString("en-IN")}</span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Cash on delivery</span>
-                        <span>₹{guestDueOnDelivery.toLocaleString("en-IN")}</span>
-                      </div>
+                      {guestQuote.isPlaceOnly ? (
+                        <div className="flex justify-between font-medium">
+                          <span>Pay on delivery</span>
+                          <span>₹{rupees(guestQuote.dueOnDelivery)}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between font-medium">
+                            <span>Paying now</span>
+                            <span>₹{rupees(guestQuote.payableNow)}</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Cash on delivery</span>
+                            <span>₹{rupees(guestQuote.dueOnDelivery)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -576,13 +651,16 @@ export default function CheckoutPage() {
               <PaymentMethodChoice
                 value={guestMethod}
                 onChange={setPaymentMethod}
-                orderTotal={guestTotal}
-                advanceAmount={codAdvance}
+                codMethod={codMethod}
+                merchandiseTotal={guestTotal}
+                codQuote={guestCodQuote}
                 availability={guestCodAvailability}
                 disabled={isProcessing}
               />
 
-              {scriptState === "error" && (
+              {/* Silent under full COD: there is no gateway in that flow, so a
+                  failed checkout.js is not the customer's problem. */}
+              {!guestQuote.isPlaceOnly && scriptState === "error" && (
                 <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -633,7 +711,7 @@ export default function CheckoutPage() {
                 className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
-                disabled={isProcessing || scriptState === "error"}
+                disabled={isProcessing || (!guestQuote.isPlaceOnly && scriptState === "error")}
               >
                 {isProcessing ? (
                   <>
@@ -642,9 +720,14 @@ export default function CheckoutPage() {
                   </>
                 ) : (
                   <>
-                    {guestMethod === "COD_PARTIAL"
-                      ? `Pay ₹${guestPayableNow.toLocaleString("en-IN")} now`
-                      : `Pay ₹${guestPayableNow.toLocaleString("en-IN")}`}
+                    {/* Nothing is being collected, so there is nothing to call
+                        a payment. "Pay ₹0 now" was the button asking for money
+                        the order does not owe. */}
+                    {guestQuote.isPlaceOnly
+                      ? "Place order"
+                      : isCod(guestMethod)
+                        ? `Pay ₹${rupees(guestQuote.payableNow)} now`
+                        : `Pay ₹${rupees(guestQuote.payableNow)}`}
                     <ChevronRight className="size-4" />
                   </>
                 )}
@@ -657,7 +740,9 @@ export default function CheckoutPage() {
               )}
 
               <p className="text-center text-xs text-muted-foreground">
-                Secured by Razorpay · 256-bit SSL encryption
+                {guestQuote.isPlaceOnly
+                  ? "Pay in cash when your order is delivered"
+                  : "Secured by Razorpay · 256-bit SSL encryption"}
               </p>
             </div>
           </div>
@@ -687,9 +772,9 @@ export default function CheckoutPage() {
   const codAvailability = getCodAvailability(siteSettings, cart.total);
   // Same fallback as the guest path: never send a choice the server will refuse.
   const activeMethod: PaymentMethod =
-    paymentMethod === "COD_PARTIAL" && codAvailability.available ? "COD_PARTIAL" : "PREPAID";
-  const payableNow = amountPayableNow(activeMethod, cart.total, codAdvance);
-  const dueOnDelivery = cart.total - payableNow;
+    isCod(paymentMethod) && codAvailability.available ? codMethod : "PREPAID";
+  const quote = quotePayment(activeMethod, cart.total, codAdvance, codFee);
+  const codQuote = quotePayment(codMethod, cart.total, codAdvance, codFee);
 
   // Captured here, where the early return above still has `cart` narrowed to
   // non-null. The Razorpay callbacks further down are closures, and inside
@@ -700,7 +785,9 @@ export default function CheckoutPage() {
     value: item.finalPrice,
     quantity: item.quantity,
   }));
-  const pixelTotal = cart.total;
+  // The order's value, COD charge included — the same figure the summary and
+  // the server put on the order.
+  const pixelTotal = quote.total;
   // GA4's item shape, which is not the pixel's. Built once here rather than at
   // each event, so begin_checkout, add_payment_info and purchase are reporting
   // the same basket by construction.
@@ -753,7 +840,9 @@ export default function CheckoutPage() {
     // Wait for checkout.js rather than turning the customer away. They have
     // filled the form in and pressed pay, and telling them to try again in
     // a moment is the worst thing to say at that point in the funnel.
-    if (!window.Razorpay) {
+    // Under full COD nothing is collected online, so checkout.js is beside
+    // the point and an ad blocker holding it up must not stop the order.
+    if (!quote.isPlaceOnly && !window.Razorpay) {
       setIsProcessing(true);
       const scriptReady = await ensureReady();
       setIsProcessing(false);
@@ -765,7 +854,9 @@ export default function CheckoutPage() {
 
     trackInitiateCheckout(pixelItems, pixelTotal);
     gaBeginCheckout(gaItems, pixelTotal);
-    gaAddPaymentInfo(gaItems, pixelTotal, paymentMethod);
+    // activeMethod, not the raw radio state: what is reported has to be what
+    // the order is actually placed as.
+    gaAddPaymentInfo(gaItems, pixelTotal, activeMethod);
 
     setIsProcessing(true);
     try {
@@ -773,6 +864,21 @@ export default function CheckoutPage() {
         addressId: activeAddressId,
         paymentMethod: activeMethod,
       });
+
+      // Full cash on delivery: the server has already placed the order, and
+      // there is no ₹0 payment for the gateway to take. A null razorpayOrderId
+      // with zero paise is the agreed signal, so go straight to the order
+      // rather than opening a sheet that cannot open.
+      if (!orderData.razorpayOrderId || !orderData.keyId || orderData.amountPaise === 0) {
+        trackPurchase(orderData.internalOrderId, orderData.orderTotal, pixelItems);
+        gaPurchase(orderData.internalOrderId, orderData.orderTotal, gaItems, orderData.paymentMethod);
+        clearGuestCart();
+        toast.success(
+          `Order placed — ₹${rupees(orderData.amountDueOnDelivery)} to pay on delivery.`
+        );
+        router.push(`/orders/${orderData.internalOrderId}?confirmed=true`);
+        return;
+      }
 
       // Re-read after the awaits above: the guard that made this safe ran
       // before them, and a type that admits checkout.js might not be there
@@ -804,8 +910,8 @@ export default function CheckoutPage() {
             gaPurchase(confirmedOrder.id, pixelTotal, gaItems, activeMethod);
             clearGuestCart();
             toast.success(
-              activeMethod === "COD_PARTIAL"
-                ? `Order confirmed — ₹${dueOnDelivery.toLocaleString("en-IN")} to pay on delivery.`
+              isCod(activeMethod)
+                ? `Order confirmed — ₹${rupees(quote.dueOnDelivery)} to pay on delivery.`
                 : "Payment successful!"
             );
             router.push(`/orders/${confirmedOrder.id}?confirmed=true`);
@@ -999,20 +1105,38 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">Delivery</span>
                   <span className="text-green-600">FREE</span>
                 </div>
+                {/* The COD charge is part of the order, so it belongs above the
+                    total and inside it — the summary used to show a total with
+                    no charge in it while the server charged one. */}
+                {quote.fee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cash on delivery charge</span>
+                    <span>₹{rupees(quote.fee)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t pt-2 text-base font-bold">
                   <span>Total</span>
-                  <span>₹{cart.total.toLocaleString("en-IN")}</span>
+                  <span>₹{rupees(quote.total)}</span>
                 </div>
-                {activeMethod === "COD_PARTIAL" && (
+                {isCod(activeMethod) && (
                   <div className="space-y-1 border-t pt-2">
-                    <div className="flex justify-between font-medium">
-                      <span>Paying now</span>
-                      <span>₹{payableNow.toLocaleString("en-IN")}</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Cash on delivery</span>
-                      <span>₹{dueOnDelivery.toLocaleString("en-IN")}</span>
-                    </div>
+                    {quote.isPlaceOnly ? (
+                      <div className="flex justify-between font-medium">
+                        <span>Pay on delivery</span>
+                        <span>₹{rupees(quote.dueOnDelivery)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between font-medium">
+                          <span>Paying now</span>
+                          <span>₹{rupees(quote.payableNow)}</span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Cash on delivery</span>
+                          <span>₹{rupees(quote.dueOnDelivery)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -1021,8 +1145,9 @@ export default function CheckoutPage() {
             <PaymentMethodChoice
               value={activeMethod}
               onChange={setPaymentMethod}
-              orderTotal={cart.total}
-              advanceAmount={codAdvance}
+              codMethod={codMethod}
+              merchandiseTotal={cart.total}
+              codQuote={codQuote}
               availability={codAvailability}
               disabled={isProcessing}
             />
@@ -1045,7 +1170,9 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {scriptState === "error" && (
+            {/* Silent under full COD: there is no gateway in that flow, so a
+                failed checkout.js is not the customer's problem. */}
+            {!quote.isPlaceOnly && scriptState === "error" && (
               <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -1096,7 +1223,7 @@ export default function CheckoutPage() {
               className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
               size="lg"
               onClick={handlePlaceOrder}
-              disabled={isProcessing || scriptState === "error"}
+              disabled={isProcessing || (!quote.isPlaceOnly && scriptState === "error")}
             >
               {isProcessing ? (
                 <>
@@ -1105,9 +1232,14 @@ export default function CheckoutPage() {
                 </>
               ) : (
                 <>
-                  {activeMethod === "COD_PARTIAL"
-                    ? `Pay ₹${payableNow.toLocaleString("en-IN")} now`
-                    : `Pay ₹${payableNow.toLocaleString("en-IN")}`}
+                  {/* Nothing is being collected, so there is nothing to call a
+                      payment. "Pay ₹0 now" was the button asking for money the
+                      order does not owe. */}
+                  {quote.isPlaceOnly
+                    ? "Place order"
+                    : isCod(activeMethod)
+                      ? `Pay ₹${rupees(quote.payableNow)} now`
+                      : `Pay ₹${rupees(quote.payableNow)}`}
                   <ChevronRight className="size-4" />
                 </>
               )}
@@ -1120,7 +1252,9 @@ export default function CheckoutPage() {
             )}
 
             <p className="text-center text-xs text-muted-foreground">
-              Secured by Razorpay · 256-bit SSL encryption
+              {quote.isPlaceOnly
+                ? "Pay in cash when your order is delivered"
+                : "Secured by Razorpay · 256-bit SSL encryption"}
             </p>
           </div>
         </div>
