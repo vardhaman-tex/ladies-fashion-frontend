@@ -18,18 +18,32 @@ export function proxy(request: NextRequest) {
   const metaPixel = process.env.NEXT_PUBLIC_META_PIXEL_ID
     ? { script: " https://connect.facebook.net", endpoint: " https://www.facebook.com" }
     : { script: "", endpoint: "" };
+  // GA4 fails the same silent way, and needs more hosts than people expect:
+  // gtag.js is served from googletagmanager.com, while hits go to
+  // google-analytics.com and, for some regions and features, to
+  // *.analytics.google.com and *.googletagmanager.com. Miss one and a subset
+  // of events vanish, which is worse than none vanishing because the reports
+  // still look populated. Only named when a measurement id is configured.
+  const ga4 = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+    ? {
+        script: " https://www.googletagmanager.com",
+        endpoint:
+          " https://www.google-analytics.com https://*.google-analytics.com" +
+          " https://*.analytics.google.com https://*.googletagmanager.com",
+      }
+    : { script: "", endpoint: "" };
 
   const csp = [
     "default-src 'self'",
     // 'nonce-…' lets Next.js stamp its own inline RSC-payload scripts.
     // The razorpay domain is kept for the <Script> component on checkout.
     // 'unsafe-eval' is required in dev — React uses eval for better error stacks.
-    `script-src 'self' 'nonce-${nonce}' ${razorpay}${vercelAnalytics}${metaPixel.script}${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' ${razorpay}${vercelAnalytics}${metaPixel.script}${ga4.script}${isDev ? " 'unsafe-eval'" : ""}`,
     // 'unsafe-inline' for styles is fine — CSS injection can't steal cookies.
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: https://res.cloudinary.com https://picsum.photos${metaPixel.endpoint}`,
+    `img-src 'self' data: https://res.cloudinary.com https://picsum.photos${metaPixel.endpoint}${ga4.endpoint}`,
     "font-src 'self' data:",
-    `connect-src 'self' ${razorpay}${metaPixel.endpoint}`,
+    `connect-src 'self' ${razorpay}${metaPixel.endpoint}${ga4.endpoint}`,
     `frame-src ${razorpay}`,
     "object-src 'none'",
     "base-uri 'self'",

@@ -23,9 +23,11 @@ import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
+import { SizeGuideDialog } from "@/components/product/SizeGuideDialog";
 import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
 import { inr } from "@/lib/money";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
+import { gaViewItem } from "@/lib/ga";
 import { colourSlug, findVariantByColourSlug } from "@/lib/variantUrl";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
@@ -195,6 +197,7 @@ export default function ProductDetailClient({
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const ctaRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef<HTMLDivElement>(null);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [ctaVisible, setCtaVisible] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -284,11 +287,18 @@ export default function ProductDetailClient({
   const viewedId = product?.id;
   const viewedName = product?.name;
   const viewedPrice = product?.finalPrice;
+  const viewedCategory = product?.category?.name;
 
   useEffect(() => {
     if (!viewedId || !viewedName || viewedPrice == null) return;
     trackViewContent({ id: viewedId, name: viewedName, value: viewedPrice });
-  }, [viewedId, viewedName, viewedPrice]);
+    gaViewItem({
+      item_id: viewedId,
+      item_name: viewedName,
+      price: viewedPrice,
+      ...(viewedCategory ? { item_category: viewedCategory } : {}),
+    });
+  }, [viewedId, viewedName, viewedPrice, viewedCategory]);
 
   if (isLoading) return <PDPSkeleton />;
 
@@ -437,6 +447,8 @@ export default function ProductDetailClient({
   return (
     <>
 
+      <SizeGuideDialog open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+
       <div className="mx-auto max-w-7xl px-4 py-6">
         {/* Breadcrumb */}
         <div className="mb-4">
@@ -560,9 +572,20 @@ export default function ProductDetailClient({
             {/* Size selector */}
             {needsSizeChoice && (
               <div ref={sizeRef}>
-                <p className="mb-2 text-sm font-medium text-foreground">
-                  Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
-                </p>
+                {/* The guide sits next to the sizes, not in the footer: the
+                    moment a customer needs it is the moment she is choosing. */}
+                <div className="mb-2 flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-medium text-foreground">
+                    Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideOpen(true)}
+                    className="text-sm font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700"
+                  >
+                    Size guide
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {availableSizes.map((sku) => (
                     <button

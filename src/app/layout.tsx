@@ -7,6 +7,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { CartProvider } from "@/providers/CartProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { getSiteSettingsServer } from "@/lib/server-api";
 import {
@@ -172,6 +173,9 @@ export default async function RootLayout({
         {/* Renders nothing unless NEXT_PUBLIC_META_PIXEL_ID is set, so
             previews and local runs stay out of the production dataset. */}
         <MetaPixel nonce={nonce} />
+        {/* GA4 alongside the pixel, not instead of it: the pixel is what the
+            campaigns optimise on, GA4 is where the funnel can be read. */}
+        <GoogleAnalytics nonce={nonce} />
       </body>
     </html>
   );

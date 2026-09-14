@@ -12,6 +12,11 @@ import {
 } from "@/services/cartService";
 import { useGuestCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
+// remove_from_cart is deliberately not reported from here: the remove payload
+// carries only ids, and GA4 wants the item's name and price. Sending zeros
+// would put a wrong `value` into the reports, which is worse than the event
+// being absent. It wants the cart cache read at the call site instead.
+import { gaAddToCart } from "@/lib/ga";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
@@ -67,9 +72,20 @@ export function useAddToCart() {
       guestAdd(guestItem);
       return null;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, payload) => {
       if (data) qc.setQueryData(CART_KEY, data);
       toast.success("Added to cart");
+      // Reported here rather than at each button, so an add from a grid
+      // quick-add counts the same as one from the product page. GA4's funnel is
+      // only readable if add_to_cart means "an item was added", not "an item was
+      // added from the one surface somebody remembered to instrument".
+      gaAddToCart({
+        item_id: payload.productId,
+        item_name: payload.productName,
+        price: payload.price - payload.discountAmount,
+        quantity: payload.quantity,
+        ...(payload.size ? { item_variant: payload.size } : {}),
+      });
     },
     onError: () => toast.error("Failed to add to cart"),
   });
