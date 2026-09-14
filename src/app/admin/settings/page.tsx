@@ -353,6 +353,7 @@ function CodSection() {
 
   const [enabled, setEnabled] = useState(false);
   const [advance, setAdvance] = useState("100");
+  const [fee, setFee] = useState("40");
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -362,6 +363,7 @@ function CodSection() {
   if (settings && !hydrated) {
     setEnabled(settings.codEnabled);
     setAdvance(String(settings.codAdvanceAmount ?? 100));
+    setFee(String(settings.codFeeAmount ?? 40));
     setMinValue(settings.codMinOrderValue == null ? "" : String(settings.codMinOrderValue));
     setMaxValue(settings.codMaxOrderValue == null ? "" : String(settings.codMaxOrderValue));
     setHydrated(true);
@@ -385,29 +387,42 @@ function CodSection() {
 
   function handleSave() {
     const advanceAmount = Number(advance);
+    const feeAmount = Number(fee);
     const minOrderValue = minValue.trim() === "" ? null : Number(minValue);
     const maxOrderValue = maxValue.trim() === "" ? null : Number(maxValue);
 
-    if (!Number.isFinite(advanceAmount) || advanceAmount < 1) {
-      toast.error("The advance must be at least ₹1");
+    // Zero is a real setting, not a mistake: it is how the store switches to
+    // full cash on delivery, with the courier collecting the whole total. The
+    // old floor of ₹1 made that impossible to express from this form.
+    if (!Number.isFinite(advanceAmount) || advanceAmount < 0) {
+      toast.error("The advance cannot be negative. Use 0 for full cash on delivery.");
+      return;
+    }
+    if (!Number.isFinite(feeAmount) || feeAmount < 0) {
+      toast.error("The COD fee cannot be negative. Use 0 for no fee.");
       return;
     }
     // The same combinations the server refuses, caught here so the admin gets
-    // the reason immediately rather than after a round trip.
-    if (minOrderValue != null && minOrderValue <= advanceAmount) {
-      toast.error("Minimum order value must be above the advance — below it there is no balance to collect.");
-      return;
-    }
-    if (maxOrderValue != null && maxOrderValue <= advanceAmount) {
-      toast.error("Maximum order value must be above the advance, or COD can never be offered.");
-      return;
+    // the reason immediately rather than after a round trip. Both only mean
+    // anything while an advance is collected — at zero there is no threshold
+    // for the floor and cap to sit above, and applying them anyway would
+    // reject the very configuration that turns the advance off.
+    if (advanceAmount > 0) {
+      if (minOrderValue != null && minOrderValue <= advanceAmount) {
+        toast.error("Minimum order value must be above the advance — below it there is no balance to collect.");
+        return;
+      }
+      if (maxOrderValue != null && maxOrderValue <= advanceAmount) {
+        toast.error("Maximum order value must be above the advance, or COD can never be offered.");
+        return;
+      }
     }
     if (minOrderValue != null && maxOrderValue != null && maxOrderValue < minOrderValue) {
       toast.error("Maximum order value cannot be below the minimum.");
       return;
     }
 
-    save.mutate({ enabled, advanceAmount, minOrderValue, maxOrderValue });
+    save.mutate({ enabled, advanceAmount, feeAmount, minOrderValue, maxOrderValue });
   }
 
   return (
@@ -417,7 +432,8 @@ function CodSection() {
         <div>
           <h2 className="font-semibold">Cash on Delivery</h2>
           <p className="text-xs text-muted-foreground">
-            Customers pay a small advance online and the courier collects the rest on delivery.
+            An advance above ₹0 is collected online and the courier collects the rest. At ₹0 the
+            courier collects everything.
           </p>
         </div>
       </div>
@@ -443,19 +459,47 @@ function CodSection() {
             </span>
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
               <Label htmlFor="cod-advance">Advance paid online (₹)</Label>
               <Input
                 id="cod-advance"
                 type="number"
-                min={1}
+                min={0}
                 step="1"
                 value={advance}
                 onChange={(e) => setAdvance(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
                 Charged at checkout. Existing orders keep the advance they were quoted.
+              </p>
+              {/* Spelled out because it is a business decision disguised as a
+                  number: zero removes the only thing standing between a casual
+                  order and your stock. */}
+              {Number(advance) === 0 ? (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-500">
+                  Full cash on delivery: nothing is collected online and the courier collects
+                  the whole total. Nothing filters out refused deliveries — consider setting a
+                  maximum order value.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Set to 0 for full cash on delivery.</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="cod-fee">COD fee (₹)</Label>
+              <Input
+                id="cod-fee"
+                type="number"
+                min={0}
+                step="1"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Added to the order total when COD is chosen, and shown before the customer picks
+                it. Use 0 for no fee.
               </p>
             </div>
 
