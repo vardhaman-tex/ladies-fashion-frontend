@@ -6,6 +6,7 @@ import { useDebounce } from "use-debounce";
 import { SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useSearchSuggestions } from "@/hooks/useSearch";
+import { gaSearch } from "@/lib/ga";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,6 +34,10 @@ export function SearchBar() {
 
   const goToSearch = (q: string) => {
     if (!q.trim()) return;
+    // Reported on submit, not per keystroke: the debounced suggestion query
+    // fires as she types, and counting those would make `search` a measure of
+    // typing speed rather than of intent.
+    gaSearch(q);
     setIsOpen(false);
     router.push(`/search?q=${encodeURIComponent(q.trim())}`);
   };

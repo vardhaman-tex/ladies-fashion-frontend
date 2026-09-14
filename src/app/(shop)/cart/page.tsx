@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
+import { gaViewCart } from "@/lib/ga";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CartItemRow } from "@/components/cart/CartItemRow";
@@ -10,6 +12,25 @@ import { useClearCart, useCart } from "@/hooks/useCart";
 export default function CartPage() {
   const { cart, isLoading, isMerging } = useCart();
   const { mutate: clearCart, isPending: clearing } = useClearCart();
+
+  // Reported once the cart has resolved to something, keyed on the item count
+  // rather than the cart object: a refetch returning the same cart must not
+  // report a second view, and an empty cart is not a cart view.
+  const cartItemCount = cart?.items.length ?? 0;
+  useEffect(() => {
+    if (cartItemCount === 0) return;
+    const items = cart?.items ?? [];
+    gaViewCart(
+      items.map((item) => ({
+        item_id: item.productId,
+        item_name: item.productName,
+        price: item.finalPrice,
+        quantity: item.quantity,
+      })),
+      cart?.total
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItemCount]);
 
   if (isLoading) {
     return (
