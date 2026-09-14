@@ -45,6 +45,7 @@ import {
   type GuestAddressForm,
 } from "@/lib/checkoutAddress";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
+import { gaAddPaymentInfo, gaBeginCheckout, gaPurchase } from "@/lib/ga";
 import type { PaymentMethod } from "@/types/payment";
 
 /**
@@ -324,6 +325,19 @@ export default function CheckoutPage() {
         guestTotal
       );
 
+      // The same moment, reported for GA4's funnel. add_payment_info carries
+      // the method, which is the dimension worth having in this business: it is
+      // how the COD share of checkouts, and the COD-versus-prepaid drop-off,
+      // become readable at all.
+      const gaGuestItems = guestItems.map((item) => ({
+        item_id: item.productId,
+        item_name: item.productName,
+        price: item.finalPrice,
+        quantity: item.quantity,
+      }));
+      gaBeginCheckout(gaGuestItems, guestTotal);
+      gaAddPaymentInfo(gaGuestItems, guestTotal, guestMethod);
+
       // `state` is deliberately absent: it goes through canonicalState below
       // rather than being sent as typed.
       const { fullName, phone, email, addressLine1, city, pincode } = guestForm;
@@ -393,6 +407,7 @@ export default function CheckoutPage() {
                   quantity: item.quantity,
                 }))
               );
+              gaPurchase(confirmed.id, guestTotal, gaGuestItems, guestMethod);
               clearGuestCart();
               toast.success(
                 guestMethod === "COD_PARTIAL"
@@ -686,6 +701,15 @@ export default function CheckoutPage() {
     quantity: item.quantity,
   }));
   const pixelTotal = cart.total;
+  // GA4's item shape, which is not the pixel's. Built once here rather than at
+  // each event, so begin_checkout, add_payment_info and purchase are reporting
+  // the same basket by construction.
+  const gaItems = cart.items.map((item) => ({
+    item_id: item.productId,
+    item_name: item.productName,
+    price: item.finalPrice,
+    quantity: item.quantity,
+  }));
 
   // A returning customer has already answered this step, so it opens collapsed
   // on their default address and gets out of the way of the pay button.
@@ -740,6 +764,8 @@ export default function CheckoutPage() {
     }
 
     trackInitiateCheckout(pixelItems, pixelTotal);
+    gaBeginCheckout(gaItems, pixelTotal);
+    gaAddPaymentInfo(gaItems, pixelTotal, paymentMethod);
 
     setIsProcessing(true);
     try {
@@ -775,6 +801,7 @@ export default function CheckoutPage() {
               razorpaySignature: response.razorpay_signature,
             });
             trackPurchase(confirmedOrder.id, pixelTotal, pixelItems);
+            gaPurchase(confirmedOrder.id, pixelTotal, gaItems, activeMethod);
             clearGuestCart();
             toast.success(
               activeMethod === "COD_PARTIAL"
