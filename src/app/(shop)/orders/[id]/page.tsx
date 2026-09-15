@@ -11,7 +11,7 @@ import { useOrder, useCancelOrder } from "@/hooks/useOrders";
 import { OrderDetailSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { formatVariantSummary } from "@/lib/catalogueDisplay";
-import type { OrderStatus } from "@/types/order";
+import type { OrderStatus, OrderPaymentMethod } from "@/types/order";
 
 const STATUS_STEPS: OrderStatus[] = ["PENDING", "PAID", "CONFIRMED", "SHIPPED", "DELIVERED"];
 
@@ -41,12 +41,23 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function StatusTimeline({ status }: { status: OrderStatus }) {
+function StatusTimeline({
+  status,
+  paymentMethod,
+}: {
+  status: OrderStatus;
+  paymentMethod: OrderPaymentMethod;
+}) {
   if (status === "CANCELLED") return null;
-  const currentStep = STATUS_STEPS.indexOf(status);
+  // A cash order is never PAID before it is delivered, so showing "Paid" as
+  // the step between placing it and confirming it promises a stage that will
+  // not happen and makes a confirmed order look stuck.
+  const steps =
+    paymentMethod === "PREPAID" ? STATUS_STEPS : STATUS_STEPS.filter((s) => s !== "PAID");
+  const currentStep = steps.indexOf(status);
   return (
     <div className="flex items-center gap-0">
-      {STATUS_STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const done = i <= currentStep;
         return (
           <div key={step} className="flex flex-1 items-center last:flex-none">
@@ -63,7 +74,7 @@ function StatusTimeline({ status }: { status: OrderStatus }) {
                 {STATUS_LABELS[step]}
               </span>
             </div>
-            {i < STATUS_STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <div className={cn("h-0.5 flex-1 mb-4", done && i < currentStep ? "bg-rose-600" : "bg-muted")} />
             )}
           </div>
@@ -155,7 +166,7 @@ function OrderDetailContent({ id }: { id: string }) {
 
       {/* Status timeline */}
       <div className="mb-6 rounded-xl border p-4">
-        <StatusTimeline status={order.status} />
+        <StatusTimeline status={order.status} paymentMethod={order.paymentMethod} />
         {order.status === "CANCELLED" && (
           <p className="text-center text-sm text-red-600">This order has been cancelled.</p>
         )}
