@@ -185,7 +185,7 @@ function PaymentMethodChoice({
                     saying "₹0 advance payment required" made the option read
                     like a broken one. */}
                 {codQuote.isPlaceOnly
-                  ? `No advance payment. Pay ₹${rupees(codQuote.dueOnDelivery)} in cash when your order is delivered.`
+                  ? ""
                   : `₹${rupees(codQuote.payableNow)} advance payment required to confirm and process the COD order. The remaining ₹${rupees(codQuote.dueOnDelivery)} is payable at the time of delivery.`}
                 {codQuote.fee > 0
                   ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery charge.`
