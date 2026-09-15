@@ -75,6 +75,8 @@ export interface PlaceOrderPayload {
 
 export interface TrackOrderData {
   id: string;
+  /** The short number the customer is given and looks the order up by. */
+  orderNumber: string;
   status: OrderStatus;
   addrFullName: string;
   addrPhone: string;
@@ -93,5 +95,10 @@ export interface TrackOrderData {
   amountDue: number;
   itemCount: number;
   items: OrderItemData[];
-  createdAt: string;
+  /**
+   * The tracking endpoint calls this placedAt, not createdAt like the others.
+   * Typed as createdAt here, it arrived undefined and the page printed
+   * "Placed on Invalid Date".
+   */
+  placedAt: string;
 }
