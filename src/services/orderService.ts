@@ -26,9 +26,16 @@ export async function cancelOrder(id: string): Promise<OrderData> {
   return data.data;
 }
 
-export async function trackOrder(orderId: string, phone: string): Promise<TrackOrderData> {
+/**
+ * @param orderNumber the short human-readable number (X48ETU2), not the UUID.
+ *
+ * The parameter was called orderId and was sent under that name, which is not
+ * what the endpoint reads — so every lookup answered 400 and the page said
+ * "something went wrong" no matter what was typed into it.
+ */
+export async function trackOrder(orderNumber: string, phone: string): Promise<TrackOrderData> {
   const { data } = await api.get<ApiResponse<TrackOrderData>>(`${BASE}/track`, {
-    params: { orderId, phone },
+    params: { orderNumber, phone },
   });
   return data.data;
 }

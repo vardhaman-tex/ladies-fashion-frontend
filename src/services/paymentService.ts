@@ -1,3 +1,4 @@
+import { apiErrorFrom } from "@/lib/apiError";
 import type {
   CreatePaymentOrderRequest,
   CreatePaymentOrderResponse,
@@ -22,12 +23,7 @@ export async function createRazorpayOrder(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as ApiResponse<unknown>).message ?? "Failed to create payment order"
-    );
-  }
+  if (!res.ok) throw await apiErrorFrom(res, "Failed to create payment order");
   const body: ApiResponse<CreatePaymentOrderResponse> = await res.json();
   return body.data;
 }
@@ -39,12 +35,7 @@ export async function verifyPayment(req: PaymentVerifyRequest): Promise<{ id: st
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as ApiResponse<unknown>).message ?? "Payment verification failed"
-    );
-  }
+  if (!res.ok) throw await apiErrorFrom(res, "Payment verification failed");
   const body: ApiResponse<{ id: string }> = await res.json();
   return body.data;
 }
@@ -57,12 +48,7 @@ export async function createGuestRazorpayOrder(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as ApiResponse<unknown>).message ?? "Failed to create guest payment order"
-    );
-  }
+  if (!res.ok) throw await apiErrorFrom(res, "Failed to create guest payment order");
   const body: ApiResponse<GuestCreatePaymentOrderResponse> = await res.json();
   return body.data;
 }
@@ -75,12 +61,7 @@ export async function verifyGuestPayment(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as ApiResponse<unknown>).message ?? "Guest payment verification failed"
-    );
-  }
+  if (!res.ok) throw await apiErrorFrom(res, "Guest payment verification failed");
   const body: ApiResponse<{ id: string }> = await res.json();
   return body.data;
 }

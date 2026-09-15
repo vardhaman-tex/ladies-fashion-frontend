@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   MapPin, Package, ChevronRight, AlertCircle,
-  Plus, ShoppingBag, Loader2, RefreshCw, User, Banknote, CreditCard,
+  Plus, ShoppingBag, Loader2, RefreshCw, User, Banknote, CreditCard, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCart } from "@/hooks/useCart";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useAddresses } from "@/hooks/useAddresses";
+import { useAddresses, ADDRESSES_KEY } from "@/hooks/useAddresses";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { useAuthStore } from "@/stores/authStore";
 import { useGuestCartStore } from "@/stores/cartStore";
@@ -22,7 +23,12 @@ import { Button } from "@/components/ui/button";
 import { CheckoutSection } from "@/components/checkout/CheckoutSection";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
 import { GuestAddressFields, guestFieldId } from "@/components/checkout/GuestAddressFields";
+import { CheckoutSignIn } from "@/components/checkout/CheckoutSignIn";
 import { cn } from "@/lib/utils";
+import { ACCOUNT_EXISTS_EMAIL, ACCOUNT_EXISTS_PHONE, ApiError } from "@/lib/apiError";
+import { addAddress } from "@/services/addressService";
+import { getMe } from "@/services/authService";
+import type { AuthResponse } from "@/types/auth";
 import type { AddressData } from "@/types/address";
 import {
   createRazorpayOrder,
@@ -197,8 +203,10 @@ function PaymentMethodChoice({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart } = useCart();
+  const queryClient = useQueryClient();
+  const { cart, isLoading: cartLoading, isMerging } = useCart();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const setUser = useAuthStore((state) => state.setUser);
   const clearGuestCart = useGuestCartStore((state) => state.clearCart);
   const { data: addresses = [], isLoading: addressesLoading } = useAddresses();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -214,6 +222,19 @@ export default function CheckoutPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<GuestAddressErrors>({});
   const [policyError, setPolicyError] = useState(false);
+  /**
+   * The number the server told us already has an account, which turns the
+   * checkout into a sign-in rather than a dead end. Null the rest of the time.
+   */
+  const [signInPhone, setSignInPhone] = useState<string | null>(null);
+  /** The optional email belongs to an account. Dropping it is a way through. */
+  const [emailTaken, setEmailTaken] = useState(false);
+  /**
+   * They signed in from this page rather than arriving signed in. The screen
+   * changes under them when that happens, so it owes them a sentence saying
+   * what became of the details they had already filled in.
+   */
+  const [resumedFromSignIn, setResumedFromSignIn] = useState(false);
   const { data: siteSettings } = useSiteSettings();
   const codAdvance = siteSettings?.codAdvanceAmount ?? 0;
   const codFee = siteSettings?.codFeeAmount ?? 0;
@@ -246,6 +267,11 @@ export default function CheckoutPage() {
   function setField(field: GuestAddressField, value: string) {
     const next = { ...guestForm, [field]: value };
     setGuestForm(next);
+    // Both collisions are about a specific value, so editing that value takes
+    // the question away: a corrected number is not the number with an account,
+    // and the sign-in panel would be offering a code to the wrong phone.
+    if (field === "phone") setSignInPhone(null);
+    if (field === "email") setEmailTaken(false);
     // After a failed attempt, errors clear as the customer fixes them rather
     // than waiting for them to fail again.
     if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
@@ -427,9 +453,9 @@ export default function CheckoutPage() {
           toast.success(
             `Order placed — ₹${rupees(orderData.amountDueOnDelivery)} to pay on delivery.`
           );
-          // orderRef: swap internalOrderId → orderNumber once the confirmation
-          // page reads that field.
-          router.push(`/guest-order-confirmed?orderRef=${orderData.internalOrderId}`);
+          // The order number, not the UUID: it is what the confirmation page
+          // shows and what tracking looks an order up by.
+          router.push(`/guest-order-confirmed?orderRef=${orderData.orderNumber}`);
           return;
         }
 
@@ -471,9 +497,9 @@ export default function CheckoutPage() {
                   ? `Order confirmed — ₹${rupees(guestQuote.dueOnDelivery)} to pay on delivery.`
                   : "Payment successful!"
               );
-              // orderRef: swap confirmed.id → confirmed.orderNumber once backend ships that field
-              const orderRef = confirmed.id;
-              router.push(`/guest-order-confirmed?orderRef=${orderRef}`);
+              // The order number, not the UUID: it is what the confirmation
+              // page shows and what tracking looks an order up by.
+              router.push(`/guest-order-confirmed?orderRef=${orderData.orderNumber}`);
             } catch {
               toast.error("Payment verification failed. Contact support.");
               setIsProcessing(false);
@@ -488,9 +514,84 @@ export default function CheckoutPage() {
         });
         rzp.open();
       } catch (err) {
+        // Guest checkout keys a customer by their phone number, so one that
+        // belongs to a registered account cannot be one. That is not a mistake
+        // the customer can fix by trying again, and printing it at them was a
+        // dead end at the end of a filled-in form — so offer the way through.
+        if (err instanceof ApiError && err.code === ACCOUNT_EXISTS_PHONE) {
+          setSignInPhone(normalisePhone(guestForm.phone));
+          setIsProcessing(false);
+          focusAfterRender("checkout-signin");
+          return;
+        }
+        // The email is optional, and the phone here owns no account, so a code
+        // sent to it would sign them into nothing. Dropping the email is the
+        // way through, and the panel below offers exactly that.
+        if (err instanceof ApiError && err.code === ACCOUNT_EXISTS_EMAIL) {
+          setEmailTaken(true);
+          setIsProcessing(false);
+          focusAfterRender("checkout-email-taken");
+          return;
+        }
         toast.error(err instanceof Error ? err.message : "Failed to initiate payment.");
         setIsProcessing(false);
       }
+    }
+
+    /**
+     * The code checked out, so the session cookies are already set.
+     *
+     * The address goes across before the session is adopted, deliberately: the
+     * moment this page knows it is signed in it renders the authenticated
+     * checkout, and that screen asks for an address. Saving first means the one
+     * they just typed is already there and already selected, so signing in
+     * costs a code and nothing else. The cart follows on its own — CartProvider
+     * merges it as soon as the session lands.
+     */
+    async function handleVerified(user: AuthResponse) {
+      try {
+        const saved = await addAddress({
+          fullName: guestForm.fullName.trim(),
+          phone: normalisePhone(guestForm.phone),
+          addressLine1: guestForm.addressLine1.trim(),
+          addressLine2: guestForm.addressLine2.trim() || undefined,
+          city: guestForm.city.trim(),
+          state: canonicalState(guestForm),
+          pincode: guestForm.pincode.trim(),
+          isDefault: true,
+        });
+        // Seeded rather than refetched so the authenticated screen has it on
+        // its first render, with no gap where the customer is told they have
+        // no saved addresses.
+        queryClient.setQueryData<AddressData[]>(ADDRESSES_KEY, (old = []) => [
+          saved,
+          ...old.filter((a) => a.id !== saved.id).map((a) => ({ ...a, isDefault: false })),
+        ]);
+        setSelectedAddressId(saved.id);
+      } catch {
+        // Not fatal: they land on the authenticated checkout with their own
+        // saved addresses, and can pick or add one there.
+      }
+
+      setSignInPhone(null);
+      setResumedFromSignIn(true);
+      // Read the profile back rather than believing the auth response, which
+      // carries no verification flags — and those are the whole point of having
+      // just proven the number.
+      try {
+        setUser(await getMe());
+      } catch {
+        setUser({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isEmailVerified: false,
+          isMobileVerified: true,
+          roles: user.roles,
+        });
+      }
+      toast.success("Signed in — your cart and address came with you.");
     }
 
     return (
@@ -676,6 +777,42 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {signInPhone && (
+                <div id="checkout-signin" tabIndex={-1}>
+                  <CheckoutSignIn
+                    phone={signInPhone}
+                    onVerified={handleVerified}
+                    disabled={isProcessing}
+                  />
+                </div>
+              )}
+
+              {emailTaken && (
+                <div
+                  id="checkout-email-taken"
+                  tabIndex={-1}
+                  className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+                >
+                  <p className="font-semibold">That email belongs to an account</p>
+                  <p className="mt-0.5 text-xs">
+                    The email is optional here. Remove it to carry on as a guest, or{" "}
+                    <Link href="/login?redirect=/checkout" className="font-medium underline">
+                      sign in
+                    </Link>{" "}
+                    to use the account it belongs to.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-3"
+                    onClick={() => setField("email", "")}
+                  >
+                    Remove email and continue
+                  </Button>
+                </div>
+              )}
+
               <div>
                 <label className="flex items-start gap-2 text-sm text-muted-foreground">
                   <input
@@ -711,7 +848,13 @@ export default function CheckoutPage() {
                 className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
-                disabled={isProcessing || (!guestQuote.isPlaceOnly && scriptState === "error")}
+                // While the sign-in panel is up, the code is the next step and
+                // pressing this again would only earn the same refusal.
+                disabled={
+                  isProcessing ||
+                  signInPhone !== null ||
+                  (!guestQuote.isPlaceOnly && scriptState === "error")
+                }
               >
                 {isProcessing ? (
                   <>
@@ -751,7 +894,26 @@ export default function CheckoutPage() {
     );
   }
 
-  // ─── Authenticated checkout path (unchanged) ─────────────────────────────────
+  // ─── Authenticated checkout path ─────────────────────────────────────────────
+
+  /*
+    Nothing is known about the cart yet, so say nothing about it.
+
+    The server cart is fetched the moment a session exists, and when that
+    session was just created by signing in, the guest cart is still being merged
+    into it. Both gaps are a few hundred milliseconds in which the cart is
+    legitimately empty — and the branch below read that as "your cart is empty"
+    and offered to send the customer shopping, seconds after they filled in a
+    checkout. The one case that matters is the one this page now creates.
+  */
+  if (cartLoading || isMerging) {
+    return (
+      <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Getting your cart…</p>
+      </div>
+    );
+  }
 
   if (!cart || cart.items.length === 0) {
     return (
@@ -1218,6 +1380,13 @@ export default function CheckoutPage() {
                 </p>
               )}
             </div>
+
+            {resumedFromSignIn && (
+              <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900 dark:border-green-900/50 dark:bg-green-950/20 dark:text-green-200">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+                <span>You&apos;re signed in — check your order and place it.</span>
+              </div>
+            )}
 
             <Button
               className="w-full gap-2 bg-rose-600 hover:bg-rose-700"

@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { formatVariantSummary } from "@/lib/catalogueDisplay";
 import { cn } from "@/lib/utils";
 import { trackOrder } from "@/services/orderService";
-import type { TrackOrderData, OrderStatus } from "@/types/order";
+import type { TrackOrderData, OrderStatus, OrderPaymentMethod } from "@/types/order";
 
 const STATUS_STEPS: OrderStatus[] = ["PENDING", "PAID", "CONFIRMED", "SHIPPED", "DELIVERED"];
 
@@ -49,12 +49,23 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function StatusTimeline({ status }: { status: OrderStatus }) {
+function StatusTimeline({
+  status,
+  paymentMethod,
+}: {
+  status: OrderStatus;
+  paymentMethod: OrderPaymentMethod;
+}) {
   if (status === "CANCELLED") return null;
-  const currentStep = STATUS_STEPS.indexOf(status);
+  // A cash order is never PAID before it is delivered, so showing "Paid" as
+  // the step between placing it and confirming it promises a stage that will
+  // not happen and makes a confirmed order look stuck.
+  const steps =
+    paymentMethod === "PREPAID" ? STATUS_STEPS : STATUS_STEPS.filter((s) => s !== "PAID");
+  const currentStep = steps.indexOf(status);
   return (
     <div className="flex items-center">
-      {STATUS_STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const done = i <= currentStep;
         return (
           <div key={step} className="flex flex-1 items-center last:flex-none">
@@ -76,7 +87,7 @@ function StatusTimeline({ status }: { status: OrderStatus }) {
                 {STATUS_LABELS[step]}
               </span>
             </div>
-            {i < STATUS_STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <div
                 className={cn(
                   "mb-4 h-0.5 flex-1",
@@ -185,12 +196,13 @@ function TrackOrderForm() {
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold">
-                Order #{order.id.slice(0, 8).toUpperCase()}
-              </h2>
+              {/* The number they typed in, not eight characters of the UUID —
+                  showing them a different id than the one that found the order
+                  is how a customer ends up quoting the wrong one to support. */}
+              <h2 className="text-lg font-bold">Order #{order.orderNumber}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Placed on{" "}
-                {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                {new Date(order.placedAt).toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -202,7 +214,7 @@ function TrackOrderForm() {
 
           {/* Status timeline */}
           <div className="rounded-xl border p-4">
-            <StatusTimeline status={order.status} />
+            <StatusTimeline status={order.status} paymentMethod={order.paymentMethod} />
             {order.status === "CANCELLED" && (
               <p className="text-center text-sm text-red-600">This order has been cancelled.</p>
             )}
