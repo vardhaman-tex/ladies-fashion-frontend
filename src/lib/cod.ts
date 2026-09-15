@@ -54,11 +54,61 @@ export function getCodAvailability(
   return { available: true };
 }
 
-/** What the customer pays online, given their chosen method. */
-export function amountPayableNow(
-  method: "PREPAID" | "COD_PARTIAL",
-  orderTotal: number,
-  advanceAmount: number
-): number {
-  return method === "COD_PARTIAL" ? Math.min(advanceAmount, orderTotal) : orderTotal;
+/**
+ * Every number the checkout shows about one payment method, worked out once.
+ *
+ * It exists because these four figures have to agree with each other and with
+ * the server, and they were previously each derived at the point of display —
+ * which is how the summary came to show a total with no COD fee in it while the
+ * server charged one, and how the pay button came to read "Pay ₹0 now".
+ *
+ * @param merchandiseTotal the cart's value, before any COD fee
+ */
+export interface PaymentQuote {
+  /** Added to the total for choosing COD. Zero when prepaid, or when no fee is set. */
+  fee: number;
+  /** What the order is actually worth: merchandise plus the fee. */
+  total: number;
+  /** Collected online now. The whole total when prepaid, the advance on COD, zero under full COD. */
+  payableNow: number;
+  /** What the courier collects. */
+  dueOnDelivery: number;
+  /**
+   * Nothing is collected online, so there is no payment step at all — the order
+   * is placed and that is that. Drives the button's label and the decision not
+   * to open the gateway.
+   */
+  isPlaceOnly: boolean;
+}
+
+export function quotePayment(
+  method: "PREPAID" | "COD_PARTIAL" | "COD_FULL",
+  merchandiseTotal: number,
+  advanceAmount: number,
+  feeAmount: number
+): PaymentQuote {
+  if (method === "PREPAID") {
+    return {
+      fee: 0,
+      total: merchandiseTotal,
+      payableNow: merchandiseTotal,
+      dueOnDelivery: 0,
+      isPlaceOnly: false,
+    };
+  }
+
+  // The fee rides on the order, so it is collected by the courier along with
+  // everything else — it is part of the total, not a separate charge.
+  const fee = Math.max(feeAmount, 0);
+  const total = merchandiseTotal + fee;
+  // Never ask for more than the order is worth, however the advance is set.
+  const payableNow = Math.min(Math.max(advanceAmount, 0), total);
+
+  return {
+    fee,
+    total,
+    payableNow,
+    dueOnDelivery: Math.max(total - payableNow, 0),
+    isPlaceOnly: payableNow <= 0,
+  };
 }

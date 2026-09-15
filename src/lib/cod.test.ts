@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getCodAvailability, amountPayableNow } from "./cod";
+import { getCodAvailability, quotePayment } from "./cod";
 
 const settings = (over: Partial<{
   codEnabled: boolean;
@@ -57,16 +57,57 @@ describe("getCodAvailability", () => {
   });
 });
 
-describe("amountPayableNow", () => {
-  it("charges the whole total when prepaid", () => {
-    expect(amountPayableNow("PREPAID", 1500, 100)).toBe(1500);
+describe("quotePayment", () => {
+  it("charges the whole total when prepaid, and adds no fee", () => {
+    expect(quotePayment("PREPAID", 1500, 100, 40)).toEqual({
+      fee: 0,
+      total: 1500,
+      payableNow: 1500,
+      dueOnDelivery: 0,
+      isPlaceOnly: false,
+    });
   });
 
-  it("charges only the advance on COD", () => {
-    expect(amountPayableNow("COD_PARTIAL", 1500, 100)).toBe(100);
+  it("charges only the advance on partial COD, fee included in the total", () => {
+    expect(quotePayment("COD_PARTIAL", 1500, 100, 40)).toEqual({
+      fee: 40,
+      total: 1540,
+      payableNow: 100,
+      dueOnDelivery: 1440,
+      isPlaceOnly: false,
+    });
+  });
+
+  it("collects nothing online under full COD", () => {
+    // The whole point of the zero advance: no payment step at all.
+    expect(quotePayment("COD_FULL", 1500, 0, 40)).toEqual({
+      fee: 40,
+      total: 1540,
+      payableNow: 0,
+      dueOnDelivery: 1540,
+      isPlaceOnly: true,
+    });
+  });
+
+  it("treats a zero advance as place-only whichever COD label it is given", () => {
+    // The server decides the model; a stale COD_PARTIAL from the client must
+    // not resurrect a payment step the settings have switched off.
+    expect(quotePayment("COD_PARTIAL", 1500, 0, 0).isPlaceOnly).toBe(true);
   });
 
   it("never charges more than the order is worth", () => {
-    expect(amountPayableNow("COD_PARTIAL", 80, 100)).toBe(80);
+    const quote = quotePayment("COD_PARTIAL", 80, 100, 0);
+    expect(quote.payableNow).toBe(80);
+    expect(quote.dueOnDelivery).toBe(0);
+  });
+
+  it("ignores a negative fee or advance rather than crediting the customer", () => {
+    expect(quotePayment("COD_FULL", 1500, -50, -40)).toEqual({
+      fee: 0,
+      total: 1500,
+      payableNow: 0,
+      dueOnDelivery: 1500,
+      isPlaceOnly: true,
+    });
   });
 });

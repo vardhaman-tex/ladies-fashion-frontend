@@ -1,9 +1,10 @@
 /**
- * COD_FULL exists on the server's enum but is refused at checkout — nothing
- * collects money for it and nothing deducts stock without a first payment — so
- * it is deliberately not in this union.
+ * COD_PARTIAL is what the storefront sends to mean "cash on delivery". Which
+ * COD model that becomes is the store's decision, not the client's: the server
+ * reads its own settings and answers with COD_PARTIAL or COD_FULL, so
+ * COD_FULL appears in responses without ever being requested.
  */
-export type PaymentMethod = "PREPAID" | "COD_PARTIAL";
+export type PaymentMethod = "PREPAID" | "COD_PARTIAL" | "COD_FULL";
 
 export interface CreatePaymentOrderRequest {
   addressId: string;
@@ -44,11 +45,17 @@ export interface GuestPaymentVerifyRequest {
 export interface CreatePaymentOrderResponse {
   internalOrderId: string;
   orderNumber: string;
-  razorpayOrderId: string;
-  /** What Razorpay charges now — the full total when prepaid, the advance on COD. */
+  /**
+   * Null under full cash on delivery: there is no payment to open, and the
+   * gateway will not mint a ₹0 order. That null, with amountPaise 0, is how the
+   * storefront knows the order is already placed and it should go straight to
+   * confirmation rather than launching Razorpay.
+   */
+  razorpayOrderId: string | null;
+  /** What Razorpay charges now — the full total when prepaid, the advance on COD, zero under full COD. */
   amountPaise: number;
   currency: string;
-  keyId: string;
+  keyId: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
