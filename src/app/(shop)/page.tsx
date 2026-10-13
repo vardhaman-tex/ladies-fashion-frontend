@@ -15,6 +15,7 @@ import {
   type FaqEntry,
 } from "@/lib/schema";
 import {
+  getBestSellersServer,
   getCategoriesServer,
   getFeaturedServer,
   getNewArrivalsServer,
@@ -114,13 +115,14 @@ function buildFaqs(settings: SiteSettings | null): FaqEntry[] {
 export default async function HomePage() {
   // Fetched in parallel; each helper degrades to null rather than throwing, so
   // a slow backend costs the page its seed data, never the render itself.
-  const [categories, featured, trending, newArrivals, sale, settings, socialLinks] =
+  const [categories, featured, trending, newArrivals, sale, bestSellers, settings, socialLinks] =
     await Promise.all([
       getCategoriesServer(),
       getFeaturedServer(8),
       getTrendingServer(8),
       getNewArrivalsServer(8),
       getSaleProductsServer(8),
+      getBestSellersServer(8),
       getSiteSettingsServer(),
       getSocialLinksServer(),
     ]);
@@ -162,6 +164,7 @@ export default async function HomePage() {
         initialTrending={trending ?? undefined}
         initialNewArrivals={newArrivals ?? undefined}
         initialSale={sale ?? undefined}
+        initialBestSellers={bestSellers ?? undefined}
       />
 
       {/* Server-rendered answer block. This is the only substantial prose on

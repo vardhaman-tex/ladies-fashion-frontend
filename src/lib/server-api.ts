@@ -92,6 +92,11 @@ export const getTrendingServer = cache(
     apiGet<PageResponse<ProductSummary>>(`/api/v1/products/trending${query({ size })}`)
 );
 
+export const getBestSellersServer = cache(
+  (size = 8): Promise<PageResponse<ProductSummary> | null> =>
+    apiGet<PageResponse<ProductSummary>>(`/api/v1/products/best-sellers${query({ size })}`)
+);
+
 export const getSaleProductsServer = cache(
   (size = 8): Promise<PageResponse<ProductSummary> | null> =>
     apiGet<PageResponse<ProductSummary>>(`/api/v1/products/sale${query({ size })}`)

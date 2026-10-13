@@ -2,22 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRightIcon, Lock, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
 import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { ProductStrip } from "@/components/product/ProductStrip";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategories } from "@/hooks/useCategories";
-import { useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
+import { useBestSellers, useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
 import type { PageResponse } from "@/types/api";
 import type { Category } from "@/types/category";
 import type { ProductSummary } from "@/types/product";
 
 const TRUST_BADGES = [
-  { icon: Truck, label: "Free Shipping", sub: undefined, bg: "bg-orange-100 text-orange-600" },
-  { icon: ShieldCheck, label: "Authentic Products", sub: "100% genuine fabrics", bg: "bg-purple-100 text-purple-600" },
-  { icon: Lock, label: "Secure Payment", sub: "Safe & encrypted checkout", bg: "bg-amber-100 text-amber-600" },
+  { icon: Truck, label: "Free shipping", sub: "On every order, across India" },
+  { icon: Banknote, label: "Cash on delivery", sub: "Pay when it arrives" },
+  { icon: ShieldCheck, label: "Secure payment", sub: "Encrypted checkout" },
+  { icon: MessageCircle, label: "Ask a person", sub: "Help on WhatsApp" },
 ];
 
 type ProductPage = PageResponse<ProductSummary>;
@@ -35,6 +36,7 @@ export interface HomeClientProps {
   initialTrending?: ProductPage;
   initialNewArrivals?: ProductPage;
   initialSale?: ProductPage;
+  initialBestSellers?: ProductPage;
 }
 
 export default function HomeClient({
@@ -43,11 +45,13 @@ export default function HomeClient({
   initialTrending,
   initialNewArrivals,
   initialSale,
+  initialBestSellers,
 }: HomeClientProps) {
   const { data: categories } = useCategories(initialCategories);
   const { data: featured, isLoading: loadingFeatured } = useFeaturedProducts({ size: 8 }, initialFeatured);
   const { data: trending, isLoading: loadingTrending } = useTrending({ size: 8 }, initialTrending);
   const { data: newArrivals, isLoading: loadingNewArrivals } = useNewArrivals({ size: 8 }, initialNewArrivals);
+  const { data: bestSellers, isLoading: loadingBestSellers } = useBestSellers({ size: 8 }, initialBestSellers);
   const { data: sale, isLoading: loadingSale } = useSaleProducts({ size: 8 }, initialSale);
 
   const heroImages = Array.from(
@@ -73,22 +77,22 @@ export default function HomeClient({
             Discover the latest collections of ethnic and contemporary fashion — curated for every festival, function, and everyday moment.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button size="lg" className="bg-white text-rose-600 hover:bg-white/90" render={<Link href="/products" />}>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90" render={<Link href="/products" />}>
               Shop Now
               <ArrowRightIcon />
             </Button>
-            <Button size="lg" variant="outline" className="border-white/60 bg-transparent text-white hover:bg-white/10" render={<Link href="/products" />}>
-              Explore Categories
+            <Button size="lg" variant="outline" className="border-white/60 bg-transparent text-white hover:bg-white/10" render={<a href="#categories" />}>
+              Shop by Category
             </Button>
           </div>
         </div>
       </section>
 
       {/* Category showcase */}
-      <section className="mx-auto w-full max-w-7xl px-4">
+      <section id="categories" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Browse</p>
             <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Shop by Category</h2>
           </div>
         </div>
@@ -132,7 +136,7 @@ export default function HomeClient({
         <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Curated for you</p>
               <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
             </div>
             <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
@@ -149,6 +153,7 @@ export default function HomeClient({
       {/* Trending / New Arrivals / Sale — hidden when all empty */}
       {(() => {
         const tabs = [
+          { value: "best-sellers", label: "Bestsellers", loading: loadingBestSellers, data: bestSellers },
           { value: "trending", label: "Trending", loading: loadingTrending, data: trending },
           { value: "new-arrivals", label: "New Arrivals", loading: loadingNewArrivals, data: newArrivals },
           { value: "sale", label: "Sale", loading: loadingSale, data: sale },
@@ -158,7 +163,7 @@ export default function HomeClient({
         const defaultTab = visibleTabs[0].value;
         return (
           <section className="mx-auto w-full max-w-7xl px-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Discover More</p>
             <Tabs defaultValue={defaultTab} className="mt-1">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
@@ -182,18 +187,50 @@ export default function HomeClient({
 
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">
-        <div className="grid grid-cols-3 gap-3 sm:divide-x sm:divide-border sm:gap-0">
-          {TRUST_BADGES.map(({ icon: Icon, label, sub, bg }) => (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:divide-x sm:divide-border sm:gap-0">
+          {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
-              <div className={`flex size-10 items-center justify-center rounded-full sm:size-12 ${bg}`}>
-                <Icon className="size-4 sm:size-5" />
+              <div className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                <Icon className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-foreground sm:text-sm">{label}</p>
-                {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Size help and returns, said plainly. The returns line restates the
+          published Shipping & Return Policy (damaged, defective or wrong items,
+          reported within 2 days) — if that policy changes, change this with it.
+          Nothing here promises size exchanges, because the policy does not. */}
+      <section className="mx-auto w-full max-w-7xl px-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card p-5 sm:p-6">
+            <Ruler className="size-6 text-primary" aria-hidden="true" />
+            <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Not sure of your size?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Every product page has a size chart in body measurements. Still unsure? Message us your
+              bust and waist on WhatsApp before you order and we&apos;ll suggest a size.
+            </p>
+            <Button variant="outline" className="mt-4" render={<Link href="/contact" />}>
+              Ask us about sizing
+            </Button>
+          </div>
+          <div className="rounded-2xl border bg-card p-5 sm:p-6">
+            <PackageCheck className="size-6 text-primary" aria-hidden="true" />
+            <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Returns, plainly</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Received a damaged, defective or wrong item? Tell us within 2 days of delivery with
+              photos and an unboxing video. Sale items and used or washed pieces can&apos;t be
+              returned, so please check the size chart before you order.
+            </p>
+            <Button variant="outline" className="mt-4" render={<Link href="/policies/return-policy" />}>
+              Read the full policy
+            </Button>
+          </div>
         </div>
       </section>
     </div>
