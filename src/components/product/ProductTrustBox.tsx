@@ -3,6 +3,7 @@
 import { MessageCircle, Truck, Wallet } from "lucide-react";
 
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { inr } from "@/lib/money";
 import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
 
 /**
@@ -20,25 +21,26 @@ export function ProductTrustBox({ productName }: { productName: string }) {
 
   // Only claim COD while the store is actually accepting it — the same setting
   // the checkout enforces, so the promise and the form cannot drift apart. The
-  // advance is deliberately not named here; it is stated at checkout, where the
-  // buyer is deciding to pay rather than deciding to look.
+  // fee is named here, not saved for checkout: "free shipping" next to a COD
+  // option that quietly costs extra reads as a bait-and-switch at the last step.
   const codEnabled = settings?.codEnabled === true;
 
   return (
     <section className="rounded-xl border bg-muted/30 p-4">
       <ul className="space-y-2.5 text-sm">
-        {codEnabled && (
+        {codEnabled && settings && (
           <li className="flex items-start gap-2.5">
             <Wallet className="mt-0.5 size-4 shrink-0 text-rose-600" />
             <span>
               <span className="font-medium">Cash on delivery</span> available
+              {settings.codFeeAmount > 0 ? ` (${inr(settings.codFeeAmount)} fee)` : ""}
             </span>
           </li>
         )}
         <li className="flex items-start gap-2.5">
           <Truck className="mt-0.5 size-4 shrink-0 text-rose-600" />
           <span>
-            <span className="font-medium">Free shipping</span> across India
+            <span className="font-medium">Free shipping</span> across India on every order
           </span>
         </li>
         <li className="flex items-start gap-2.5">

@@ -151,7 +151,7 @@ function PaymentMethodChoice({
               Pay now
             </span>
             <span className="block text-xs text-muted-foreground">
-              Pay ₹{rupees(merchandiseTotal)} online and you are done.
+              Pay ₹{rupees(merchandiseTotal)} online{codQuote.fee > 0 ? ". No cash-on-delivery fee." : "."}
             </span>
           </span>
         </label>
@@ -181,14 +181,15 @@ function PaymentMethodChoice({
             </span>
             {availability.available ? (
               <span className="block text-xs text-muted-foreground">
-                {/* With no advance configured there is nothing to pay now, and
-                    saying "₹0 advance payment required" made the option read
-                    like a broken one. */}
+                {/* Said in rupees, in the same shape as the Pay now option
+                    above, so the two read as a choice between equals. With no
+                    advance there is nothing to pay today; the whole total,
+                    fee included, goes to the courier. */}
                 {codQuote.isPlaceOnly
-                  ? ""
-                  : `₹${rupees(codQuote.payableNow)} advance payment required to confirm and process the COD order. The remaining ₹${rupees(codQuote.dueOnDelivery)} is payable at the time of delivery.`}
+                  ? `Pay ₹${rupees(codQuote.total)} to the courier when your order arrives. Nothing to pay online now.`
+                  : `Pay ₹${rupees(codQuote.payableNow)} online now to confirm, and ₹${rupees(codQuote.dueOnDelivery)} when your order arrives.`}
                 {codQuote.fee > 0
-                  ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery charge.`
+                  ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery fee.`
                   : ""}
               </span>
             ) : (

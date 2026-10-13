@@ -1,3 +1,4 @@
+import type { SiteSettings } from "@/services/siteSettingsService";
 /**
  * Server-side data access for SEO surfaces.
  *
@@ -118,8 +119,8 @@ export const getSocialLinksServer = cache(
 );
 
 export const getSiteSettingsServer = cache(
-  (): Promise<{ logoUrl: string | null } | null> =>
-    apiGet<{ logoUrl: string | null }>("/api/v1/settings/site", 300)
+  (): Promise<SiteSettings | null> =>
+    apiGet<SiteSettings>("/api/v1/settings/site", 300)
 );
 
 /**

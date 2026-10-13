@@ -8,10 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { useClearCart, useCart } from "@/hooks/useCart";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { getCodAvailability, quotePayment } from "@/lib/cod";
+import { inr } from "@/lib/money";
 
 export default function CartPage() {
   const { cart, isLoading, isMerging } = useCart();
   const { mutate: clearCart, isPending: clearing } = useClearCart();
+  const { data: siteSettings } = useSiteSettings();
+
+  // What cash on delivery would make this cart cost, shown before checkout so
+  // the fee is never a surprise at the last step. Null when COD is off or does
+  // not apply to this total, in which case the line is simply not shown.
+  const codOption =
+    cart && siteSettings && getCodAvailability(siteSettings, cart.total).available
+      ? quotePayment("COD_FULL", cart.total, siteSettings.codAdvanceAmount, siteSettings.codFeeAmount)
+      : null;
 
   // Reported once the cart has resolved to something, keyed on the item count
   // rather than the cart object: a refetch returning the same cart must not
@@ -136,6 +148,14 @@ export default function CartPage() {
                 <span>Total</span>
                 <span>₹{cart.total.toFixed(0)}</span>
               </div>
+              {codOption && (
+                <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  Pay online: <span className="font-medium text-foreground">{inr(cart.total)}</span>
+                  {" · "}
+                  Cash on delivery: <span className="font-medium text-foreground">{inr(codOption.total)}</span>
+                  {codOption.fee > 0 ? ` (includes ${inr(codOption.fee)} fee)` : ""}
+                </p>
+              )}
               {hasStockIssues && (
                 <p className="text-xs font-medium text-red-600">
                   Some items exceed available stock. Reduce quantity to continue.

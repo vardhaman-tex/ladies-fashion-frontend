@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { inr } from "@/lib/money";
+import { describeCod } from "@/lib/cod";
+import type { SiteSettings } from "@/services/siteSettingsService";
 import HomeClient from "./HomeClient";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
@@ -64,7 +67,10 @@ export const metadata: Metadata = {
  * that way: an invented delivery window or returns figure is a support ticket
  * and a trust problem, not an SEO win.
  */
-const FAQS: FaqEntry[] = [
+function buildFaqs(settings: SiteSettings | null): FaqEntry[] {
+  const cod = describeCod(settings);
+  const codFeeApplies = Boolean(settings?.codEnabled && settings.codFeeAmount > 0);
+  return [
   {
     question: "What does Vardhman Textile sell?",
     answer:
@@ -73,7 +79,10 @@ const FAQS: FaqEntry[] = [
   {
     question: "Does Vardhman Textile offer free shipping?",
     answer:
-      "Yes. Free shipping is included on orders placed through the Vardhman Textile store, and delivery is available across India. Shipping is confirmed at checkout before payment, so you can see exactly what applies to your order before you pay.",
+      "Yes. Free shipping is included on every order placed through the Vardhman Textile store, and delivery is available across India. Orders are dispatched in 1–2 days and usually arrive in 4–7 days." +
+      (codFeeApplies
+        ? ` Choosing Cash on Delivery adds a ${inr(settings!.codFeeAmount)} COD fee, shown at checkout before you place the order.`
+        : ""),
   },
   {
     question: "How do I track my Vardhman Textile order?",
@@ -83,12 +92,11 @@ const FAQS: FaqEntry[] = [
   {
     question: "What payment methods are accepted?",
     answer:
-      "Checkout is handled through an encrypted payment gateway that accepts credit cards, debit cards, UPI and net banking. Cash on Delivery is also available on eligible orders. Card and bank details are entered on the payment provider's secure form and are never stored by the store itself.",
+      "Checkout is handled through an encrypted payment gateway that accepts credit cards, debit cards, UPI and net banking. " + (settings?.codEnabled ? "Cash on Delivery is also available on eligible orders. " : "") + "Card and bank details are entered on the payment provider's secure form and are never stored by the store itself.",
   },
   {
     question: "Does Vardhman Textile offer Cash on Delivery (COD)?",
-    answer:
-      "Yes. Cash on Delivery is available on eligible orders across supported locations. A ₹100 advance payment is required to confirm a COD order, and the remaining amount is payable at the time of delivery. The ₹100 advance is non-refundable if the customer refuses, fails to collect, or returns the order for reasons attributable to the customer.",
+    answer: cod.long,
   },
   {
     question: "Can I order without creating an account?",
@@ -100,7 +108,8 @@ const FAQS: FaqEntry[] = [
     answer:
       "Returns and exchanges are governed by the store's Return Policy, which sets out which items are eligible, the window to raise a request and how refunds are issued. Read the current terms on the Return Policy page before placing an order.",
   },
-];
+  ];
+}
 
 export default async function HomePage() {
   // Fetched in parallel; each helper degrades to null rather than throwing, so
@@ -116,6 +125,8 @@ export default async function HomePage() {
       getSocialLinksServer(),
     ]);
 
+  const faqs = buildFaqs(settings);
+
   const sameAs = (socialLinks ?? [])
     .filter((link) => link.enabled && link.url)
     .map((link) => link.url);
@@ -124,7 +135,7 @@ export default async function HomePage() {
     organizationSchema({ logoUrl: settings?.logoUrl, sameAs }),
     websiteSchema(),
     breadcrumbSchema([{ name: "Home" }]),
-    faqSchema(FAQS),
+    faqSchema(faqs),
   ];
 
   if (categories?.length) {
@@ -172,7 +183,7 @@ export default async function HomePage() {
         </h2>
 
         <dl className="mt-6 flex flex-col divide-y divide-border border-t border-border">
-          {FAQS.map((faq) => (
+          {faqs.map((faq) => (
             <div key={faq.question} className="py-5">
               <dt className="text-base font-semibold text-foreground">
                 {faq.question}
