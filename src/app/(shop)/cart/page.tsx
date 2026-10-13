@@ -85,7 +85,7 @@ export default function CartPage() {
       */}
       {isMerging && isEmpty ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-          <Loader2 className="size-10 animate-spin text-rose-600" />
+          <Loader2 className="size-10 animate-spin text-primary" />
           <p className="text-lg font-medium">Moving your items into your cart…</p>
           <p className="text-sm text-muted-foreground">
             The items you added before signing in are on their way.
@@ -133,14 +133,14 @@ export default function CartPage() {
                   <span>{inr(cart.subtotal)}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
+                  <div className="flex justify-between text-success font-medium">
                     <span>Discount</span>
                     <span>−{inr(cart.totalDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
-                  <span className="text-green-600">Free</span>
+                  <span className="text-success">Free</span>
                 </div>
               </div>
               <Separator />
@@ -169,12 +169,12 @@ export default function CartPage() {
                 </div>
               )}
               {hasStockIssues && (
-                <p className="text-xs font-medium text-red-600">
+                <p className="text-xs font-medium text-destructive">
                   Some items exceed available stock. Reduce quantity to continue.
                 </p>
               )}
               <Button
-                className="w-full bg-rose-600 hover:bg-rose-700"
+                className="w-full bg-primary hover:bg-primary/90"
                 disabled={hasStockIssues}
                 render={<Link href="/checkout" />}
               >

@@ -52,7 +52,7 @@ export function ProductReviews({ slug }: { slug: string }) {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <StarRating value={review.rating} />
                 <span className="text-sm font-medium text-foreground">{review.reviewerName}</span>
-                <span className="text-xs font-medium text-green-600">Verified purchase</span>
+                <span className="text-xs font-medium text-success">Verified purchase</span>
                 <time dateTime={review.createdAt} className="text-xs text-muted-foreground">
                   {new Date(review.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",

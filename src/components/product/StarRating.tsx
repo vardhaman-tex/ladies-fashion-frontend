@@ -16,7 +16,7 @@ export function StarRating({ value, className }: { value: number; className?: st
           aria-hidden="true"
           className={cn(
             "size-4",
-            n <= Math.round(value) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"
+            n <= Math.round(value) ? "fill-warning text-warning" : "text-muted-foreground/40"
           )}
         />
       ))}

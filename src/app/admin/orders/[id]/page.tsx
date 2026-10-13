@@ -318,7 +318,7 @@ function PaymentLinksCard({ order }: { order: OrderData }) {
                 type="checkbox"
                 checked={notifySms}
                 onChange={(e) => setNotifySms(e.target.checked)}
-                className="size-4 accent-rose-600"
+                className="size-4 accent-primary"
               />
               Text the customer
             </label>
@@ -327,7 +327,7 @@ function PaymentLinksCard({ order }: { order: OrderData }) {
                 type="checkbox"
                 checked={notifyEmail}
                 onChange={(e) => setNotifyEmail(e.target.checked)}
-                className="size-4 accent-rose-600"
+                className="size-4 accent-primary"
               />
               Email the customer
             </label>

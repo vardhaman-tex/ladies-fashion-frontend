@@ -75,7 +75,7 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {hasDiscount && product.inStock && (
-          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-rose-600 px-2 py-0.5 text-xs font-semibold text-white">
+          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
             {Math.round(product.discountPercent)}% OFF
           </span>
         )}
@@ -114,7 +114,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.inStock && (
             <Button
               size="sm"
-              className="h-10 shrink-0 gap-1 rounded-full bg-rose-600 px-3.5 text-white hover:bg-rose-700"
+              className="h-10 shrink-0 gap-1 rounded-full bg-primary px-3.5 text-white hover:bg-primary/90"
               onClick={handleAddToCart}
               disabled={adding}
               aria-label={`Add ${product.name} to cart`}

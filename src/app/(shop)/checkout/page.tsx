@@ -140,7 +140,7 @@ function PaymentMethodChoice({
         <label
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-            value === "PREPAID" ? "border-rose-600 bg-rose-50/50 dark:bg-rose-950/20" : "hover:border-rose-300"
+            value === "PREPAID" ? "border-primary bg-accent/50" : "hover:border-primary/30"
           )}
         >
           <input
@@ -149,7 +149,7 @@ function PaymentMethodChoice({
             checked={value === "PREPAID"}
             onChange={() => onChange("PREPAID")}
             disabled={disabled}
-            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+            className="mt-0.5 size-4 shrink-0 accent-primary"
           />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -168,8 +168,8 @@ function PaymentMethodChoice({
             !availability.available
               ? "cursor-not-allowed opacity-60"
               : isCod(value)
-                ? "cursor-pointer border-rose-600 bg-rose-50/50 dark:bg-rose-950/20"
-                : "cursor-pointer hover:border-rose-300"
+                ? "cursor-pointer border-primary bg-accent/50"
+                : "cursor-pointer hover:border-primary/30"
           )}
         >
           <input
@@ -178,7 +178,7 @@ function PaymentMethodChoice({
             checked={isCod(value)}
             onChange={() => onChange(codMethod)}
             disabled={disabled || !availability.available}
-            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+            className="mt-0.5 size-4 shrink-0 accent-primary"
           />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -678,7 +678,7 @@ export default function CheckoutPage() {
             current={isProcessing ? 3 : isGuestAddressComplete(guestForm) ? 2 : 1}
           />
 
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-foreground/80">
             <User className="size-4 shrink-0" />
             <span>
               Checking out as guest.{" "}
@@ -740,7 +740,7 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               <div className="rounded-xl border p-5">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <Package className="size-5 text-rose-600" />
+                  <Package className="size-5 text-primary" />
                   Order Summary
                 </h2>
 
@@ -763,7 +763,7 @@ export default function CheckoutPage() {
                         <p className="text-xs text-muted-foreground">
                           {formatVariantSummary(item.size, item.color)} × {item.quantity}
                         </p>
-                        <p className="text-sm font-semibold text-rose-600">
+                        <p className="text-sm font-semibold text-primary">
                           ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                         </p>
                       </div>
@@ -777,14 +777,14 @@ export default function CheckoutPage() {
                     <span>₹{guestSubtotal.toLocaleString("en-IN")}</span>
                   </div>
                   {guestDiscount > 0 && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-success">
                       <span>Discount</span>
                       <span>−₹{guestDiscount.toLocaleString("en-IN")}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span className="text-green-600">FREE</span>
+                    <span className="text-success">FREE</span>
                   </div>
                   {/* The COD charge is part of the order, so it belongs above
                       the total and inside it — the summary used to show a total
@@ -836,14 +836,14 @@ export default function CheckoutPage() {
               {/* Silent under full COD: there is no gateway in that flow, so a
                   failed checkout.js is not the customer's problem. */}
               {!guestQuote.isPlaceOnly && scriptState === "error" && (
-                <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+                <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="mt-0.5 size-4 shrink-0" />
                     <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                   </div>
                   <button
                     onClick={retryScript}
-                    className="shrink-0 rounded p-1 hover:bg-red-100"
+                    className="shrink-0 rounded p-1 hover:bg-destructive/20"
                     title="Retry loading payment"
                   >
                     <RefreshCw className="size-3.5" />
@@ -865,7 +865,7 @@ export default function CheckoutPage() {
                 <div
                   id="checkout-email-taken"
                   tabIndex={-1}
-                  className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+                  className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning"
                 >
                   <p className="font-semibold">That email belongs to an account</p>
                   <p className="mt-0.5 text-xs">
@@ -897,14 +897,14 @@ export default function CheckoutPage() {
                       setPolicyAgreed(e.target.checked);
                       if (e.target.checked) setPolicyError(false);
                     }}
-                    className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                    className="mt-0.5 size-4 shrink-0 accent-primary"
                   />
                   <span>
                     I have read and agree to the{" "}
                     <Link
                       href="/policies/return-policy"
                       target="_blank"
-                      className="font-medium text-rose-600 underline hover:text-rose-700"
+                      className="font-medium text-primary underline hover:text-primary"
                     >
                       Cancellation, Return, Refund &amp; Exchange Policy
                     </Link>
@@ -912,14 +912,14 @@ export default function CheckoutPage() {
                   </span>
                 </label>
                 {policyError && (
-                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  <p className="mt-1.5 text-xs font-medium text-destructive">
                     Please accept the policy to place your order.
                   </p>
                 )}
               </div>
 
               <Button
-                className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+                className="w-full gap-2 bg-primary hover:bg-primary/90"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
                 // While the sign-in panel is up, the code is the next step and
@@ -951,7 +951,7 @@ export default function CheckoutPage() {
               </Button>
 
               {guestBlockReason && (
-                <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+                <p className="text-center text-sm font-medium text-accent-foreground">
                   {guestBlockReason}
                 </p>
               )}
@@ -1214,7 +1214,7 @@ export default function CheckoutPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-1 text-rose-600"
+                  className="gap-1 text-primary"
                   onClick={() => setAddAddrOpen(true)}
                 >
                   <Plus className="size-3.5" /> Add New
@@ -1250,7 +1250,7 @@ export default function CheckoutPage() {
                         className={cn(
                           "w-full rounded-xl border p-4 text-left transition-colors",
                           isSelected
-                            ? "border-rose-600 bg-rose-50 dark:bg-rose-950/20"
+                            ? "border-primary bg-accent"
                             : "border-border hover:border-muted-foreground/40"
                         )}
                       >
@@ -1259,7 +1259,7 @@ export default function CheckoutPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">{address.fullName}</span>
                               {address.isDefault && (
-                                <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
+                                <span className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground">
                                   Default
                                 </span>
                               )}
@@ -1273,7 +1273,7 @@ export default function CheckoutPage() {
                             className={cn(
                               "mt-1 size-4 shrink-0 rounded-full border-2 transition-colors",
                               isSelected
-                                ? "border-rose-600 bg-rose-600"
+                                ? "border-primary bg-primary"
                                 : "border-muted-foreground/40"
                             )}
                           />
@@ -1290,7 +1290,7 @@ export default function CheckoutPage() {
           <div className="space-y-4">
             <div className="rounded-xl border p-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <Package className="size-5 text-rose-600" />
+                <Package className="size-5 text-primary" />
                 Order Summary
               </h2>
 
@@ -1314,11 +1314,11 @@ export default function CheckoutPage() {
                         {formatVariantSummary(item.size, item.color)} × {item.quantity}
                       </p>
                       {item.availableQty !== undefined && item.quantity > item.availableQty && (
-                        <p className="text-xs font-medium text-red-600">
+                        <p className="text-xs font-medium text-destructive">
                           Only {item.availableQty} left
                         </p>
                       )}
-                      <p className="text-sm font-semibold text-rose-600">
+                      <p className="text-sm font-semibold text-primary">
                         ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -1332,14 +1332,14 @@ export default function CheckoutPage() {
                   <span>₹{cart.subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-success">
                     <span>Discount</span>
                     <span>−₹{cart.totalDiscount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span className="text-green-600">FREE</span>
+                  <span className="text-success">FREE</span>
                 </div>
                 {/* The COD charge is part of the order, so it belongs above the
                     total and inside it — the summary used to show a total with
@@ -1391,7 +1391,7 @@ export default function CheckoutPage() {
             {stockIssues.length > 0 && (
               <div
                 id="checkout-stock-issues"
-                className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400"
+                className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <div>
@@ -1409,14 +1409,14 @@ export default function CheckoutPage() {
             {/* Silent under full COD: there is no gateway in that flow, so a
                 failed checkout.js is not the customer's problem. */}
             {!quote.isPlaceOnly && scriptState === "error" && (
-              <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+              <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                 </div>
                 <button
                   onClick={retryScript}
-                  className="shrink-0 rounded p-1 hover:bg-red-100"
+                  className="shrink-0 rounded p-1 hover:bg-destructive/20"
                   title="Retry loading payment"
                 >
                   <RefreshCw className="size-3.5" />
@@ -1434,14 +1434,14 @@ export default function CheckoutPage() {
                     setPolicyAgreed(e.target.checked);
                     if (e.target.checked) setPolicyError(false);
                   }}
-                  className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                  className="mt-0.5 size-4 shrink-0 accent-primary"
                 />
                 <span>
                   I have read and agree to the{" "}
                   <Link
                     href="/policies/return-policy"
                     target="_blank"
-                    className="font-medium text-rose-600 underline hover:text-rose-700"
+                    className="font-medium text-primary underline hover:text-primary"
                   >
                     Cancellation, Return, Refund &amp; Exchange Policy
                   </Link>
@@ -1449,21 +1449,21 @@ export default function CheckoutPage() {
                 </span>
               </label>
               {policyError && (
-                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                <p className="mt-1.5 text-xs font-medium text-destructive">
                   Please accept the policy to place your order.
                 </p>
               )}
             </div>
 
             {resumedFromSignIn && (
-              <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900 dark:border-green-900/50 dark:bg-green-950/20 dark:text-green-200">
+              <div className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0" />
                 <span>You&apos;re signed in — check your order and place it.</span>
               </div>
             )}
 
             <Button
-              className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+              className="w-full gap-2 bg-primary hover:bg-primary/90"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || (!quote.isPlaceOnly && scriptState === "error")}
@@ -1489,7 +1489,7 @@ export default function CheckoutPage() {
             </Button>
 
             {authBlockReason && (
-              <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+              <p className="text-center text-sm font-medium text-accent-foreground">
                 {authBlockReason}
               </p>
             )}

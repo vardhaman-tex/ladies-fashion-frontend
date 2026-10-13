@@ -95,7 +95,7 @@ export default function HomeClient({
             Discover the latest collections of ethnic and contemporary fashion — curated for every festival, function, and everyday moment.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button size="lg" className="bg-white text-rose-600 hover:bg-white/90" render={<Link href="/products" />}>
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90" render={<Link href="/products" />}>
               Shop Now
               <ArrowRightIcon />
             </Button>
@@ -110,7 +110,7 @@ export default function HomeClient({
       <section id="categories" className="mx-auto hidden w-full max-w-7xl scroll-mt-24 px-4 md:block">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Browse</p>
             <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Shop by Category</h2>
           </div>
         </div>
@@ -157,10 +157,10 @@ export default function HomeClient({
         <section key={section.key} className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">{section.eyebrow}</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">{section.eyebrow}</p>
               <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">{section.title}</h2>
             </div>
-            <Link href={section.href} className="flex shrink-0 items-center gap-1 text-sm font-medium text-rose-600 hover:underline">
+            <Link href={section.href} className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline">
               View all
               <ArrowRightIcon className="size-4" />
             </Link>
@@ -190,7 +190,7 @@ export default function HomeClient({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:divide-x sm:divide-border sm:gap-0">
           {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
-              <div className="flex size-11 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+              <div className="flex size-11 items-center justify-center rounded-full bg-accent text-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </div>
               <div>
@@ -209,7 +209,7 @@ export default function HomeClient({
       <section className="mx-auto w-full max-w-7xl px-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
-            <Ruler className="size-6 text-rose-600" aria-hidden="true" />
+            <Ruler className="size-6 text-primary" aria-hidden="true" />
             <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Not sure of your size?</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Every product page has a size chart to help you choose. Still unsure? Message us on
@@ -220,7 +220,7 @@ export default function HomeClient({
             </Button>
           </div>
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
-            <PackageCheck className="size-6 text-rose-600" aria-hidden="true" />
+            <PackageCheck className="size-6 text-primary" aria-hidden="true" />
             <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Exchanges &amp; returns, plainly</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Wrong size? We exchange it for another size of the same piece within 2 days of

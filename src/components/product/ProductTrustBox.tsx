@@ -32,7 +32,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
       <ul className="space-y-2.5 text-sm">
         {codEnabled && settings && (
           <li className="flex items-start gap-2.5">
-            <Wallet className="mt-0.5 size-4 shrink-0 text-rose-600" />
+            <Wallet className="mt-0.5 size-4 shrink-0 text-primary" />
             <span>
               <span className="font-medium">Cash on delivery</span> available
               {cod.terms ? ` (${cod.terms})` : ""}
@@ -40,7 +40,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
           </li>
         )}
         <li className="flex items-start gap-2.5">
-          <Truck className="mt-0.5 size-4 shrink-0 text-rose-600" />
+          <Truck className="mt-0.5 size-4 shrink-0 text-primary" />
           <span>
             <span className="font-medium">Free shipping</span> across India on every order
           </span>
@@ -56,7 +56,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
           href={whatsAppLink(productName)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
         >
           <MessageCircle className="size-4 shrink-0" />
           WhatsApp us on {SUPPORT_WHATSAPP_DISPLAY}

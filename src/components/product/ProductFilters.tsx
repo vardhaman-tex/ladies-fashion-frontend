@@ -55,8 +55,8 @@ function Chip({
       className={cn(
         "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
         active
-          ? "border-rose-600 bg-rose-600 text-white"
-          : "border-border bg-background text-foreground hover:border-rose-400 hover:text-rose-600"
+          ? "border-primary bg-primary text-white"
+          : "border-border bg-background text-foreground hover:border-primary/40 hover:text-primary"
       )}
     >
       {label}
@@ -124,7 +124,7 @@ export function ProductFilters() {
         {hasFilters && (
           <button
             onClick={clearAll}
-            className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700"
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary"
           >
             <X className="size-3" /> Clear all
           </button>
@@ -139,7 +139,7 @@ export function ProductFilters() {
               className={cn(
                 "rounded px-2 py-1.5 text-left text-sm transition-colors",
                 !currentCategory
-                  ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
+                  ? "bg-accent font-semibold text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => updateParam({ categorySlug: null, subCategorySlug: null })}
@@ -155,7 +155,7 @@ export function ProductFilters() {
                     className={cn(
                       "w-full rounded px-2 py-1.5 text-left text-sm transition-colors",
                       isOpen
-                        ? "bg-rose-50 font-semibold text-rose-700 dark:bg-rose-950/30"
+                        ? "bg-accent font-semibold text-accent-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() =>
@@ -182,7 +182,7 @@ export function ProductFilters() {
                             className={cn(
                               "rounded px-2 py-1 text-left text-sm transition-colors",
                               active
-                                ? "font-semibold text-rose-700 dark:text-rose-400"
+                                ? "font-semibold text-accent-foreground"
                                 : "text-muted-foreground hover:text-foreground"
                             )}
                             onClick={() =>
@@ -270,7 +270,7 @@ export function ProductFilters() {
           <div
             className={cn(
               "relative h-5 w-9 rounded-full transition-colors",
-              inStock ? "bg-rose-600" : "bg-muted-foreground/30"
+              inStock ? "bg-primary" : "bg-muted-foreground/30"
             )}
             onClick={() => updateParam({ inStock: inStock ? null : "true" })}
           >

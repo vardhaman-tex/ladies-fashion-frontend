@@ -48,7 +48,7 @@ export function CheckoutSection({
     <section id={id}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold sm:text-lg">
-          <span className="shrink-0 text-rose-600">{icon}</span>
+          <span className="shrink-0 text-primary">{icon}</span>
           <span className="truncate">{title}</span>
         </h2>
         {open && (
@@ -72,25 +72,25 @@ export function CheckoutSection({
         <button
           type="button"
           onClick={() => onOpenChange(true)}
-          className="flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-5 text-left transition-colors hover:border-rose-400 hover:bg-rose-50/40 dark:hover:bg-rose-950/10"
+          className="flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-5 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
             {icon}
           </span>
           <span className="flex-1 font-medium">{placeholder}</span>
-          <Plus className="size-4 shrink-0 text-rose-600" />
+          <Plus className="size-4 shrink-0 text-primary" />
         </button>
       ) : showSummary ? (
         <div className="rounded-xl border p-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 shrink-0 text-rose-600">{icon}</span>
+            <span className="mt-0.5 shrink-0 text-primary">{icon}</span>
             <div className="min-w-0 flex-1 space-y-0.5 text-sm text-muted-foreground">
               {summary}
             </div>
             <button
               type="button"
               onClick={() => onOpenChange(true)}
-              className="shrink-0 rounded px-1 text-sm font-medium text-rose-600 underline underline-offset-2"
+              className="shrink-0 rounded px-1 text-sm font-medium text-primary underline underline-offset-2"
             >
               {editLabel}
             </button>

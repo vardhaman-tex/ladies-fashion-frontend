@@ -181,11 +181,11 @@ export function StateCombobox({
                 }}
                 className={cn(
                   "flex cursor-pointer items-center justify-between px-3 py-2 text-sm",
-                  isHighlighted && "bg-rose-50 dark:bg-rose-950/30"
+                  isHighlighted && "bg-accent"
                 )}
               >
                 <span>{state}</span>
-                {isSelected && <Check className="size-4 shrink-0 text-rose-600" />}
+                {isSelected && <Check className="size-4 shrink-0 text-primary" />}
               </li>
             );
           })}

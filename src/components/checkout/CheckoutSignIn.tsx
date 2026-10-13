@@ -127,9 +127,9 @@ export function CheckoutSignIn({
   const locked = busy || disabled;
 
   return (
-    <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
+    <div className="rounded-xl border border-primary/20 bg-accent/60 p-4">
       <div className="flex items-start gap-2">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-rose-600" />
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">You already have an account with this number</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -160,12 +160,12 @@ export function CheckoutSignIn({
         />
 
         {error && (
-          <p className="text-center text-xs font-medium text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-center text-xs font-medium text-destructive">{error}</p>
         )}
 
         <Button
           type="submit"
-          className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+          className="w-full gap-2 bg-primary hover:bg-primary/90"
           disabled={locked || !challenge || code.length < 6}
         >
           {busy && <Loader2 className="size-4 animate-spin" />}
@@ -180,7 +180,7 @@ export function CheckoutSignIn({
               type="button"
               onClick={() => void sendCode(true)}
               disabled={locked}
-              className="inline-flex items-center gap-1 font-medium text-rose-600 underline underline-offset-2"
+              className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-2"
             >
               <RefreshCw className="size-3" />
               Resend code

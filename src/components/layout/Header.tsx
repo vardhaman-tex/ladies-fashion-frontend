@@ -77,7 +77,7 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
                     <Home className="size-4" />
                   </div>
                   Home
@@ -90,7 +90,7 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/30">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80">
                     <ShoppingBag className="size-4" />
                   </div>
                   All Products
@@ -103,11 +103,11 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/30">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
                     <Tag className="size-4" />
                   </div>
                   <span className="flex-1">Sale</span>
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
                     HOT
                   </span>
                 </SheetClose>
@@ -170,12 +170,12 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80">
                       <Heart className="size-4" />
                     </div>
                     Wishlist
                     {wishlistCount > 0 && (
-                      <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
                         {wishlistCount}
                       </span>
                     )}
@@ -188,7 +188,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80">
                       <Package className="size-4" />
                     </div>
                     My Orders
@@ -201,7 +201,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
                       <User className="size-4" />
                     </div>
                     Account
@@ -214,7 +214,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80">
                       <MapPin className="size-4" />
                     </div>
                     Track Order
@@ -233,7 +233,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
                       <LogIn className="size-4" />
                     </div>
                     Login
@@ -246,7 +246,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/80">
                       <MapPin className="size-4" />
                     </div>
                     Track Order
@@ -326,7 +326,7 @@ export function Header() {
           >
             <Heart className="size-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-semibold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}

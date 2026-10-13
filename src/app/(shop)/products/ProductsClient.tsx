@@ -118,8 +118,8 @@ function ProductsPageContent({
               className={cn(
                 "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
                 subCategory
-                  ? "border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600"
-                  : "border-rose-600 bg-rose-600 text-white"
+                  ? "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+                  : "border-primary bg-primary text-white"
               )}
             >
               All {category.name}
@@ -131,8 +131,8 @@ function ProductsPageContent({
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
                   subCategory?.id === sub.id
-                    ? "border-rose-600 bg-rose-600 text-white"
-                    : "border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                    ? "border-primary bg-primary text-white"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
                 )}
               >
                 {sub.name}

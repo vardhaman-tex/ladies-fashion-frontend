@@ -52,7 +52,7 @@ function QtyStepper({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border border-rose-600 bg-rose-50 px-1 ${className}`}
+      className={`flex items-center justify-between rounded-lg border border-primary bg-accent px-1 ${className}`}
     >
       <Button
         variant="ghost"
@@ -130,13 +130,13 @@ function StockIndicator({
   }
   if (availableQty !== null && availableQty <= 10) {
     return (
-      <span className="text-xs font-semibold text-amber-600">
+      <span className="text-xs font-semibold text-warning">
         Only {availableQty} left!
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+    <span className="flex items-center gap-1 text-xs font-semibold text-success">
       <CheckCircle2 className="size-3.5" />
       In Stock
     </span>
@@ -529,7 +529,7 @@ export default function ProductDetailClient({
             {displayVariants.length > 1 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Color{selectedVariant ? <span className="ml-1 font-bold text-rose-600">— {selectedVariant.color}</span> : ""}
+                  Color{selectedVariant ? <span className="ml-1 font-bold text-primary">— {selectedVariant.color}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {displayVariants.map((variant) => {
@@ -546,7 +546,7 @@ export default function ProductDetailClient({
                         aria-label={variant.color}
                         onClick={() => selectVariant(variant.id)}
                         className={`relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-all ${
-                          isSelected ? "border-rose-600 ring-2 ring-rose-200" : "border-border"
+                          isSelected ? "border-primary ring-2 ring-primary/20" : "border-border"
                         }`}
                       >
                         {variantThumb ? (
@@ -577,12 +577,12 @@ export default function ProductDetailClient({
                     moment a customer needs it is the moment she is choosing. */}
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <p className="text-sm font-medium text-foreground">
-                    Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
+                    Size{selectedSize ? <span className="ml-1 font-bold text-primary">— {formatSizeLabel(selectedSize)}</span> : ""}
                   </p>
                   <button
                     type="button"
                     onClick={() => setSizeGuideOpen(true)}
-                    className="text-sm font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700"
+                    className="text-sm font-medium text-primary underline underline-offset-2 hover:text-primary"
                   >
                     Size guide
                   </button>
@@ -596,10 +596,10 @@ export default function ProductDetailClient({
                       onClick={() => setSelectedSize(selectedSize === sku.size ? null : sku.size)}
                       className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
                         selectedSize === sku.size
-                          ? "border-rose-600 bg-rose-600 text-white"
+                          ? "border-primary bg-primary text-white"
                           : !sku.inStock
                             ? "border-border text-muted-foreground/50 line-through"
-                            : "border-border text-foreground hover:border-rose-400"
+                            : "border-border text-foreground hover:border-primary/40"
                       }`}
                     >
                       {formatSizeLabel(sku.size)}

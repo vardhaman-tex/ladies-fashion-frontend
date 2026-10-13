@@ -33,12 +33,12 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PAID: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  SHIPPED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  PENDING: "bg-warning/10 text-warning",
+  PAID: "bg-muted text-foreground/80",
+  CONFIRMED: "bg-muted text-foreground/80",
+  SHIPPED: "bg-muted text-foreground/80",
+  DELIVERED: "bg-success/10 text-success",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -73,7 +73,7 @@ function StatusTimeline({
               <div
                 className={cn(
                   "flex size-7 items-center justify-center rounded-full text-xs font-bold",
-                  done ? "bg-rose-600 text-white" : "bg-muted text-muted-foreground"
+                  done ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                 )}
               >
                 {i + 1}
@@ -81,7 +81,7 @@ function StatusTimeline({
               <span
                 className={cn(
                   "mt-1 text-[10px]",
-                  done ? "font-medium text-rose-600" : "text-muted-foreground"
+                  done ? "font-medium text-primary" : "text-muted-foreground"
                 )}
               >
                 {STATUS_LABELS[step]}
@@ -91,7 +91,7 @@ function StatusTimeline({
               <div
                 className={cn(
                   "mb-4 h-0.5 flex-1",
-                  done && i < currentStep ? "bg-rose-600" : "bg-muted"
+                  done && i < currentStep ? "bg-primary" : "bg-muted"
                 )}
               />
             )}
@@ -171,7 +171,7 @@ function TrackOrderForm() {
           </div>
           <Button
             type="submit"
-            className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+            className="w-full gap-2 bg-primary hover:bg-primary/90"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -185,7 +185,7 @@ function TrackOrderForm() {
       </form>
 
       {error && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+        <div className="mb-6 flex items-start gap-2 rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -216,7 +216,7 @@ function TrackOrderForm() {
           <div className="rounded-xl border p-4">
             <StatusTimeline status={order.status} paymentMethod={order.paymentMethod} />
             {order.status === "CANCELLED" && (
-              <p className="text-center text-sm text-red-600">This order has been cancelled.</p>
+              <p className="text-center text-sm text-destructive">This order has been cancelled.</p>
             )}
           </div>
 
@@ -236,7 +236,7 @@ function TrackOrderForm() {
           <div className="rounded-xl border">
             <div className="border-b px-5 py-4">
               <h3 className="flex items-center gap-2 font-semibold">
-                <Package className="size-4 text-rose-600" /> Items ({order.itemCount})
+                <Package className="size-4 text-primary" /> Items ({order.itemCount})
               </h3>
             </div>
             <div className="divide-y">
@@ -259,7 +259,7 @@ function TrackOrderForm() {
                       {formatVariantSummary(item.size, item.color)} × {item.quantity}
                     </p>
                     <div className="mt-1 flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-rose-600">
+                      <span className="font-semibold text-primary">
                         ₹{item.finalPrice.toLocaleString("en-IN")}
                       </span>
                       {item.discountAmount > 0 && (
@@ -281,14 +281,14 @@ function TrackOrderForm() {
                 <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
               </div>
               {order.totalDiscount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-success">
                   <span>Discount</span>
                   <span>−₹{order.totalDiscount.toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery</span>
-                <span className="text-green-600">FREE</span>
+                <span className="text-success">FREE</span>
               </div>
               <div className="flex justify-between border-t pt-2 text-base font-bold">
                 <span>Total</span>
@@ -300,7 +300,7 @@ function TrackOrderForm() {
           {/* Delivery address */}
           <div className="rounded-xl border p-5">
             <h3 className="mb-3 flex items-center gap-2 font-semibold">
-              <MapPin className="size-4 text-rose-600" /> Delivery Address
+              <MapPin className="size-4 text-primary" /> Delivery Address
             </h3>
             <p className="font-medium">{order.addrFullName}</p>
             <p className="mt-1 text-sm text-muted-foreground">

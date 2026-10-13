@@ -117,7 +117,7 @@ export function QuickAddDialog({
                       aria-checked={v.color === variant.color}
                       className={cn(
                         "relative size-12 overflow-hidden rounded-lg border-2 bg-muted",
-                        v.color === variant.color ? "border-rose-600" : "border-transparent",
+                        v.color === variant.color ? "border-primary" : "border-transparent",
                         !v.inStock && "opacity-50"
                       )}
                     >
@@ -148,10 +148,10 @@ export function QuickAddDialog({
                       aria-checked={size === sku.size}
                       aria-label={`${formatSizeLabel(sku.size)}${sku.inStock ? "" : ", sold out"}`}
                       className={cn(
-                        "h-11 min-w-11 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
+                        "h-11 min-w-11 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                         size === sku.size
-                          ? "border-rose-600 bg-rose-600 text-white"
-                          : "hover:border-rose-600",
+                          ? "border-primary bg-primary text-white"
+                          : "hover:border-primary",
                         !sku.inStock && "cursor-not-allowed text-muted-foreground/60 line-through hover:border-border"
                       )}
                     >
@@ -163,7 +163,7 @@ export function QuickAddDialog({
             )}
 
             <Button
-              className="w-full bg-rose-600 hover:bg-rose-700"
+              className="w-full bg-primary hover:bg-primary/90"
               size="lg"
               disabled={isPending || (needsSize && !size)}
               onClick={add}

@@ -257,7 +257,7 @@ export function PhoneAuthFlow({
                 />
               </div>
               {mobileError && (
-                <p id="auth-mobile-error" className="text-xs font-medium text-red-600 dark:text-red-400">
+                <p id="auth-mobile-error" className="text-xs font-medium text-destructive">
                   {mobileError}
                 </p>
               )}
@@ -282,13 +282,13 @@ export function PhoneAuthFlow({
             }}
           >
             <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
-              <Smartphone className="mt-0.5 size-4 shrink-0 text-rose-600" />
+              <Smartphone className="mt-0.5 size-4 shrink-0 text-primary" />
               <span>
                 {channelLine(challenge.channel, challenge.maskedMobile)}{" "}
                 <button
                   type="button"
                   onClick={() => setStep("phone")}
-                  className="font-medium text-rose-600 underline underline-offset-2"
+                  className="font-medium text-primary underline underline-offset-2"
                 >
                   Change number
                 </button>
@@ -308,7 +308,7 @@ export function PhoneAuthFlow({
             />
 
             {codeError && (
-              <p className="text-center text-sm font-medium text-red-600 dark:text-red-400">
+              <p className="text-center text-sm font-medium text-destructive">
                 {codeError}
               </p>
             )}
@@ -326,7 +326,7 @@ export function PhoneAuthFlow({
                   type="button"
                   onClick={() => void sendCode(true)}
                   disabled={busy}
-                  className="font-medium text-rose-600 underline underline-offset-2"
+                  className="font-medium text-primary underline underline-offset-2"
                 >
                   Resend code
                 </button>
@@ -391,7 +391,7 @@ export function PhoneAuthFlow({
             </div>
 
             {profileError && (
-              <p className="text-sm font-medium text-red-600 dark:text-red-400">{profileError}</p>
+              <p className="text-sm font-medium text-destructive">{profileError}</p>
             )}
 
             <Button type="submit" className="w-full gap-2" disabled={busy}>
@@ -452,7 +452,7 @@ export function PhoneAuthFlow({
             <button
               type="button"
               onClick={() => setStep("phone")}
-              className="flex w-full items-center justify-center gap-1 text-sm font-medium text-rose-600"
+              className="flex w-full items-center justify-center gap-1 text-sm font-medium text-primary"
             >
               <ArrowLeft className="size-3.5" /> Back to sign in with a code
             </button>
@@ -468,7 +468,7 @@ export function PhoneAuthFlow({
             <button
               type="button"
               onClick={() => setStep("password")}
-              className="font-medium text-rose-600 underline underline-offset-2"
+              className="font-medium text-primary underline underline-offset-2"
             >
               Sign in with a password
             </button>

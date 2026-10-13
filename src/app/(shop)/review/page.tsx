@@ -91,7 +91,7 @@ function ReviewForm() {
   if (done) {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <CheckCircle2 className="size-12 text-green-600" aria-hidden="true" />
+        <CheckCircle2 className="size-12 text-success" aria-hidden="true" />
         <h2 className="font-heading text-2xl font-bold">Thank you for your review</h2>
         <p className="max-w-sm text-sm text-muted-foreground">
           It&apos;s now live on the product page and helps other shoppers choose.
@@ -156,7 +156,7 @@ function ReviewForm() {
                     key={item.productId}
                     className={cn(
                       "flex cursor-pointer items-center gap-3 rounded-lg border p-3",
-                      selected?.productId === item.productId && "border-rose-600 bg-rose-50/50"
+                      selected?.productId === item.productId && "border-primary bg-accent/50"
                     )}
                   >
                     <input
@@ -164,7 +164,7 @@ function ReviewForm() {
                       name="product"
                       checked={selected?.productId === item.productId}
                       onChange={() => setSelected(item)}
-                      className="size-4 accent-rose-600"
+                      className="size-4 accent-primary"
                     />
                     <span className="relative size-12 shrink-0 overflow-hidden rounded bg-muted">
                       {item.thumbnail && (
@@ -193,7 +193,7 @@ function ReviewForm() {
                   <Star
                     className={cn(
                       "size-7",
-                      n <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"
+                      n <= rating ? "fill-warning text-warning" : "text-muted-foreground/40"
                     )}
                   />
                 </button>
@@ -237,7 +237,7 @@ function ReviewForm() {
 export default function ReviewPage() {
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10 sm:py-14">
-      <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Verified reviews</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Verified reviews</p>
       <h1 className="mt-1 font-heading text-3xl font-bold text-foreground">Write a review</h1>
       <p className="mt-3 mb-8 text-sm text-muted-foreground">
         Reviews come only from delivered orders. Enter the order number and the phone number you
