@@ -1,6 +1,7 @@
 "use client";
 
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   addToCart,
@@ -51,6 +52,7 @@ export function useAddToCart() {
   const qc = useQueryClient();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const guestAdd = useGuestCartStore((s) => s.addItem);
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async (payload: AddToCartPayload & { productName: string; productSlug: string; thumbnail: string | null; price: number; discountAmount: number }) => {
@@ -74,7 +76,10 @@ export function useAddToCart() {
     },
     onSuccess: (data, payload) => {
       if (data) qc.setQueryData(CART_KEY, data);
-      toast.success("Added to cart");
+      toast.success("Added to cart", {
+        // The cart drawer is gone, so the confirmation carries the way to it.
+        action: { label: "View cart", onClick: () => router.push("/cart") },
+      });
       // Reported here rather than at each button, so an add from a grid
       // quick-add counts the same as one from the product page. GA4's funnel is
       // only readable if add_to_cart means "an item was added", not "an item was

@@ -99,7 +99,7 @@ export default function HomeClient({
               Shop Now
               <ArrowRightIcon />
             </Button>
-            <Button size="lg" variant="outline" className="border-white/60 bg-transparent text-white hover:bg-white/10" render={<a href="#categories" />}>
+            <Button size="lg" variant="outline" className="hidden border-white/60 bg-transparent text-white hover:bg-white/10 md:inline-flex" render={<a href="#categories" />}>
               Shop by Category
             </Button>
           </div>
@@ -107,7 +107,7 @@ export default function HomeClient({
       </section>
 
       {/* Category showcase */}
-      <section id="categories" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4">
+      <section id="categories" className="mx-auto hidden w-full max-w-7xl scroll-mt-24 px-4 md:block">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
-import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CartButton } from "@/components/cart/CartButton";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
@@ -339,7 +339,7 @@ export function Header() {
           >
             <User className="size-5" />
           </Button>
-          <CartDrawer />
+          <CartButton />
         </div>
       </div>
 

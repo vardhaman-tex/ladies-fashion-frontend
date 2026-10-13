@@ -46,8 +46,10 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group flex flex-col gap-2">
-      <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted">
+    // One bordered unit: photo, details and the add button read as a single
+    // card rather than a picture with a button hanging underneath it.
+    <div className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card">
+      <div className="relative aspect-3/4 overflow-hidden bg-muted">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 block">
           {product.thumbnail ? (
             <Image
@@ -87,46 +89,42 @@ export function ProductCard({ product }: ProductCardProps) {
           discountAmount={product.discountAmount}
           className="absolute top-2 right-2"
         />
-
       </div>
 
-      <div className="flex flex-col gap-0.5">
-        <Link href={`/products/${product.slug}`} className="line-clamp-1 text-sm font-medium text-foreground hover:underline">
+      <div className="flex flex-1 flex-col gap-2 p-2.5">
+        <Link
+          href={`/products/${product.slug}`}
+          className="line-clamp-2 text-sm leading-tight font-medium text-foreground hover:underline"
+        >
           {product.name}
         </Link>
 
-        {hasDiscount ? (
-          <div className="flex flex-col gap-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-foreground">
-                ₹{product.finalPrice.toLocaleString("en-IN")}
-              </span>
-              <span className="whitespace-nowrap text-xs font-semibold text-rose-600">
-                {Math.round(product.discountPercent)}% off
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground line-through">
-              ₹{product.price.toLocaleString("en-IN")}
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <div className="flex min-w-0 flex-col">
+            <span className="text-base font-bold text-foreground">
+              ₹{product.finalPrice.toLocaleString("en-IN")}
             </span>
+            {hasDiscount && (
+              <span className="text-xs text-muted-foreground">
+                <span className="line-through">₹{product.price.toLocaleString("en-IN")}</span>
+              </span>
+            )}
           </div>
-        ) : (
-          <span className="text-sm font-bold text-foreground">
-            ₹{product.price.toLocaleString("en-IN")}
-          </span>
-        )}
+
+          {product.inStock && (
+            <Button
+              size="sm"
+              className="h-10 shrink-0 gap-1 rounded-full bg-rose-600 px-3.5 text-white hover:bg-rose-700"
+              onClick={handleAddToCart}
+              disabled={adding}
+              aria-label={`Add ${product.name} to cart`}
+            >
+              <ShoppingBag className="size-4" aria-hidden="true" />
+              {adding ? "…" : "Add"}
+            </Button>
+          )}
+        </div>
       </div>
-      {product.inStock && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full border-rose-600 text-rose-600 hover:bg-rose-600 hover:text-white"
-          onClick={handleAddToCart}
-          disabled={adding}
-        >
-          <ShoppingBag className="size-3.5" />
-          {adding ? "Adding…" : "Add to Cart"}
-        </Button>
-      )}
 
       {needsSelection && (
         <QuickAddDialog product={product} open={pickerOpen} onClose={() => setPickerOpen(false)} />
