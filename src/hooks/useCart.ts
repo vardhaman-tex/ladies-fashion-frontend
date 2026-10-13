@@ -18,6 +18,7 @@ import { useAuthStore } from "@/stores/authStore";
 // would put a wrong `value` into the reports, which is worse than the event
 // being absent. It wants the cart cache read at the call site instead.
 import { gaAddToCart } from "@/lib/ga";
+import { buildGuestCart, cartBadgeCount } from "@/lib/guestCart";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
@@ -209,30 +210,15 @@ export function useCart() {
     return { cart: serverCart ?? null, isLoading, isMerging };
   }
 
-  // Derive a CartData-like object from guest items
-  const subtotal = guestItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const totalDiscount = guestItems.reduce((sum, i) => sum + i.discountAmount * i.quantity, 0);
-  const guestCart: CartData = {
-    id: "guest",
-    items: guestItems.map((i) => ({
-      id: `${i.productId}-${i.size}-${i.color}`,
-      productId: i.productId,
-      productName: i.productName,
-      productSlug: i.productSlug,
-      thumbnail: i.thumbnail,
-      price: i.price,
-      discountAmount: i.discountAmount,
-      finalPrice: i.price - i.discountAmount,
-      quantity: i.quantity,
-      size: i.size,
-      color: i.color,
-      lineTotal: (i.price - i.discountAmount) * i.quantity,
-    })),
-    itemCount: guestItems.reduce((sum, i) => sum + i.quantity, 0),
-    subtotal,
-    totalDiscount,
-    total: subtotal - totalDiscount,
-  };
+  const guestCart = buildGuestCart(guestItems);
 
   return { cart: guestCart, isLoading: false, isMerging };
+}
+
+/** The header badge's number; see cartBadgeCount for why it is not simply cart.itemCount. */
+export function useCartItemCount(): number {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: serverCart } = useServerCart();
+  const guestItems = useGuestCartStore((s) => s.items);
+  return cartBadgeCount(isAuthenticated, serverCart, guestItems);
 }

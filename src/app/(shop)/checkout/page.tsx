@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -254,6 +254,20 @@ export default function CheckoutPage() {
   const activeAddressId = selectedAddressId ?? defaultAddress?.id ?? null;
   const activeAddress = addresses.find((a) => a.id === activeAddressId) ?? null;
 
+  /**
+   * The gateway order made for the current basket, kept so that a retry reopens
+   * the same one. Without it, closing the payment sheet and pressing pay again
+   * made a second order and a second payment request for one basket; reusing
+   * the order means a customer who retries can only ever pay for it once.
+   * Keyed on everything that defines the order, so changing the cart or the
+   * address starts a fresh one.
+   */
+  const pendingGuestOrder = useRef<{
+    key: string;
+    at: number;
+    data: Awaited<ReturnType<typeof createGuestRazorpayOrder>>;
+  } | null>(null);
+
   // Guest form state — only used when !isAuthenticated
   const [guestForm, setGuestForm] = useState<GuestAddressForm>({
     fullName: "",
@@ -432,7 +446,19 @@ export default function CheckoutPage() {
 
       setIsProcessing(true);
       try {
-        const orderData = await createGuestRazorpayOrder({
+        const orderKey = JSON.stringify([
+          fullName.trim(), normalisePhone(phone), email.trim(), addressLine1.trim(),
+          guestForm.addressLine2.trim(), city.trim(), canonicalState(guestForm), pincode.trim(),
+          guestMethod,
+          guestItems.map((item) => [item.productId, item.size, item.color, item.quantity]),
+        ]);
+        // Not reused for long: the server expires unpaid orders after 30 minutes.
+        const reusable = pendingGuestOrder.current;
+        let orderData =
+          reusable && reusable.key === orderKey && Date.now() - reusable.at < 20 * 60_000
+            ? reusable.data
+            : null;
+        if (!orderData) orderData = await createGuestRazorpayOrder({
           fullName: fullName.trim(),
           // Stored as bare digits so "+91 98765 43210" and "9876543210" are not
           // two different customers.
@@ -454,6 +480,9 @@ export default function CheckoutPage() {
           })),
           paymentMethod: guestMethod,
         });
+        // Only an order still waiting on a payment is worth reusing; a placed
+        // one (full COD) is finished and navigates away below.
+        pendingGuestOrder.current = orderData.razorpayOrderId ? { key: orderKey, at: Date.now(), data: orderData } : null;
 
         // Full cash on delivery: the server has already placed the order, and
         // there is no ₹0 payment for the gateway to take. A null razorpayOrderId
@@ -509,6 +538,7 @@ export default function CheckoutPage() {
               // deliveries are common this systematically overstates ROAS.
               trackPurchase(confirmed.id, guestQuote.total, pixelGuestItems);
               gaPurchase(confirmed.id, guestQuote.total, gaGuestItems, guestMethod);
+              pendingGuestOrder.current = null;
               clearGuestCart();
               toast.success(
                 isCod(guestMethod)
@@ -519,16 +549,26 @@ export default function CheckoutPage() {
               // page shows and what tracking looks an order up by.
               router.push(`/guest-order-confirmed?orderRef=${orderData.orderNumber}`);
             } catch {
-              toast.error("Payment verification failed. Contact support.");
+              // The money may have moved even though we could not confirm it, and
+              // the gateway also tells us directly, so say so rather than
+              // implying the order is lost.
+              toast.error(
+                "We could not confirm your payment yet. If money was deducted, your order will be confirmed automatically; otherwise contact us on WhatsApp with your phone number."
+              );
               setIsProcessing(false);
             }
           },
           modal: {
             ondismiss: () => {
-              toast("Payment cancelled.");
+              toast("Payment cancelled. You can retry without placing a second order.");
               setIsProcessing(false);
             },
           },
+        });
+        // A failed attempt (declined card, wrong UPI PIN) leaves the sheet open
+        // for another try; this only tells the customer why, the order stays.
+        rzp.on?.("payment.failed", (response) => {
+          toast.error(response.error?.description ?? "Payment failed. Please try again.");
         });
         rzp.open();
       } catch (err) {

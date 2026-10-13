@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/useCart";
+import { useCartItemCount } from "@/hooks/useCart";
 
 /**
  * The header's cart icon: one tap to the cart page, with the item count.
@@ -14,8 +14,7 @@ import { useCart } from "@/hooks/useCart";
  * page, and "Added to cart" now offers a View cart shortcut instead.
  */
 export function CartButton() {
-  const { cart } = useCart();
-  const itemCount = cart?.itemCount ?? 0;
+  const itemCount = useCartItemCount();
 
   return (
     <Button
@@ -25,7 +24,7 @@ export function CartButton() {
       render={
         <Link
           href="/cart"
-          aria-label={itemCount > 0 ? `Cart, ${itemCount} items` : "Cart"}
+          aria-label={itemCount > 0 ? `Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}` : "Cart"}
         />
       }
     >

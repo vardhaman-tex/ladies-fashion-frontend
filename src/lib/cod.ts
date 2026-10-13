@@ -124,18 +124,37 @@ export function quotePayment(
  * changing the setting in admin changes every sentence at once.
  */
 export interface CodCopy {
-  /** A few words, for a banner or a badge. Null when COD is off. */
+  /** A few words for a badge: "Cash on delivery (₹100 advance)". Null when COD is off. */
   short: string | null;
-  /** A sentence or two, for the FAQ and structured data. */
+  /** Just the qualifier: "₹100 advance", "₹40 fee", or "" when there is nothing to disclose. */
+  terms: string;
+  /** A paragraph, for the FAQ and structured data. */
   long: string;
 }
 
 type CodCopySettings = Pick<SiteSettings, "codEnabled" | "codAdvanceAmount" | "codFeeAmount">;
 
+/**
+ * The refund conditions printed in the published Terms & Conditions, section 2,
+ * restated for an order that has an advance. They are not new rules: the
+ * advance is forfeited only for the customer-side reasons listed there, is
+ * refunded if the store cannot fulfil the order, and is taken into account when
+ * a damaged, defective, incorrect or missing item is verified.
+ */
+function advanceConditions(advance: string): string {
+  return (
+    `The ${advance} advance is non-refundable if the customer refuses the order, is unavailable or fails to collect it, ` +
+    `or the order is returned because of the customer's refusal, non-availability or incorrect address. ` +
+    `If Vardhman Textile cannot fulfil the order, the advance is refunded. ` +
+    `For verified damaged, defective, incorrect or missing items, the advance is considered as part of the resolution rather than forfeited.`
+  );
+}
+
 export function describeCod(settings: CodCopySettings | null | undefined): CodCopy {
   if (!settings || !settings.codEnabled) {
     return {
       short: null,
+      terms: "",
       long: "Cash on Delivery is not available at the moment. Orders are paid online by card, UPI or net banking.",
     };
   }
@@ -145,8 +164,10 @@ export function describeCod(settings: CodCopySettings | null | undefined): CodCo
   const feeText = fee > 0 ? `${inr(fee)} Cash on Delivery fee` : null;
 
   if (advance <= 0) {
+    const terms = fee > 0 ? `${inr(fee)} fee` : "";
     return {
-      short: fee > 0 ? `Cash on delivery (${inr(fee)} fee)` : "Cash on delivery",
+      short: terms ? `Cash on delivery (${terms})` : "Cash on delivery",
+      terms,
       long:
         fee > 0
           ? `Yes. Cash on Delivery is available on eligible orders across India, and nothing is paid online in advance. A ${feeText} is added to the order total, and you pay the full amount to the courier when your order arrives. Free shipping applies to every order, with or without COD.`
@@ -154,11 +175,14 @@ export function describeCod(settings: CodCopySettings | null | undefined): CodCo
     };
   }
 
+  const terms = `${inr(advance)} advance${fee > 0 ? `, ${inr(fee)} fee` : ""}`;
   return {
-    short: `Cash on delivery (${inr(advance)} advance${fee > 0 ? `, ${inr(fee)} fee` : ""})`,
+    short: `Cash on delivery (${terms})`,
+    terms,
     long:
-      `Yes. Cash on Delivery is available on eligible orders across India. ${inr(advance)} is paid online to confirm the order` +
-      `${feeText ? `, a ${feeText} is added to the order total,` : ""} and the remaining amount is paid to the courier on delivery. ` +
-      `The ${inr(advance)} advance is non-refundable if the customer refuses, fails to collect, or returns the order for reasons attributable to the customer.`,
+      `Yes. Cash on Delivery is available on eligible orders across India. To confirm a COD order, ${inr(advance)} is paid online at checkout, ` +
+      `and the remaining amount is paid to the courier on delivery. The advance is part of your order total, not an extra charge` +
+      `${feeText ? `; a ${feeText} is added to the total` : ""}. ` +
+      advanceConditions(inr(advance)),
   };
 }

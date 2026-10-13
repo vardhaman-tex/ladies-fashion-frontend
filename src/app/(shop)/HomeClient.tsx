@@ -202,10 +202,10 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* Size help and returns, said plainly. The returns line restates the
-          published Shipping & Return Policy (damaged, defective or wrong items,
-          reported within 2 days) — if that policy changes, change this with it.
-          Nothing here promises size exchanges, because the policy does not. */}
+      {/* Size help and exchanges, said plainly. The exchange and returns lines
+          restate the published Terms & Conditions (section 3, size exchange within
+          2 days; section 4, no refund for change of mind). If those change,
+          change this with them. */}
       <section className="mx-auto w-full max-w-7xl px-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
@@ -221,11 +221,11 @@ export default function HomeClient({
           </div>
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
             <PackageCheck className="size-6 text-rose-600" aria-hidden="true" />
-            <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Returns, plainly</h2>
+            <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Exchanges &amp; returns, plainly</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Received a damaged, defective or wrong item? Tell us within 2 days of delivery with
-              photos and an unboxing video. Sale items and used or washed pieces can&apos;t be
-              returned, so please check the size chart before you order.
+              Wrong size? We exchange it for another size of the same piece within 2 days of
+              delivery, subject to stock. Damaged, defective or wrong item? Tell us within 2 days
+              with photos and an unboxing video. We don&apos;t offer refunds for change of mind.
             </p>
             <Button variant="outline" className="mt-4" render={<Link href="/policies/return-policy" />}>
               Read the full policy

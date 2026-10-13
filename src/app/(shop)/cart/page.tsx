@@ -149,12 +149,24 @@ export default function CartPage() {
                 <span>₹{cart.total.toFixed(0)}</span>
               </div>
               {codOption && (
-                <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                  Pay online: <span className="font-medium text-foreground">{inr(cart.total)}</span>
-                  {" · "}
-                  Cash on delivery: <span className="font-medium text-foreground">{inr(codOption.total)}</span>
-                  {codOption.fee > 0 ? ` (includes ${inr(codOption.fee)} fee)` : ""}
-                </p>
+                <div className="space-y-1 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  <p>
+                    Pay online: <span className="font-medium text-foreground">{inr(cart.total)}</span>
+                  </p>
+                  <p>
+                    Cash on delivery:{" "}
+                    <span className="font-medium text-foreground">{inr(codOption.total)}</span>
+                    {codOption.fee > 0 ? ` (includes ${inr(codOption.fee)} fee)` : ""}
+                  </p>
+                  {codOption.payableNow > 0 && (
+                    <p>
+                      Pay <span className="font-medium text-foreground">{inr(codOption.payableNow)}</span> online
+                      now to confirm, and{" "}
+                      <span className="font-medium text-foreground">{inr(codOption.dueOnDelivery)}</span> on
+                      delivery. The advance is part of the total, not extra.
+                    </p>
+                  )}
+                </div>
               )}
               {hasStockIssues && (
                 <p className="text-xs font-medium text-red-600">

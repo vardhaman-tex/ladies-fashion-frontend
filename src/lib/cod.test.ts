@@ -112,6 +112,24 @@ describe("quotePayment", () => {
   });
 });
 
+describe("quotePayment with an advance and no fee", () => {
+  it("takes the advance out of the total rather than adding it on", () => {
+    const quote = quotePayment("COD_PARTIAL", 1500, 100, 0);
+    expect(quote.fee).toBe(0);
+    expect(quote.total).toBe(1500);
+    expect(quote.payableNow).toBe(100);
+    expect(quote.dueOnDelivery).toBe(1400);
+    expect(quote.payableNow + quote.dueOnDelivery).toBe(quote.total);
+    expect(quote.isPlaceOnly).toBe(false);
+  });
+
+  it("never asks for more online than the order is worth", () => {
+    const quote = quotePayment("COD_PARTIAL", 80, 100, 0);
+    expect(quote.payableNow).toBe(80);
+    expect(quote.dueOnDelivery).toBe(0);
+  });
+});
+
 describe("describeCod", () => {
   it("describes full COD with a fee, naming no advance", () => {
     const copy = describeCod({ codEnabled: true, codAdvanceAmount: 0, codFeeAmount: 40 });
@@ -120,10 +138,15 @@ describe("describeCod", () => {
     expect(copy.long).not.toMatch(/advance payment|non-refundable/i);
   });
 
-  it("names the advance when the store asks for one", () => {
+  it("names the advance, its conditions and the exceptions when the store asks for one", () => {
     const copy = describeCod({ codEnabled: true, codAdvanceAmount: 100, codFeeAmount: 0 });
-    expect(copy.short).toContain("₹100 advance");
+    expect(copy.short).toBe("Cash on delivery (₹100 advance)");
+    expect(copy.terms).toBe("₹100 advance");
+    expect(copy.long).toContain("not an extra charge");
     expect(copy.long).toContain("non-refundable");
+    expect(copy.long).toContain("cannot fulfil the order, the advance is refunded");
+    expect(copy.long).toContain("verified damaged, defective, incorrect or missing");
+    expect(copy.long).not.toMatch(/fee/i);
   });
 
   it("says nothing promotional when COD is off or settings are unknown", () => {

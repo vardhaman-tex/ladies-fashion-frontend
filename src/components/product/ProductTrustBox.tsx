@@ -4,7 +4,7 @@ import { MessageCircle, Truck, Wallet } from "lucide-react";
 
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { DeliveryCheck } from "@/components/product/DeliveryCheck";
-import { inr } from "@/lib/money";
+import { describeCod } from "@/lib/cod";
 import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
 
 /**
@@ -25,6 +25,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
   // fee is named here, not saved for checkout: "free shipping" next to a COD
   // option that quietly costs extra reads as a bait-and-switch at the last step.
   const codEnabled = settings?.codEnabled === true;
+  const cod = describeCod(settings);
 
   return (
     <section className="rounded-xl border bg-muted/30 p-4">
@@ -34,7 +35,7 @@ export function ProductTrustBox({ productName }: { productName: string }) {
             <Wallet className="mt-0.5 size-4 shrink-0 text-rose-600" />
             <span>
               <span className="font-medium">Cash on delivery</span> available
-              {settings.codFeeAmount > 0 ? ` (${inr(settings.codFeeAmount)} fee)` : ""}
+              {cod.terms ? ` (${cod.terms})` : ""}
             </span>
           </li>
         )}

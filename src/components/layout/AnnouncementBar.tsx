@@ -8,8 +8,8 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
  *
  * Deliberately names no fee and no phone number. The COD fee is stated where it
  * is charged (product page, cart, checkout), and WhatsApp has its own button.
- * The returns line says what the published policy actually covers; widen it
- * only if the policy is widened.
+ * The exchange line restates the published Terms (size exchange within 2 days);
+ * widen it only if the policy is widened.
  */
 export function AnnouncementBar() {
   const { data: settings } = useSiteSettings();
@@ -18,7 +18,7 @@ export function AnnouncementBar() {
   const messages = [
     "Free shipping across India",
     ...(codOn ? ["Cash on delivery available"] : []),
-    "Easy returns on damaged or wrong items",
+    "Easy size exchange within 2 days",
   ];
 
   const row = (hidden: boolean) => (
