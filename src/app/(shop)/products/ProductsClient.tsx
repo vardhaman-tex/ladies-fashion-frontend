@@ -154,7 +154,7 @@ function ProductsPageContent({
           {/* Sticky on a phone: Filter and the sort chips stay under the header
               while the grid scrolls, so changing the order never means scrolling
               back to the top. */}
-          <div className="sticky top-[7.25rem] z-30 -mx-4 flex flex-col gap-2 border-b border-border bg-background/95 px-4 py-2 backdrop-blur md:top-[4.25rem] lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+          <div className="sticky top-[3.65rem] z-30 -mx-4 flex flex-col gap-2 border-b border-border bg-background/95 px-4 py-2 backdrop-blur md:top-[4.25rem] lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
             <div className="flex items-center gap-2">
               <Sheet>
                 <SheetTrigger render={<Button variant="outline" className="h-10 shrink-0 gap-1.5 rounded-full px-4 lg:hidden" />}>

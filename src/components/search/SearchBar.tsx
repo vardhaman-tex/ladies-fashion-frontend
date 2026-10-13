@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 /**
  * Debounced search input with a keyboard-navigable suggestions dropdown.
  */
-export function SearchBar() {
+export function SearchBar({ autoFocus = false, onDone }: { autoFocus?: boolean; onDone?: () => void } = {}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [debouncedQuery] = useDebounce(query, 300);
@@ -39,11 +39,13 @@ export function SearchBar() {
     // typing speed rather than of intent.
     gaSearch(q);
     setIsOpen(false);
+    onDone?.();
     router.push(`/search?q=${encodeURIComponent(q.trim())}`);
   };
 
   const goToProduct = (slug: string) => {
     setIsOpen(false);
+    onDone?.();
     router.push(`/products/${slug}`);
   };
 
@@ -62,6 +64,7 @@ export function SearchBar() {
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
+      onDone?.();
     }
   };
 
@@ -76,6 +79,7 @@ export function SearchBar() {
             setIsOpen(true);
             setActiveIndex(-1);
           }}
+          autoFocus={autoFocus}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search for products..."

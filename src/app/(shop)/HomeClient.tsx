@@ -1,8 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
+import { HeroSlider, type HeroSlide } from "@/components/home/HeroSlider";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
@@ -70,52 +72,17 @@ export default function HomeClient({
     ].filter((section) => section.products.length > 0);
   })();
 
-  const heroImage =
-    [...(featured?.content ?? []), ...(newArrivals?.content ?? [])].find((p) => p.thumbnail)?.thumbnail ?? null;
+  // Up to four distinct product photos, featured first, then new arrivals.
+  const heroSlides: HeroSlide[] = (() => {
+    const seen = new Set<string>();
+    return [...(featured?.content ?? []), ...(newArrivals?.content ?? [])]
+      .filter((p) => p.thumbnail && !seen.has(p.id) && seen.add(p.id))
+      .slice(0, 4)
+      .map((p) => ({ id: p.id, image: p.thumbnail as string, href: `/products/${p.slug}`, alt: p.name }));
+  })();
 
-  return (
-    <div className="flex flex-col gap-8 pb-8 sm:gap-12 sm:pb-12 lg:gap-16">
-      {/* Hero: a solid text panel beside the photo, so the words never depend on
-          what the picture happens to look like. Stacks on a phone with the
-          words first, the way a shopper reads it. */}
-      <section className="mx-auto w-full max-w-7xl md:px-4 md:pt-4">
-        <div className="grid overflow-hidden bg-accent md:grid-cols-2 md:rounded-3xl">
-          <div className="flex flex-col justify-center gap-3 px-5 py-8 sm:px-8 md:py-14 lg:px-14">
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">New season collection</p>
-            <h1 className="font-heading text-3xl leading-[1.12] font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Celebrate every occasion in style
-            </h1>
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Ethnic and contemporary fashion for every festival, function and everyday moment. Easy size exchange within 2 days.
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <Button size="lg" className="rounded-full px-7" render={<Link href="/products" />}>
-                Shop now
-                <ArrowRightIcon />
-              </Button>
-              <Button size="lg" variant="ghost" className="hidden rounded-full text-primary md:inline-flex" render={<Link href="/products?discountAmount=1" />}>
-                See the sale
-              </Button>
-            </div>
-          </div>
-          <div className="relative aspect-4/3 bg-muted md:aspect-auto md:min-h-[26rem]">
-            {heroImage && (
-              <Image
-                src={heroImage}
-                alt="A look from our new collection"
-                fill
-                priority
-                className="object-cover object-top"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust: the questions a first-time buyer has, answered before the first
-          product rather than after the last one. */}
-      <section className="mx-auto w-full max-w-7xl px-4" aria-label="Why shop with us">
+  const trustRow = (
+      <section key="trust" className="mx-auto w-full max-w-7xl px-4" aria-label="Why shop with us">
         <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
           {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
             <li key={label} className="flex items-center gap-3">
@@ -128,14 +95,17 @@ export default function HomeClient({
           ))}
         </ul>
       </section>
+  );
 
+  return (
+    <div className="flex flex-col gap-6 pb-8 sm:gap-12 sm:pb-12 lg:gap-16">
       {/* Categories. A round rail on phones, where it has to be one swipe from
           the top; image tiles from tablet up. It used to be hidden on phones,
           which left no way to browse by category from the home page. */}
       {categories && categories.length > 0 && (
         <section id="categories" className="scroll-mt-24" aria-label="Shop by category">
           <div className="mx-auto w-full max-w-7xl px-4 md:hidden">
-            <ul className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <ul className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {categories.map((category, index) => (
                 <li key={category.id} className="w-[4.5rem] shrink-0 snap-start">
                   <Link href={`/products?categorySlug=${category.slug}`} className="flex flex-col items-center gap-2">
@@ -187,9 +157,16 @@ export default function HomeClient({
         </section>
       )}
 
+      {/* The opening photo is a short slider of real products. Kept compact so
+          the first product rail is on the first screen of a phone. */}
+      <section className="mx-auto w-full max-w-7xl md:px-4 md:pt-4">
+        <HeroSlider slides={heroSlides} />
+      </section>
+
       {/* A product shows once on the page, in the first rail that has it. */}
-      {productSections.map((section) => (
-        <section key={section.key} className="mx-auto w-full max-w-7xl px-4">
+      {productSections.map((section, sectionIndex) => (
+        <Fragment key={section.key}>
+        <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">{section.eyebrow}</p>
@@ -202,7 +179,7 @@ export default function HomeClient({
           </div>
           {/* A swipe rail on a phone (the next card peeks in to say there is more),
               a four-column grid from tablet up. */}
-          <ul className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mt-5 md:mx-0 md:grid md:grid-cols-4 md:gap-x-4 md:gap-y-8 md:overflow-visible md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ul className="-mx-4 mt-3 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mt-5 md:mx-0 md:grid md:grid-cols-4 md:gap-x-4 md:gap-y-8 md:overflow-visible md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {section.products.map((product) => (
               <li key={product.id} className="w-[44vw] max-w-56 shrink-0 snap-start md:w-auto md:max-w-none">
                 <ProductCard product={product} badge={section.badge} />
@@ -210,6 +187,10 @@ export default function HomeClient({
             ))}
           </ul>
         </section>
+        {/* Trust sits after the first rail: product first, reassurance as the
+            shopper decides, not before they have seen anything to buy. */}
+        {sectionIndex === 0 && trustRow}
+        </Fragment>
       ))}
 
       {productSections.length > 0 && (

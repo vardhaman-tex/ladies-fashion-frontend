@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Menu, Heart, User, ShoppingBag, Home, Package, X,
-  Tag, ChevronRight, LogIn, MapPin,
+  Tag, ChevronRight, LogIn, MapPin, Search,
 } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function Header() {
   const { itemCount: wishlistCount } = useWishlist();
   const { isAuthenticated } = useAuthStore();
   const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Hide search on product detail pages (/products/[slug])
   const isProductDetail =
@@ -296,6 +298,16 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
+            className="md:hidden"
+            aria-label={searchOpen ? "Close search" : "Search"}
+            aria-expanded={searchOpen}
+            onClick={() => setSearchOpen((v) => !v)}
+          >
+            {searchOpen ? <X className="size-5" /> : <Search className="size-5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="relative"
             render={<Link href="/wishlist" aria-label="Wishlist" />}
           >
@@ -318,12 +330,11 @@ export function Header() {
         </div>
       </div>
 
-      {/* Search is always on show: on a phone it is the main way in, so it gets
-          its own row instead of hiding behind an icon. The product page keeps the
-          header slim because the buy bar is what matters there. */}
-      {!isProductDetail && (
-        <div className="px-4 pb-3 md:hidden">
-          <SearchBar />
+      {/* On a phone search is an icon beside the wishlist and opens a bar under
+          the header, so it costs no height until it is wanted. */}
+      {searchOpen && (
+        <div className="border-t border-border px-4 py-2 md:hidden">
+          <SearchBar autoFocus onDone={() => setSearchOpen(false)} />
         </div>
       )}
     </header>
