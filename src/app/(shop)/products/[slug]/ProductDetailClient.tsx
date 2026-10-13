@@ -621,6 +621,7 @@ export default function ProductDetailClient({
                 />
               ) : (
                 <Button
+                  size="lg"
                   className="flex-1"
                   disabled={!inStockNow || adding}
                   onClick={handleAddToCart}
@@ -630,6 +631,7 @@ export default function ProductDetailClient({
                 </Button>
               )}
               <Button
+                size="lg"
                 className="flex-1"
                 variant="secondary"
                 disabled={!inStockNow || adding}
@@ -739,7 +741,6 @@ export default function ProductDetailClient({
             />
           ) : (
           <Button
-            size="sm"
             disabled={!inStockNow || adding}
             onClick={() => {
               if (needsSizeChoice && !selectedSize) {
@@ -748,6 +749,7 @@ export default function ProductDetailClient({
               }
               handleAddToCart();
             }}
+            size="lg"
             className="shrink-0"
           >
             <ShoppingCartIcon className="size-4" />

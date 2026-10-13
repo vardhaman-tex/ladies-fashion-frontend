@@ -9,13 +9,13 @@ import { trackContact } from "@/lib/pixel";
 /**
  * A floating way to ask a person, on every page where one is wanted.
  *
- * Left out of the checkout, where it would sit on top of the pay button on a
- * phone and invite a tap in the wrong place. On product pages it rides above
+ * Left out of the cart and checkout, where it would sit near the buttons that
+ * matter most on a phone and invite a tap in the wrong place. On product pages it rides above
  * the sticky add-to-cart bar rather than behind it.
  */
 export function WhatsAppFloat() {
   const pathname = usePathname() ?? "";
-  if (pathname.startsWith("/checkout")) return null;
+  if (pathname.startsWith("/checkout") || pathname.startsWith("/cart")) return null;
 
   const onProduct = /^\/products\/[^/]+/.test(pathname);
 
@@ -26,11 +26,13 @@ export function WhatsAppFloat() {
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       onClick={() => trackContact("whatsapp_float")}
-      className={`fixed right-4 z-30 flex size-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground md:bottom-6 ${
-        onProduct ? "bottom-24" : "bottom-5"
+      className={`fixed right-3 z-30 size-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground md:bottom-6 ${
+        // On a product page a phone already has the sticky buy bar at the bottom and
+        // a WhatsApp link in the page itself, so the floating one steps aside there.
+        onProduct ? "bottom-24 hidden md:flex" : "bottom-5 flex"
       }`}
     >
-      <MessageCircle className="size-6" aria-hidden="true" />
+      <MessageCircle className="size-5" aria-hidden="true" />
     </a>
   );
 }

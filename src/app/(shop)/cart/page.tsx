@@ -101,7 +101,7 @@ export default function CartPage() {
       ) : (
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Items list */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <div className="rounded-xl border bg-card">
               <div className="divide-y px-4">
                 {cart.items.map((item) => (
@@ -130,12 +130,12 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({cart.itemCount} items)</span>
-                  <span>₹{cart.subtotal.toFixed(0)}</span>
+                  <span>{inr(cart.subtotal)}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Discount</span>
-                    <span>−₹{cart.totalDiscount.toFixed(0)}</span>
+                    <span>−{inr(cart.totalDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
@@ -146,7 +146,7 @@ export default function CartPage() {
               <Separator />
               <div className="flex justify-between font-semibold text-base">
                 <span>Total</span>
-                <span>₹{cart.total.toFixed(0)}</span>
+                <span>{inr(cart.total)}</span>
               </div>
               {codOption && (
                 <div className="space-y-1 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">

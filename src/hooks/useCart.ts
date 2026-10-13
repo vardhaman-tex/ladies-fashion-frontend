@@ -2,6 +2,7 @@
 
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
   addToCart,
@@ -205,6 +206,7 @@ export function useCart() {
   const { data: serverCart, isLoading } = useServerCart();
   const guestItems = useGuestCartStore((s) => s.items);
   const isMerging = useIsMergingCart();
+  const hydrated = useIsClient();
 
   if (isAuthenticated) {
     return { cart: serverCart ?? null, isLoading, isMerging };
@@ -212,7 +214,18 @@ export function useCart() {
 
   const guestCart = buildGuestCart(guestItems);
 
-  return { cart: guestCart, isLoading: false, isMerging };
+  // The guest cart lives in the browser, so the server's HTML can only ever show
+  // it empty. Until the client has taken over, report "loading" rather than
+  // "empty": otherwise every page load flashes "Your cart is empty" over a cart
+  // that has items in it.
+  return { cart: guestCart, isLoading: !hydrated, isMerging };
+}
+
+const noopSubscribe = () => () => {};
+
+/** False on the server and during hydration, true once the browser has taken over. */
+function useIsClient(): boolean {
+  return useSyncExternalStore(noopSubscribe, () => true, () => false);
 }
 
 /** The header badge's number; see cartBadgeCount for why it is not simply cart.itemCount. */

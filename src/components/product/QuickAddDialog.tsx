@@ -35,7 +35,7 @@ export function QuickAddDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const { data: detail, isLoading, isError } = useProduct(open ? product.slug : "");
+  const { data: detail, isLoading, isError } = useProduct(product.slug, undefined, open);
   const { mutate: addToCart, isPending } = useAddToCart();
 
   const variants = useMemo(
@@ -76,7 +76,7 @@ export function QuickAddDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="pr-8 text-base">{product.name}</DialogTitle>
           <DialogDescription>
@@ -103,7 +103,7 @@ export function QuickAddDialog({
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Colour: <span className="text-foreground normal-case">{variant.color}</span>
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Colour">
                   {variants.map((v) => (
                     <button
                       key={v.id}
@@ -112,8 +112,9 @@ export function QuickAddDialog({
                         setPickedColor(v.color);
                         setPickedSize(null);
                       }}
-                      aria-label={`Colour ${v.color}`}
-                      aria-pressed={v.color === variant.color}
+                      role="radio"
+                      aria-label={`${v.color}${v.inStock ? "" : ", sold out"}`}
+                      aria-checked={v.color === variant.color}
                       className={cn(
                         "relative size-12 overflow-hidden rounded-lg border-2 bg-muted",
                         v.color === variant.color ? "border-rose-600" : "border-transparent",
@@ -136,16 +137,18 @@ export function QuickAddDialog({
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Select size
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
                   {sizes.map((sku) => (
                     <button
                       key={sku.id}
                       type="button"
                       disabled={!sku.inStock}
-                      onClick={() => setPickedSize(sku.size)}
-                      aria-pressed={size === sku.size}
+                      onClick={() => sku.inStock && setPickedSize(sku.size)}
+                      role="radio"
+                      aria-checked={size === sku.size}
+                      aria-label={`${formatSizeLabel(sku.size)}${sku.inStock ? "" : ", sold out"}`}
                       className={cn(
-                        "h-11 min-w-11 rounded-lg border px-3 text-sm font-medium transition-colors",
+                        "h-11 min-w-11 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
                         size === sku.size
                           ? "border-rose-600 bg-rose-600 text-white"
                           : "hover:border-rose-600",

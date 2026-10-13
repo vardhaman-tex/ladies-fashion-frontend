@@ -75,6 +75,11 @@ function focusAfterRender(elementId: string) {
   }, 0);
 }
 
+/** The clock, behind a function so event handlers can read it without it counting as render-time impurity. */
+function nowMs() {
+  return Date.now();
+}
+
 function formatAddress(a: AddressData) {
   return [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode]
     .filter(Boolean)
@@ -322,6 +327,16 @@ export default function CheckoutPage() {
   if (!isAuthenticated) {
     const guestItems = cart?.items ?? [];
 
+    // The guest cart is read from the browser, so until it has been, "empty"
+    // would be a guess and a wrong one for anyone with items waiting.
+    if (cartLoading) {
+      return (
+        <div className="container mx-auto flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
     if (guestItems.length === 0) {
       return (
         <div className="container mx-auto px-4 py-16 text-center">
@@ -455,7 +470,7 @@ export default function CheckoutPage() {
         // Not reused for long: the server expires unpaid orders after 30 minutes.
         const reusable = pendingGuestOrder.current;
         let orderData =
-          reusable && reusable.key === orderKey && Date.now() - reusable.at < 20 * 60_000
+          reusable && reusable.key === orderKey && nowMs() - reusable.at < 20 * 60_000
             ? reusable.data
             : null;
         if (!orderData) orderData = await createGuestRazorpayOrder({
@@ -482,7 +497,7 @@ export default function CheckoutPage() {
         });
         // Only an order still waiting on a payment is worth reusing; a placed
         // one (full COD) is finished and navigates away below.
-        pendingGuestOrder.current = orderData.razorpayOrderId ? { key: orderKey, at: Date.now(), data: orderData } : null;
+        pendingGuestOrder.current = orderData.razorpayOrderId ? { key: orderKey, at: nowMs(), data: orderData } : null;
 
         // Full cash on delivery: the server has already placed the order, and
         // there is no ₹0 payment for the gateway to take. A null razorpayOrderId
