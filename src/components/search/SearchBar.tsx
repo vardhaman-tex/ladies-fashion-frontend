@@ -66,9 +66,9 @@ export function SearchBar() {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
           onChange={(e) => {
@@ -79,7 +79,8 @@ export function SearchBar() {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search for products..."
-          className="pl-8"
+          aria-label="Search products"
+          className="h-11 rounded-full border-border bg-card pl-10 text-base md:h-10 md:text-sm"
         />
       </div>
 
@@ -89,7 +90,7 @@ export function SearchBar() {
             <li key={suggestion.id}>
               <button
                 className={cn(
-                  "w-full rounded-md px-2 py-1.5 text-left text-sm",
+                  "min-h-11 w-full rounded-md px-3 py-2 text-left text-sm",
                   index === activeIndex ? "bg-muted" : "hover:bg-muted"
                 )}
                 onMouseEnter={() => setActiveIndex(index)}

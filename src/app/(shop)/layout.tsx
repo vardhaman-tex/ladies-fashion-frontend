@@ -1,3 +1,4 @@
+import { BottomNav } from "@/components/layout/BottomNav";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
@@ -10,6 +11,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <BottomNav />
       <WhatsAppFloat />
     </div>
   );
