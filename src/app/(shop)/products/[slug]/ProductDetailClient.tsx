@@ -23,6 +23,7 @@ import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
 import { ProductReviews } from "@/components/product/ProductReviews";
+import { Testimonials } from "@/components/product/Testimonials";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
 import { SizeGuideDialog } from "@/components/product/SizeGuideDialog";
 import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
@@ -702,6 +703,12 @@ export default function ProductDetailClient({
         </div>
 
         <ProductReviews slug={product.slug} />
+
+        <Testimonials
+          productSlug={product.slug}
+          heading="Feedback from earlier customers"
+          className="mt-10"
+        />
 
         {/* Related products */}
         {hasSimilar && (

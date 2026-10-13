@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
 import { HeroSlider, type HeroSlide } from "@/components/home/HeroSlider";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Testimonials } from "@/components/product/Testimonials";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
 import { useBestSellers, useFeaturedProducts, useProducts, useNewArrivals, useSaleProducts } from "@/hooks/useProducts";
@@ -195,6 +196,9 @@ export default function HomeClient({
           </Button>
         </div>
       )}
+
+      {/* Renders nothing until the store has genuine feedback to show. */}
+      <Testimonials className="mx-auto w-full max-w-7xl px-4" />
 
       {/* Size help and exchanges, said plainly. The exchange and returns lines
           restate the published Terms & Conditions (section 3, size exchange within
