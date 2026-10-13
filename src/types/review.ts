@@ -5,6 +5,8 @@ export interface Review {
   title: string | null;
   body: string | null;
   verifiedPurchase: boolean;
+  /** Where an unverified review came from, e.g. "WhatsApp"; null when verified. */
+  source: string | null;
   createdAt: string;
 }
 
