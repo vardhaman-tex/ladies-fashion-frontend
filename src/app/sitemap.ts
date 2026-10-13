@@ -50,6 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    { url: `${SITE_URL}/about`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/contact`, changeFrequency: "yearly", priority: 0.4 },
   ];
 
   // The catalogue has no dedicated /category/[slug] routes — categories are

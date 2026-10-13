@@ -50,6 +50,11 @@ export function trackViewContent(product: PixelProduct) {
   });
 }
 
+/** A shopper reached for a human. Meta's standard Contact event; `source` says where. */
+export function trackContact(source: string) {
+  track("Contact", { content_name: source });
+}
+
 export function trackAddToCart(product: PixelProduct) {
   track("AddToCart", {
     content_type: "product",

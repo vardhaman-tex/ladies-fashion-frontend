@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuthStore } from "@/stores/authStore";
+import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
 import { getSocialLinks, type SocialLink } from "@/services/socialLinkService";
 
 const AUTH_LINKS = [
@@ -117,6 +118,7 @@ export function Footer() {
             Vardhman Textile
           </Link>
           <p className="text-center text-xs text-muted-foreground">Curated styles for every occasion</p>
+          <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}</a>
           <div className="mt-2">
             <SocialIconBar links={socialLinks} size="md" />
           </div>
@@ -149,8 +151,10 @@ export function Footer() {
         </div>
 
         <div className="border-b border-border px-4 py-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Help &amp; Legal</p>
           <ul className="flex flex-col gap-1.5">
+            <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About Us</Link></li>
+            <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link></li>
             <li><Link href="/policies/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
             <li><Link href="/policies/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground">Terms &amp; Conditions</Link></li>
             <li><Link href="/policies/return-policy" className="text-sm text-muted-foreground hover:text-foreground">Return Policy</Link></li>
@@ -175,6 +179,9 @@ export function Footer() {
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
               Curated styles for every occasion, delivered to your doorstep.
             </p>
+            <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+              WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}
+            </a>
             <div className="mt-4">
               <SocialIconBar links={socialLinks} size="sm" />
             </div>
@@ -206,8 +213,10 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-foreground">Legal</h4>
+            <h4 className="text-sm font-semibold text-foreground">Help &amp; Legal</h4>
             <ul className="mt-3 flex flex-col gap-2">
+              <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About Us</Link></li>
+              <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link></li>
               <li><Link href="/policies/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
               <li><Link href="/policies/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground">Terms & Conditions</Link></li>
               <li><Link href="/policies/return-policy" className="text-sm text-muted-foreground hover:text-foreground">Return Policy</Link></li>

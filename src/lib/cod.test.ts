@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getCodAvailability, quotePayment } from "./cod";
+import { describeCod, getCodAvailability, quotePayment } from "./cod";
 
 const settings = (over: Partial<{
   codEnabled: boolean;
@@ -109,5 +109,25 @@ describe("quotePayment", () => {
       dueOnDelivery: 1500,
       isPlaceOnly: true,
     });
+  });
+});
+
+describe("describeCod", () => {
+  it("describes full COD with a fee, naming no advance", () => {
+    const copy = describeCod({ codEnabled: true, codAdvanceAmount: 0, codFeeAmount: 40 });
+    expect(copy.short).toBe("Cash on delivery (₹40 fee)");
+    expect(copy.long).toContain("₹40");
+    expect(copy.long).not.toMatch(/advance payment|non-refundable/i);
+  });
+
+  it("names the advance when the store asks for one", () => {
+    const copy = describeCod({ codEnabled: true, codAdvanceAmount: 100, codFeeAmount: 0 });
+    expect(copy.short).toContain("₹100 advance");
+    expect(copy.long).toContain("non-refundable");
+  });
+
+  it("says nothing promotional when COD is off or settings are unknown", () => {
+    expect(describeCod({ codEnabled: false, codAdvanceAmount: 0, codFeeAmount: 0 }).short).toBeNull();
+    expect(describeCod(null).short).toBeNull();
   });
 });
