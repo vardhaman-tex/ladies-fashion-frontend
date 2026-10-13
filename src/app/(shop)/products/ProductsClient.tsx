@@ -98,10 +98,11 @@ function ProductsPageContent({
     breadcrumbs.push({ label: subCategory.name });
   }
 
+  const activeFilterCount = FILTER_PARAM_KEYS.filter((key) => key !== "categorySlug" && key !== "subCategorySlug" && searchParams.has(key)).length;
   const hasFilters = FILTER_PARAM_KEYS.some((key) => searchParams.has(key)) || searchParams.has("sort");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
       <Breadcrumbs items={breadcrumbs} />
       <h1 className="mt-2 font-heading text-2xl font-bold text-foreground sm:text-3xl">{title}</h1>
 
@@ -119,7 +120,7 @@ function ProductsPageContent({
                 "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
                 subCategory
                   ? "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
-                  : "border-primary bg-primary text-white"
+                  : "border-primary bg-primary text-primary-foreground"
               )}
             >
               All {category.name}
@@ -131,7 +132,7 @@ function ProductsPageContent({
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors",
                   subCategory?.id === sub.id
-                    ? "border-primary bg-primary text-white"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
                 )}
               >
@@ -150,16 +151,20 @@ function ProductsPageContent({
         </aside>
 
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            {/* Top bar: count + mobile filter button */}
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                {isLoading ? "Loading…" : `${data?.totalElements ?? 0} products`}
-              </p>
+          {/* Sticky on a phone: Filter and the sort chips stay under the header
+              while the grid scrolls, so changing the order never means scrolling
+              back to the top. */}
+          <div className="sticky top-[7.25rem] z-30 -mx-4 flex flex-col gap-2 border-b border-border bg-background/95 px-4 py-2 backdrop-blur md:top-[4.25rem] lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <div className="flex items-center gap-2">
               <Sheet>
-                <SheetTrigger render={<Button variant="outline" size="sm" className="gap-1.5 lg:hidden" />}>
-                  <SlidersHorizontalIcon className="size-3.5" />
-                  Filter &amp; Sort
+                <SheetTrigger render={<Button variant="outline" className="h-10 shrink-0 gap-1.5 rounded-full px-4 lg:hidden" />}>
+                  <SlidersHorizontalIcon className="size-4" aria-hidden="true" />
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </SheetTrigger>
                 <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
                   <SheetHeader className="px-4 pb-2 pt-4">
@@ -174,12 +179,11 @@ function ProductsPageContent({
                   </div>
                 </SheetContent>
               </Sheet>
-            </div>
-
-            {/* Desktop sort chips */}
-            <div className="hidden lg:block">
               <ProductSort />
             </div>
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {isLoading ? "Loading…" : `${data?.totalElements ?? 0} products`}
+            </p>
           </div>
 
           <ActiveFilters />

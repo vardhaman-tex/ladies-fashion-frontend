@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, Star } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/product/WishlistButton";
 import { useAddToCart } from "@/hooks/useCart";
@@ -113,14 +113,6 @@ export function ProductCard({ product, badge }: ProductCardProps) {
         >
           {product.name}
         </Link>
-
-        {product.reviewCount > 0 && (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
-            <span className="font-medium text-foreground">{product.avgRating.toFixed(1)}</span>
-            <span aria-label={`${product.reviewCount} reviews`}>({product.reviewCount})</span>
-          </p>
-        )}
 
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className="text-base font-bold text-foreground">
