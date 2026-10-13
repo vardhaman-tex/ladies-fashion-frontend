@@ -69,20 +69,9 @@ export interface ProductSummary {
   fabric: string | null;
   colors: ColorSwatch[];
   hasSizes: boolean;
-  /**
-   * Sizes to offer as chips on a card. Empty unless the product has exactly one
-   * colour, since otherwise a size alone does not say what to add. Optional so
-   * a response from a backend that predates the field still parses.
-   */
-  sizes?: SizeOption[];
   inStock: boolean;
   isFeatured: boolean;
   status: ProductStatus;
-}
-
-export interface SizeOption {
-  size: string;
-  inStock: boolean;
 }
 
 /**

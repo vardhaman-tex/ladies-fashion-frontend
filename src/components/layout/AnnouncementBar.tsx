@@ -1,42 +1,48 @@
 "use client";
 
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { describeCod } from "@/lib/cod";
-import { SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
 
 /**
- * The three things a first-time visitor wants settled before they scroll:
- * what shipping costs, whether they can pay on delivery, and whether a person
- * answers questions.
+ * A scrolling ticker of the three things a first-time visitor wants settled:
+ * shipping, paying on delivery, and returns.
  *
- * Shipping is free on every order, so the bar says that rather than naming a
- * threshold that does not exist. The COD wording comes from the live settings
- * (see describeCod), so the fee in the banner is the fee at checkout.
+ * Deliberately names no fee and no phone number. The COD fee is stated where it
+ * is charged (product page, cart, checkout), and WhatsApp has its own button.
+ * The returns line says what the published policy actually covers; widen it
+ * only if the policy is widened.
  */
 export function AnnouncementBar() {
   const { data: settings } = useSiteSettings();
-  const cod = describeCod(settings).short;
+  const codOn = settings?.codEnabled === true;
+
+  const messages = [
+    "Free shipping across India",
+    ...(codOn ? ["Cash on delivery available"] : []),
+    "Easy returns on damaged or wrong items",
+  ];
+
+  const row = (hidden: boolean) => (
+    <ul
+      className="marquee-copy flex shrink-0 items-center"
+      aria-hidden={hidden || undefined}
+    >
+      {messages.map((message) => (
+        <li key={message} className="flex items-center whitespace-nowrap px-6 text-xs font-medium">
+          {message}
+          <span aria-hidden="true" className="ml-12 opacity-50">
+            ✦
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
-    <div className="bg-rose-600 text-white">
-      <p className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 py-2 text-center text-xs font-medium">
-        <span>Free shipping across India</span>
-        {cod && (
-          <>
-            <span aria-hidden="true" className="opacity-50">·</span>
-            <span>{cod}</span>
-          </>
-        )}
-        <span aria-hidden="true" className="hidden opacity-50 sm:inline">·</span>
-        <a
-          href={whatsAppLink()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 hover:opacity-80"
-        >
-          WhatsApp {SUPPORT_WHATSAPP_DISPLAY}
-        </a>
-      </p>
+    <div className="marquee-viewport overflow-hidden bg-rose-600 py-2 text-white">
+      <div className="marquee-track">
+        {row(false)}
+        {row(true)}
+      </div>
     </div>
   );
 }

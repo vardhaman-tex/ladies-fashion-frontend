@@ -1,14 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WishlistButton } from "@/components/product/WishlistButton";
 import { useAddToCart } from "@/hooks/useCart";
-import { cn } from "@/lib/utils";
-import { formatSizeLabel } from "@/lib/catalogueDisplay";
+import { QuickAddDialog } from "@/components/product/QuickAddDialog";
 import type { ProductSummary } from "@/types/product";
 
 interface ProductCardProps {
@@ -18,35 +17,19 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discountAmount > 0;
   const { mutate: addToCart, isPending: adding } = useAddToCart();
-  const router = useRouter();
 
   // Does the shopper need to make a choice we can't make for them?
   const needsSelection = product.hasSizes || product.colors.length > 1;
 
-  // One colour and known sizes: the shopper only has a size to pick, so let
-  // them pick it here instead of making them open the product page for it.
-  const quickSizes = product.inStock && product.colors.length <= 1 ? (product.sizes ?? []) : [];
-
-  const addSize = (size: string) => {
-    addToCart({
-      productId: product.id,
-      productName: product.name,
-      productSlug: product.slug,
-      thumbnail: product.thumbnail,
-      price: product.price,
-      discountAmount: product.discountAmount,
-      quantity: 1,
-      size,
-      color: product.colors[0]?.color ?? null,
-    });
-  };
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // If product has sizes or more than one color, navigate to PDP so user can pick
+    // Sizes or several colours: ask here, in a popup, instead of sending the
+    // shopper to the product page and losing their place in the grid.
     if (needsSelection) {
-      router.push(`/products/${product.slug}`);
+      setPickerOpen(true);
       return;
     }
     addToCart({
@@ -105,40 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
           className="absolute top-2 right-2"
         />
 
-        {product.inStock && quickSizes.length === 0 && (
-          <Button
-            size="sm"
-            className="absolute inset-x-2 bottom-2 rounded-lg bg-white/90 text-xs font-semibold text-foreground shadow hover:bg-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
-            onClick={handleAddToCart}
-            disabled={adding}
-          >
-            <ShoppingBag className="size-3.5 mr-1" />
-            {adding ? "Adding…" : needsSelection ? "Select Options" : "Add to Cart"}
-          </Button>
-        )}
       </div>
-
-      {quickSizes.length > 0 && (
-        <div role="group" aria-label={`Add ${product.name} to cart in size`} className="flex flex-wrap gap-1.5">
-          {quickSizes.map((option) => (
-            <button
-              key={option.size}
-              type="button"
-              disabled={!option.inStock || adding}
-              onClick={() => addSize(option.size)}
-              aria-label={`Add size ${formatSizeLabel(option.size)} to cart${option.inStock ? "" : " (sold out)"}`}
-              className={cn(
-                "h-9 min-w-9 rounded-md border border-border px-2 text-xs font-medium transition-colors",
-                option.inStock
-                  ? "hover:border-rose-600 hover:bg-rose-600 hover:text-white"
-                  : "cursor-not-allowed text-muted-foreground/60 line-through"
-              )}
-            >
-              {formatSizeLabel(option.size)}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="flex flex-col gap-0.5">
         <Link href={`/products/${product.slug}`} className="line-clamp-1 text-sm font-medium text-foreground hover:underline">
@@ -165,6 +115,22 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
         )}
       </div>
+      {product.inStock && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-rose-600 text-rose-600 hover:bg-rose-600 hover:text-white"
+          onClick={handleAddToCart}
+          disabled={adding}
+        >
+          <ShoppingBag className="size-3.5" />
+          {adding ? "Adding…" : "Add to Cart"}
+        </Button>
+      )}
+
+      {needsSelection && (
+        <QuickAddDialog product={product} open={pickerOpen} onClose={() => setPickerOpen(false)} />
+      )}
     </div>
   );
 }

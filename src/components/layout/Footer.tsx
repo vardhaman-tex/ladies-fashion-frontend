@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useCategories } from "@/hooks/useCategories";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuthStore } from "@/stores/authStore";
-import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
+import { MessageCircle } from "lucide-react";
+import { SUPPORT_HOURS, whatsAppLink } from "@/lib/support";
 import { getSocialLinks, type SocialLink } from "@/services/socialLinkService";
 
 const AUTH_LINKS = [
@@ -95,6 +96,22 @@ function SocialIconBar({ links, size }: { links: SocialLink[]; size: "sm" | "md"
   );
 }
 
+/** A WhatsApp call to action: the icon and a label, with the number left to the chat itself. */
+function WhatsAppButton() {
+  return (
+    <a
+      href={whatsAppLink()}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Support hours: ${SUPPORT_HOURS}`}
+      className="inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1ebe5b]"
+    >
+      <MessageCircle className="size-5" aria-hidden="true" />
+      Chat on WhatsApp
+    </a>
+  );
+}
+
 export function Footer() {
   const { data: categories } = useCategories();
   const { data: siteSettings } = useSiteSettings();
@@ -118,7 +135,7 @@ export function Footer() {
             Vardhman Textile
           </Link>
           <p className="text-center text-xs text-muted-foreground">Curated styles for every occasion</p>
-          <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-rose-600 hover:underline">WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}</a>
+          <WhatsAppButton />
           <div className="mt-2">
             <SocialIconBar links={socialLinks} size="md" />
           </div>
@@ -179,9 +196,7 @@ export function Footer() {
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
               Curated styles for every occasion, delivered to your doorstep.
             </p>
-            <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-medium text-rose-600 hover:underline">
-              WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}
-            </a>
+            <div className="mt-3"><WhatsAppButton /></div>
             <div className="mt-4">
               <SocialIconBar links={socialLinks} size="sm" />
             </div>

@@ -170,3 +170,34 @@
   );
   animation: shimmer 1.6s ease-in-out infinite;
 }
+
+/* Announcement bar ticker: the track holds two identical copies of the message
+   row, so sliding it by half its width loops with no visible jump. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee-viewport:hover .marquee-track,
+.marquee-viewport:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+/* People who ask for less motion get a still, wrapped row instead. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .marquee-copy[aria-hidden="true"] {
+    display: none;
+  }
+}

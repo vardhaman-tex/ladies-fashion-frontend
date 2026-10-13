@@ -3,13 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
-import { ProductGridSkeleton } from "@/components/common/LoadingSkeleton";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
-import { ProductStrip } from "@/components/product/ProductStrip";
+import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategories } from "@/hooks/useCategories";
-import { useBestSellers, useFeaturedProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
+import { useBestSellers, useFeaturedProducts, useProducts, useNewArrivals, useSaleProducts, useTrending } from "@/hooks/useProducts";
 import type { PageResponse } from "@/types/api";
 import type { Category } from "@/types/category";
 import type { ProductSummary } from "@/types/product";
@@ -53,6 +51,26 @@ export default function HomeClient({
   const { data: newArrivals, isLoading: loadingNewArrivals } = useNewArrivals({ size: 8 }, initialNewArrivals);
   const { data: bestSellers, isLoading: loadingBestSellers } = useBestSellers({ size: 8 }, initialBestSellers);
   const { data: sale, isLoading: loadingSale } = useSaleProducts({ size: 8 }, initialSale);
+
+  const { data: allProducts, isLoading: loadingAll } = useProducts({ size: 24 });
+
+  const productSections = (() => {
+    const seen = new Set<string>();
+    const take = (page: ProductPage | undefined) => {
+      const fresh = (page?.content ?? []).filter((p) => !seen.has(p.id)).slice(0, 8);
+      fresh.forEach((p) => seen.add(p.id));
+      return fresh;
+    };
+    return [
+      { key: "featured", eyebrow: "Curated for you", title: "Featured Picks", href: "/products", products: take(featured), loading: loadingFeatured },
+      { key: "best", eyebrow: "Loved by customers", title: "Bestsellers", href: "/products", products: take(bestSellers), loading: loadingBestSellers },
+      { key: "new", eyebrow: "Just landed", title: "New Arrivals", href: "/products", products: take(newArrivals), loading: loadingNewArrivals },
+      { key: "trending", eyebrow: "Popular right now", title: "Trending Now", href: "/products", products: take(trending), loading: loadingTrending },
+      { key: "sale", eyebrow: "Limited time", title: "On Sale", href: "/products", products: take(sale), loading: loadingSale },
+      // The rest of the catalogue, so a short list above never leaves the page thin.
+      { key: "more", eyebrow: "Keep browsing", title: "More to Love", href: "/products", products: take(allProducts), loading: loadingAll },
+    ].filter((section) => section.products.length > 0);
+  })();
 
   const heroImages = Array.from(
     new Set(
@@ -131,59 +149,41 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* Featured products — only show once loaded and non-empty */}
-      {!loadingFeatured && (featured?.content?.length ?? 0) > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4">
-          <div className="flex items-end justify-between">
+      {/* One section per list instead of tabs, so a visitor scrolling a phone
+          meets the whole range rather than only the first tab. A product shown in
+          one section is left out of the ones below it: with a catalogue this size
+          the same suit would otherwise appear in every row. */}
+      {productSections.map((section) => (
+        <section key={section.key} className="mx-auto w-full max-w-7xl px-4">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
-              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
+              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">{section.eyebrow}</p>
+              <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">{section.title}</h2>
             </div>
-            <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-rose-600 hover:underline">
-              View All
+            <Link href={section.href} className="flex shrink-0 items-center gap-1 text-sm font-medium text-rose-600 hover:underline">
+              View all
               <ArrowRightIcon className="size-4" />
             </Link>
           </div>
-          <div className="mt-4 sm:mt-6">
-            {loadingFeatured ? <ProductGridSkeleton count={4} /> : <ProductStrip products={featured?.content ?? []} />}
+          <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:mt-6 md:grid-cols-4 md:gap-x-4">
+            {section.products.map((product, index) => (
+              // Six on a phone (three even rows of two), eight from tablet up.
+              <div key={product.id} className={index >= 6 ? "hidden md:block" : undefined}>
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
         </section>
-      )}
+      ))}
 
-      {/* Trending / New Arrivals / Sale — hidden when all empty */}
-      {(() => {
-        const tabs = [
-          { value: "best-sellers", label: "Bestsellers", loading: loadingBestSellers, data: bestSellers },
-          { value: "trending", label: "Trending", loading: loadingTrending, data: trending },
-          { value: "new-arrivals", label: "New Arrivals", loading: loadingNewArrivals, data: newArrivals },
-          { value: "sale", label: "Sale", loading: loadingSale, data: sale },
-        ];
-        const visibleTabs = tabs.filter((t) => !t.loading && (t.data?.content?.length ?? 0) > 0);
-        if (visibleTabs.length === 0) return null;
-        const defaultTab = visibleTabs[0].value;
-        return (
-          <section className="mx-auto w-full max-w-7xl px-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
-            <Tabs defaultValue={defaultTab} className="mt-1">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
-                <TabsList className="w-full sm:w-auto">
-                  {visibleTabs.map((t) => (
-                    <TabsTrigger key={t.value} value={t.value} className="flex-1 sm:flex-none">
-                      {t.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-              {visibleTabs.map((t) => (
-                <TabsContent key={t.value} value={t.value} className="mt-4 sm:mt-6">
-                  {t.loading ? <ProductGridSkeleton count={4} /> : <ProductStrip products={t.data?.content ?? []} />}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </section>
-        );
-      })()}
+      {productSections.length > 0 && (
+        <div className="mx-auto w-full max-w-7xl px-4 text-center">
+          <Button size="lg" variant="outline" render={<Link href="/products" />}>
+            Browse the full collection
+            <ArrowRightIcon />
+          </Button>
+        </div>
+      )}
 
       {/* Trust strip */}
       <section className="mx-auto w-full max-w-7xl px-4">
@@ -212,8 +212,8 @@ export default function HomeClient({
             <Ruler className="size-6 text-rose-600" aria-hidden="true" />
             <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Not sure of your size?</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Every product page has a size chart in body measurements. Still unsure? Message us your
-              bust and waist on WhatsApp before you order and we&apos;ll suggest a size.
+              Every product page has a size chart to help you choose. Still unsure? Message us on
+              WhatsApp before you order and we&apos;ll help you pick the right size.
             </p>
             <Button variant="outline" className="mt-4" render={<Link href="/contact" />}>
               Ask us about sizing
