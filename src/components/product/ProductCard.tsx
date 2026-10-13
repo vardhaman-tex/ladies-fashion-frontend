@@ -130,7 +130,7 @@ export function ProductCard({ product }: ProductCardProps) {
               className={cn(
                 "h-9 min-w-9 rounded-md border border-border px-2 text-xs font-medium transition-colors",
                 option.inStock
-                  ? "hover:border-primary hover:bg-primary hover:text-primary-foreground"
+                  ? "hover:border-rose-600 hover:bg-rose-600 hover:text-white"
                   : "cursor-not-allowed text-muted-foreground/60 line-through"
               )}
             >

@@ -220,6 +220,18 @@ function TrackOrderForm() {
             )}
           </div>
 
+          {order.status === "DELIVERED" && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-4">
+              <p className="text-sm">How was your order? Your review helps other shoppers choose.</p>
+              <Button
+                variant="outline"
+                render={<Link href={`/review?order=${encodeURIComponent(order.orderNumber)}`} />}
+              >
+                Write a review
+              </Button>
+            </div>
+          )}
+
           {/* Items */}
           <div className="rounded-xl border">
             <div className="border-b px-5 py-4">

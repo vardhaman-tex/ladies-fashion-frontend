@@ -77,7 +77,7 @@ export default function HomeClient({
             Discover the latest collections of ethnic and contemporary fashion — curated for every festival, function, and everyday moment.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90" render={<Link href="/products" />}>
+            <Button size="lg" className="bg-white text-rose-600 hover:bg-white/90" render={<Link href="/products" />}>
               Shop Now
               <ArrowRightIcon />
             </Button>
@@ -92,7 +92,7 @@ export default function HomeClient({
       <section id="categories" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Browse</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Browse</p>
             <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Shop by Category</h2>
           </div>
         </div>
@@ -136,10 +136,10 @@ export default function HomeClient({
         <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Curated for you</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Curated for you</p>
               <h2 className="mt-1 font-heading text-2xl font-bold text-foreground sm:text-3xl">Featured Picks</h2>
             </div>
-            <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+            <Link href="/products" className="flex items-center gap-1 text-sm font-medium text-rose-600 hover:underline">
               View All
               <ArrowRightIcon className="size-4" />
             </Link>
@@ -163,7 +163,7 @@ export default function HomeClient({
         const defaultTab = visibleTabs[0].value;
         return (
           <section className="mx-auto w-full max-w-7xl px-4">
-            <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Discover More</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Discover More</p>
             <Tabs defaultValue={defaultTab} className="mt-1">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What&apos;s Hot</h2>
@@ -190,7 +190,7 @@ export default function HomeClient({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:divide-x sm:divide-border sm:gap-0">
           {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex flex-col items-center gap-2 px-2 text-center sm:gap-3 sm:px-6">
-              <div className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <div className="flex size-11 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/30">
                 <Icon className="size-5" aria-hidden="true" />
               </div>
               <div>
@@ -209,7 +209,7 @@ export default function HomeClient({
       <section className="mx-auto w-full max-w-7xl px-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
-            <Ruler className="size-6 text-primary" aria-hidden="true" />
+            <Ruler className="size-6 text-rose-600" aria-hidden="true" />
             <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Not sure of your size?</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Every product page has a size chart in body measurements. Still unsure? Message us your
@@ -220,7 +220,7 @@ export default function HomeClient({
             </Button>
           </div>
           <div className="rounded-2xl border bg-card p-5 sm:p-6">
-            <PackageCheck className="size-6 text-primary" aria-hidden="true" />
+            <PackageCheck className="size-6 text-rose-600" aria-hidden="true" />
             <h2 className="mt-3 font-heading text-xl font-bold text-foreground">Returns, plainly</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Received a damaged, defective or wrong item? Tell us within 2 days of delivery with

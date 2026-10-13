@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
 import { SizeGuideDialog } from "@/components/product/SizeGuideDialog";
 import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
@@ -683,6 +684,8 @@ export default function ProductDetailClient({
             </Tabs>
           </div>
         </div>
+
+        <ProductReviews slug={product.slug} />
 
         {/* Related products */}
         {hasSimilar && (

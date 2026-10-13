@@ -37,7 +37,7 @@ const PROMISES = [
 export default function AboutPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
-      <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Our story</p>
+      <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">Our story</p>
       <h1 className="mt-1 font-heading text-3xl font-bold text-foreground sm:text-4xl">
         About {SITE_NAME}
       </h1>

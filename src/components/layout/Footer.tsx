@@ -118,7 +118,7 @@ export function Footer() {
             Vardhman Textile
           </Link>
           <p className="text-center text-xs text-muted-foreground">Curated styles for every occasion</p>
-          <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}</a>
+          <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-rose-600 hover:underline">WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}</a>
           <div className="mt-2">
             <SocialIconBar links={socialLinks} size="md" />
           </div>
@@ -179,7 +179,7 @@ export function Footer() {
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
               Curated styles for every occasion, delivered to your doorstep.
             </p>
-            <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+            <a href={whatsAppLink()} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-medium text-rose-600 hover:underline">
               WhatsApp {SUPPORT_WHATSAPP_DISPLAY} · {SUPPORT_HOURS}
             </a>
             <div className="mt-4">

@@ -18,7 +18,7 @@ export function AnnouncementBar() {
   const cod = describeCod(settings).short;
 
   return (
-    <div className="bg-primary text-primary-foreground">
+    <div className="bg-rose-600 text-white">
       <p className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 py-2 text-center text-xs font-medium">
         <span>Free shipping across India</span>
         {cod && (
