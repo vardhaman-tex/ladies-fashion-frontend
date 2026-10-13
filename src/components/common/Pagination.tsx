@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface PaginationProps {
   totalPages: number;
@@ -27,34 +26,28 @@ export function Pagination({ totalPages, currentPage }: PaginationProps) {
     router.push(`?${params.toString()}`);
   };
 
-  const pages = Array.from({ length: totalPages }, (_, i) => i);
-
+  // Previous / position / Next rather than a button per page: a catalogue of
+  // thirty pages overflowed a phone, and nobody taps page 17 anyway. The URL
+  // still carries ?page=N, so every page stays linkable and crawlable.
   return (
-    <nav className="flex items-center justify-center gap-1" aria-label="Pagination">
+    <nav className="flex items-center justify-between gap-3" aria-label="Pagination">
       <Button
         variant="outline"
-        size="sm"
+        size="lg"
+        className="min-w-28 rounded-full"
         disabled={currentPage <= 0}
         onClick={() => goToPage(currentPage - 1)}
       >
         Previous
       </Button>
 
-      {pages.map((page) => (
-        <Button
-          key={page}
-          variant={page === currentPage ? "default" : "outline"}
-          size="sm"
-          className={cn("w-8")}
-          onClick={() => goToPage(page)}
-        >
-          {page + 1}
-        </Button>
-      ))}
+      <p className="text-sm text-muted-foreground" aria-current="page">
+        Page <span className="font-semibold text-foreground">{currentPage + 1}</span> of {totalPages}
+      </p>
 
       <Button
-        variant="outline"
-        size="sm"
+        size="lg"
+        className="min-w-28 rounded-full"
         disabled={currentPage >= totalPages - 1}
         onClick={() => goToPage(currentPage + 1)}
       >

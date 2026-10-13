@@ -25,12 +25,12 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PAID: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  SHIPPED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  PENDING: "bg-warning/10 text-warning",
+  PAID: "bg-muted text-foreground/80",
+  CONFIRMED: "bg-muted text-foreground/80",
+  SHIPPED: "bg-muted text-foreground/80",
+  DELIVERED: "bg-success/10 text-success",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -65,17 +65,17 @@ function StatusTimeline({
               <div
                 className={cn(
                   "flex size-7 items-center justify-center rounded-full text-xs font-bold",
-                  done ? "bg-rose-600 text-white" : "bg-muted text-muted-foreground"
+                  done ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                 )}
               >
                 {i + 1}
               </div>
-              <span className={cn("mt-1 text-[10px]", done ? "text-rose-600 font-medium" : "text-muted-foreground")}>
+              <span className={cn("mt-1 text-[10px]", done ? "text-primary font-medium" : "text-muted-foreground")}>
                 {STATUS_LABELS[step]}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={cn("h-0.5 flex-1 mb-4", done && i < currentStep ? "bg-rose-600" : "bg-muted")} />
+              <div className={cn("h-0.5 flex-1 mb-4", done && i < currentStep ? "bg-primary" : "bg-muted")} />
             )}
           </div>
         );
@@ -125,11 +125,11 @@ function OrderDetailContent({ id }: { id: string }) {
       </Link>
 
       {confirmed && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-4 dark:border-green-800/40 dark:bg-green-950/30">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-600" />
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-4">
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
           <div>
-            <p className="font-semibold text-green-800 dark:text-green-400">Order placed successfully!</p>
-            <p className="mt-0.5 text-sm text-green-700 dark:text-green-500">
+            <p className="font-semibold text-success">Order placed successfully!</p>
+            <p className="mt-0.5 text-sm text-success">
               We&apos;ve received your order and will confirm it shortly.
             </p>
           </div>
@@ -154,7 +154,7 @@ function OrderDetailContent({ id }: { id: string }) {
             <Button
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-600 hover:bg-red-50"
+              className="border-destructive/40 text-destructive hover:bg-destructive/20"
               onClick={handleCancel}
               disabled={cancelOrder.isPending}
             >
@@ -168,7 +168,7 @@ function OrderDetailContent({ id }: { id: string }) {
       <div className="mb-6 rounded-xl border p-4">
         <StatusTimeline status={order.status} paymentMethod={order.paymentMethod} />
         {order.status === "CANCELLED" && (
-          <p className="text-center text-sm text-red-600">This order has been cancelled.</p>
+          <p className="text-center text-sm text-destructive">This order has been cancelled.</p>
         )}
       </div>
 
@@ -176,7 +176,7 @@ function OrderDetailContent({ id }: { id: string }) {
       <div className="mb-6 rounded-xl border">
         <div className="border-b px-5 py-4">
           <h2 className="flex items-center gap-2 font-semibold">
-            <Package className="size-4 text-rose-600" /> Items ({order.itemCount})
+            <Package className="size-4 text-primary" /> Items ({order.itemCount})
           </h2>
         </div>
         <div className="divide-y">
@@ -196,7 +196,7 @@ function OrderDetailContent({ id }: { id: string }) {
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/products/${item.productSlug}`}
-                  className="font-medium hover:text-rose-600"
+                  className="font-medium hover:text-primary"
                 >
                   {item.productName}
                 </Link>
@@ -204,7 +204,7 @@ function OrderDetailContent({ id }: { id: string }) {
                   {formatVariantSummary(item.size, item.color)} × {item.quantity}
                 </p>
                 <div className="mt-1 flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-rose-600">
+                  <span className="font-semibold text-primary">
                     ₹{item.finalPrice.toLocaleString("en-IN")}
                   </span>
                   {item.discountAmount > 0 && (
@@ -226,14 +226,14 @@ function OrderDetailContent({ id }: { id: string }) {
             <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
           </div>
           {order.totalDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-success">
               <span>Discount</span>
               <span>−₹{order.totalDiscount.toLocaleString("en-IN")}</span>
             </div>
           )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Delivery</span>
-            <span className="text-green-600">FREE</span>
+            <span className="text-success">FREE</span>
           </div>
           {/* Itemised because it is inside the total: without this row a
               ₹1,500 subtotal and a ₹1,540 total look like a mistake. */}
@@ -263,7 +263,7 @@ function OrderDetailContent({ id }: { id: string }) {
       {/* Delivery address */}
       <div className="rounded-xl border p-5">
         <h2 className="mb-3 flex items-center gap-2 font-semibold">
-          <MapPin className="size-4 text-rose-600" /> Delivery Address
+          <MapPin className="size-4 text-primary" /> Delivery Address
         </h2>
         <p className="font-medium">{order.addrFullName}</p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -279,7 +279,7 @@ function OrderDetailContent({ id }: { id: string }) {
       {order.razorpayPaymentId && (
         <div className="rounded-xl border p-5">
           <h2 className="mb-3 flex items-center gap-2 font-semibold">
-            <CreditCard className="size-4 text-rose-600" /> Payment
+            <CreditCard className="size-4 text-primary" /> Payment
           </h2>
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Method</span>
@@ -291,7 +291,7 @@ function OrderDetailContent({ id }: { id: string }) {
           </div>
           <div className="mt-1.5 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Amount paid</span>
-            <span className="font-semibold text-rose-600">₹{order.total.toLocaleString("en-IN")}</span>
+            <span className="font-semibold text-primary">₹{order.total.toLocaleString("en-IN")}</span>
           </div>
         </div>
       )}

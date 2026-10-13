@@ -85,7 +85,7 @@ function PolicyForm({
           type="checkbox"
           checked={visible}
           onChange={(e) => setVisible(e.target.checked)}
-          className="accent-rose-600"
+          className="accent-primary"
         />
         Visible to customers
       </label>

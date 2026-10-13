@@ -30,7 +30,7 @@ export function CartButton() {
     >
       <ShoppingBag className="size-5" />
       {itemCount > 0 && (
-        <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white">
+        <span className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
           {itemCount > 99 ? "99+" : itemCount}
         </span>
       )}

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-14">
-      <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">
+      <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
         We&apos;re here to help
       </p>
       <h1 className="mt-1 font-heading text-3xl font-bold text-foreground sm:text-4xl">
@@ -28,7 +28,7 @@ export default function ContactPage() {
 
       <div className="mt-8 rounded-2xl border bg-card p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <MessageCircle className="mt-0.5 size-5 shrink-0 text-green-600" aria-hidden="true" />
+          <MessageCircle className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
           <div>
             <h2 className="text-base font-semibold">WhatsApp</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -60,13 +60,13 @@ export default function ContactPage() {
           <div>
             <h2 className="text-base font-semibold">Where is my order?</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              <Link href="/track-order" className="font-medium text-rose-600 hover:underline">
+              <Link href="/track-order" className="font-medium text-primary hover:underline">
                 Track your order
               </Link>{" "}
               with your order number and phone number, or read the{" "}
               <Link
                 href="/policies/return-policy"
-                className="font-medium text-rose-600 hover:underline"
+                className="font-medium text-primary hover:underline"
               >
                 return policy
               </Link>

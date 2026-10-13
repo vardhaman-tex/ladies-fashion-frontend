@@ -38,7 +38,7 @@ export function AnnouncementBar() {
   );
 
   return (
-    <div className="marquee-viewport overflow-hidden bg-rose-600 py-2 text-white">
+    <div className="marquee-viewport overflow-hidden bg-primary py-2 text-white">
       <div className="marquee-track">
         {row(false)}
         {row(true)}

@@ -35,7 +35,7 @@ export function DeliveryCheck() {
   return (
     <div className="space-y-2">
       <div className="flex items-start gap-2.5 text-sm">
-        <Truck className="mt-0.5 size-4 shrink-0 text-rose-600" aria-hidden="true" />
+        <Truck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
         <span>
           Estimated delivery{" "}
           <span className="font-medium" suppressHydrationWarning>

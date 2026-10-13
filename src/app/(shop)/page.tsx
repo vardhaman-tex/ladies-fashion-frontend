@@ -175,7 +175,7 @@ export default async function HomePage() {
         aria-labelledby="faq-heading"
         className="mx-auto w-full max-w-3xl px-4 pb-16"
       >
-        <p className="text-xs font-semibold tracking-[0.2em] text-rose-600 uppercase">
+        <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
           Good to know
         </p>
         <h2
@@ -200,13 +200,13 @@ export default async function HomePage() {
 
         <p className="mt-8 text-sm text-muted-foreground">
           Still deciding?{" "}
-          <Link href="/products" className="font-medium text-rose-600 hover:underline">
+          <Link href="/products" className="font-medium text-primary hover:underline">
             Browse the full collection
           </Link>{" "}
           or read our{" "}
           <Link
             href="/policies/return-policy"
-            className="font-medium text-rose-600 hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             return policy
           </Link>

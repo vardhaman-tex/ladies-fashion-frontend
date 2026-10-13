@@ -83,7 +83,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-rose-600 text-white"
+                    ? "bg-primary text-white"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >

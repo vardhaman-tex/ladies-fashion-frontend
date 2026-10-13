@@ -15,7 +15,7 @@ function ConfirmationContent() {
 
   return (
     <div className="container mx-auto max-w-lg px-4 py-16 text-center">
-      <CheckCircle2 className="mx-auto mb-4 size-16 text-green-500" />
+      <CheckCircle2 className="mx-auto mb-4 size-16 text-success" />
       <h1 className="mb-2 text-2xl font-bold">Order Placed!</h1>
       <p className="mb-6 text-muted-foreground">
         Thank you for your order. We&apos;ve received it and will confirm shortly.
@@ -37,7 +37,7 @@ function ConfirmationContent() {
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Button
           render={<Link href={`/track-order${orderRef ? `?orderRef=${orderRef}` : ""}`} />}
-          className="gap-2 bg-rose-600 hover:bg-rose-700"
+          className="gap-2 bg-primary hover:bg-primary/90"
         >
           <Search className="size-4" />
           Track Order

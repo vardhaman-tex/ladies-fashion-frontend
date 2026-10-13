@@ -12,9 +12,11 @@ import type { ProductSummary } from "@/types/product";
 
 interface ProductCardProps {
   product: ProductSummary;
+  /** A short label for the photo corner, set only where the list is the claim (New, Bestseller). */
+  badge?: string;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, badge }: ProductCardProps) {
   const hasDiscount = product.discountAmount > 0;
   const { mutate: addToCart, isPending: adding } = useAddToCart();
 
@@ -46,15 +48,15 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    // One bordered unit: photo, details and the add button read as a single
-    // card rather than a picture with a button hanging underneath it.
-    <div className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card">
-      <div className="relative aspect-3/4 overflow-hidden bg-muted">
-        <Link href={`/products/${product.slug}`} className="absolute inset-0 block">
+    // Photo first. No box around the card: the picture is the card, and the
+    // details sit under it like a lookbook caption.
+    <div className="group flex h-full flex-col gap-2">
+      <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted">
+        <Link href={`/products/${product.slug}`} className="absolute inset-0 block" aria-label={product.name}>
           {product.thumbnail ? (
             <Image
               src={product.thumbnail}
-              alt={product.name}
+              alt=""
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
@@ -67,16 +69,16 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {!product.inStock && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/60">
+            <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wide shadow-sm">
               Out of stock
             </span>
           </div>
         )}
 
-        {hasDiscount && product.inStock && (
-          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-rose-600 px-2 py-0.5 text-xs font-semibold text-white">
-            {Math.round(product.discountPercent)}% OFF
+        {badge && product.inStock && (
+          <span className="pointer-events-none absolute top-2 left-2 rounded-full bg-background px-2.5 py-1 text-[11px] leading-none font-semibold text-primary shadow-sm">
+            {badge}
           </span>
         )}
 
@@ -87,43 +89,46 @@ export function ProductCard({ product }: ProductCardProps) {
           thumbnail={product.thumbnail}
           price={product.price}
           discountAmount={product.discountAmount}
-          className="absolute top-2 right-2"
+          className="absolute top-1 right-1"
         />
+
+        {product.inStock && (
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute right-2 bottom-2 size-11 rounded-full bg-background/95 text-primary shadow-md hover:bg-background"
+            onClick={handleAddToCart}
+            disabled={adding}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            <ShoppingBag className="size-5" aria-hidden="true" />
+          </Button>
+        )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-2.5">
+      <div className="flex flex-1 flex-col gap-1 px-0.5">
         <Link
           href={`/products/${product.slug}`}
-          className="line-clamp-2 text-sm leading-tight font-medium text-foreground hover:underline"
+          className="line-clamp-2 text-sm leading-snug text-foreground hover:underline"
         >
           {product.name}
         </Link>
 
-        <div className="mt-auto flex items-end justify-between gap-2">
-          <div className="flex min-w-0 flex-col">
-            <span className="text-base font-bold text-foreground">
-              ₹{product.finalPrice.toLocaleString("en-IN")}
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-base font-bold text-foreground">
+            ₹{product.finalPrice.toLocaleString("en-IN")}
+          </span>
+          {hasDiscount && (
+            <span className="text-xs text-muted-foreground line-through">
+              ₹{product.price.toLocaleString("en-IN")}
             </span>
-            {hasDiscount && (
-              <span className="text-xs text-muted-foreground">
-                <span className="line-through">₹{product.price.toLocaleString("en-IN")}</span>
-              </span>
-            )}
-          </div>
-
-          {product.inStock && (
-            <Button
-              size="sm"
-              className="h-10 shrink-0 gap-1 rounded-full bg-rose-600 px-3.5 text-white hover:bg-rose-700"
-              onClick={handleAddToCart}
-              disabled={adding}
-              aria-label={`Add ${product.name} to cart`}
-            >
-              <ShoppingBag className="size-4" aria-hidden="true" />
-              {adding ? "…" : "Add"}
-            </Button>
           )}
         </div>
+        {hasDiscount && (
+          <p className="text-xs font-semibold text-success">
+            {Math.round(product.discountPercent)}% off · You save ₹{product.discountAmount.toLocaleString("en-IN")}
+          </p>
+        )}
       </div>
 
       {needsSelection && (
