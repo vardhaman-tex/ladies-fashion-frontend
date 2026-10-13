@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAddresses, ADDRESSES_KEY } from "@/hooks/useAddresses";
+import { useAbandonedCartCapture } from "@/hooks/useAbandonedCartCapture";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { useAuthStore } from "@/stores/authStore";
 import { useGuestCartStore } from "@/stores/cartStore";
@@ -72,6 +73,11 @@ function focusAfterRender(elementId: string) {
     element?.scrollIntoView({ behavior: "smooth", block: "center" });
     if (element instanceof HTMLElement) element.focus({ preventScroll: true });
   }, 0);
+}
+
+/** The clock, behind a function so event handlers can read it without it counting as render-time impurity. */
+function nowMs() {
+  return Date.now();
 }
 
 function formatAddress(a: AddressData) {
@@ -134,7 +140,7 @@ function PaymentMethodChoice({
         <label
           className={cn(
             "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-            value === "PREPAID" ? "border-rose-600 bg-rose-50/50 dark:bg-rose-950/20" : "hover:border-rose-300"
+            value === "PREPAID" ? "border-primary bg-accent/50" : "hover:border-primary/30"
           )}
         >
           <input
@@ -143,7 +149,7 @@ function PaymentMethodChoice({
             checked={value === "PREPAID"}
             onChange={() => onChange("PREPAID")}
             disabled={disabled}
-            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+            className="mt-0.5 size-4 shrink-0 accent-primary"
           />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -151,7 +157,7 @@ function PaymentMethodChoice({
               Pay now
             </span>
             <span className="block text-xs text-muted-foreground">
-              Pay ₹{rupees(merchandiseTotal)} online and you are done.
+              Pay ₹{rupees(merchandiseTotal)} online{codQuote.fee > 0 ? ". No cash-on-delivery fee." : "."}
             </span>
           </span>
         </label>
@@ -162,8 +168,8 @@ function PaymentMethodChoice({
             !availability.available
               ? "cursor-not-allowed opacity-60"
               : isCod(value)
-                ? "cursor-pointer border-rose-600 bg-rose-50/50 dark:bg-rose-950/20"
-                : "cursor-pointer hover:border-rose-300"
+                ? "cursor-pointer border-primary bg-accent/50"
+                : "cursor-pointer hover:border-primary/30"
           )}
         >
           <input
@@ -172,7 +178,7 @@ function PaymentMethodChoice({
             checked={isCod(value)}
             onChange={() => onChange(codMethod)}
             disabled={disabled || !availability.available}
-            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+            className="mt-0.5 size-4 shrink-0 accent-primary"
           />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -181,14 +187,15 @@ function PaymentMethodChoice({
             </span>
             {availability.available ? (
               <span className="block text-xs text-muted-foreground">
-                {/* With no advance configured there is nothing to pay now, and
-                    saying "₹0 advance payment required" made the option read
-                    like a broken one. */}
+                {/* Said in rupees, in the same shape as the Pay now option
+                    above, so the two read as a choice between equals. With no
+                    advance there is nothing to pay today; the whole total,
+                    fee included, goes to the courier. */}
                 {codQuote.isPlaceOnly
-                  ? ""
-                  : `₹${rupees(codQuote.payableNow)} advance payment required to confirm and process the COD order. The remaining ₹${rupees(codQuote.dueOnDelivery)} is payable at the time of delivery.`}
+                  ? `Pay ₹${rupees(codQuote.total)} to the courier when your order arrives. Nothing to pay online now.`
+                  : `Pay ₹${rupees(codQuote.payableNow)} online now to confirm, and ₹${rupees(codQuote.dueOnDelivery)} when your order arrives.`}
                 {codQuote.fee > 0
-                  ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery charge.`
+                  ? ` Includes a ₹${rupees(codQuote.fee)} cash-on-delivery fee.`
                   : ""}
               </span>
             ) : (
@@ -252,6 +259,20 @@ export default function CheckoutPage() {
   const activeAddressId = selectedAddressId ?? defaultAddress?.id ?? null;
   const activeAddress = addresses.find((a) => a.id === activeAddressId) ?? null;
 
+  /**
+   * The gateway order made for the current basket, kept so that a retry reopens
+   * the same one. Without it, closing the payment sheet and pressing pay again
+   * made a second order and a second payment request for one basket; reusing
+   * the order means a customer who retries can only ever pay for it once.
+   * Keyed on everything that defines the order, so changing the cart or the
+   * address starts a fresh one.
+   */
+  const pendingGuestOrder = useRef<{
+    key: string;
+    at: number;
+    data: Awaited<ReturnType<typeof createGuestRazorpayOrder>>;
+  } | null>(null);
+
   // Guest form state — only used when !isAuthenticated
   const [guestForm, setGuestForm] = useState<GuestAddressForm>({
     fullName: "",
@@ -262,6 +283,15 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     pincode: "",
+  });
+
+  // Remembers the cart once a guest has given a number, so a reminder can bring
+  // them back. The WhatsApp notice sits next to the phone field.
+  useAbandonedCartCapture({
+    enabled: !isAuthenticated && !authLoading,
+    phone: guestForm.phone,
+    name: guestForm.fullName,
+    items: cart?.items ?? [],
   });
 
   function setField(field: GuestAddressField, value: string) {
@@ -277,6 +307,13 @@ export default function CheckoutPage() {
     if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
   }
 
+  /** A pincode lookup fills city and state in one go; two setField calls would overwrite each other. */
+  function fillFields(patch: Partial<GuestAddressForm>) {
+    const next = { ...guestForm, ...patch };
+    setGuestForm(next);
+    if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
+  }
+
   // ─── Auth loading ───────────────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -289,6 +326,16 @@ export default function CheckoutPage() {
   // ─── Guest checkout path ─────────────────────────────────────────────────────
   if (!isAuthenticated) {
     const guestItems = cart?.items ?? [];
+
+    // The guest cart is read from the browser, so until it has been, "empty"
+    // would be a guess and a wrong one for anyone with items waiting.
+    if (cartLoading) {
+      return (
+        <div className="container mx-auto flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
 
     if (guestItems.length === 0) {
       return (
@@ -414,7 +461,19 @@ export default function CheckoutPage() {
 
       setIsProcessing(true);
       try {
-        const orderData = await createGuestRazorpayOrder({
+        const orderKey = JSON.stringify([
+          fullName.trim(), normalisePhone(phone), email.trim(), addressLine1.trim(),
+          guestForm.addressLine2.trim(), city.trim(), canonicalState(guestForm), pincode.trim(),
+          guestMethod,
+          guestItems.map((item) => [item.productId, item.size, item.color, item.quantity]),
+        ]);
+        // Not reused for long: the server expires unpaid orders after 30 minutes.
+        const reusable = pendingGuestOrder.current;
+        let orderData =
+          reusable && reusable.key === orderKey && nowMs() - reusable.at < 20 * 60_000
+            ? reusable.data
+            : null;
+        if (!orderData) orderData = await createGuestRazorpayOrder({
           fullName: fullName.trim(),
           // Stored as bare digits so "+91 98765 43210" and "9876543210" are not
           // two different customers.
@@ -436,6 +495,9 @@ export default function CheckoutPage() {
           })),
           paymentMethod: guestMethod,
         });
+        // Only an order still waiting on a payment is worth reusing; a placed
+        // one (full COD) is finished and navigates away below.
+        pendingGuestOrder.current = orderData.razorpayOrderId ? { key: orderKey, at: nowMs(), data: orderData } : null;
 
         // Full cash on delivery: the server has already placed the order, and
         // there is no ₹0 payment for the gateway to take. A null razorpayOrderId
@@ -491,6 +553,7 @@ export default function CheckoutPage() {
               // deliveries are common this systematically overstates ROAS.
               trackPurchase(confirmed.id, guestQuote.total, pixelGuestItems);
               gaPurchase(confirmed.id, guestQuote.total, gaGuestItems, guestMethod);
+              pendingGuestOrder.current = null;
               clearGuestCart();
               toast.success(
                 isCod(guestMethod)
@@ -501,16 +564,26 @@ export default function CheckoutPage() {
               // page shows and what tracking looks an order up by.
               router.push(`/guest-order-confirmed?orderRef=${orderData.orderNumber}`);
             } catch {
-              toast.error("Payment verification failed. Contact support.");
+              // The money may have moved even though we could not confirm it, and
+              // the gateway also tells us directly, so say so rather than
+              // implying the order is lost.
+              toast.error(
+                "We could not confirm your payment yet. If money was deducted, your order will be confirmed automatically; otherwise contact us on WhatsApp with your phone number."
+              );
               setIsProcessing(false);
             }
           },
           modal: {
             ondismiss: () => {
-              toast("Payment cancelled.");
+              toast("Payment cancelled. You can retry without placing a second order.");
               setIsProcessing(false);
             },
           },
+        });
+        // A failed attempt (declined card, wrong UPI PIN) leaves the sheet open
+        // for another try; this only tells the customer why, the order stays.
+        rzp.on?.("payment.failed", (response) => {
+          toast.error(response.error?.description ?? "Payment failed. Please try again.");
         });
         rzp.open();
       } catch (err) {
@@ -605,7 +678,7 @@ export default function CheckoutPage() {
             current={isProcessing ? 3 : isGuestAddressComplete(guestForm) ? 2 : 1}
           />
 
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-foreground/80">
             <User className="size-4 shrink-0" />
             <span>
               Checking out as guest.{" "}
@@ -642,6 +715,7 @@ export default function CheckoutPage() {
                   form={guestForm}
                   errors={fieldErrors}
                   onChange={setField}
+                  onFill={fillFields}
                   disabled={isProcessing}
                 />
                 {/* Solid, not outlined. As an outline button it read as part
@@ -666,7 +740,7 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               <div className="rounded-xl border p-5">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <Package className="size-5 text-rose-600" />
+                  <Package className="size-5 text-primary" />
                   Order Summary
                 </h2>
 
@@ -689,7 +763,7 @@ export default function CheckoutPage() {
                         <p className="text-xs text-muted-foreground">
                           {formatVariantSummary(item.size, item.color)} × {item.quantity}
                         </p>
-                        <p className="text-sm font-semibold text-rose-600">
+                        <p className="text-sm font-semibold text-primary">
                           ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                         </p>
                       </div>
@@ -703,14 +777,14 @@ export default function CheckoutPage() {
                     <span>₹{guestSubtotal.toLocaleString("en-IN")}</span>
                   </div>
                   {guestDiscount > 0 && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-success">
                       <span>Discount</span>
                       <span>−₹{guestDiscount.toLocaleString("en-IN")}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span className="text-green-600">FREE</span>
+                    <span className="text-success">FREE</span>
                   </div>
                   {/* The COD charge is part of the order, so it belongs above
                       the total and inside it — the summary used to show a total
@@ -762,14 +836,14 @@ export default function CheckoutPage() {
               {/* Silent under full COD: there is no gateway in that flow, so a
                   failed checkout.js is not the customer's problem. */}
               {!guestQuote.isPlaceOnly && scriptState === "error" && (
-                <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+                <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="mt-0.5 size-4 shrink-0" />
                     <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                   </div>
                   <button
                     onClick={retryScript}
-                    className="shrink-0 rounded p-1 hover:bg-red-100"
+                    className="shrink-0 rounded p-1 hover:bg-destructive/20"
                     title="Retry loading payment"
                   >
                     <RefreshCw className="size-3.5" />
@@ -791,7 +865,7 @@ export default function CheckoutPage() {
                 <div
                   id="checkout-email-taken"
                   tabIndex={-1}
-                  className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+                  className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning"
                 >
                   <p className="font-semibold">That email belongs to an account</p>
                   <p className="mt-0.5 text-xs">
@@ -823,14 +897,14 @@ export default function CheckoutPage() {
                       setPolicyAgreed(e.target.checked);
                       if (e.target.checked) setPolicyError(false);
                     }}
-                    className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                    className="mt-0.5 size-4 shrink-0 accent-primary"
                   />
                   <span>
                     I have read and agree to the{" "}
                     <Link
                       href="/policies/return-policy"
                       target="_blank"
-                      className="font-medium text-rose-600 underline hover:text-rose-700"
+                      className="font-medium text-primary underline hover:text-primary"
                     >
                       Cancellation, Return, Refund &amp; Exchange Policy
                     </Link>
@@ -838,14 +912,14 @@ export default function CheckoutPage() {
                   </span>
                 </label>
                 {policyError && (
-                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  <p className="mt-1.5 text-xs font-medium text-destructive">
                     Please accept the policy to place your order.
                   </p>
                 )}
               </div>
 
               <Button
-                className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+                className="w-full gap-2 bg-primary hover:bg-primary/90"
                 size="lg"
                 onClick={handleGuestPlaceOrder}
                 // While the sign-in panel is up, the code is the next step and
@@ -877,7 +951,7 @@ export default function CheckoutPage() {
               </Button>
 
               {guestBlockReason && (
-                <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+                <p className="text-center text-sm font-medium text-accent-foreground">
                   {guestBlockReason}
                 </p>
               )}
@@ -1140,7 +1214,7 @@ export default function CheckoutPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-1 text-rose-600"
+                  className="gap-1 text-primary"
                   onClick={() => setAddAddrOpen(true)}
                 >
                   <Plus className="size-3.5" /> Add New
@@ -1176,7 +1250,7 @@ export default function CheckoutPage() {
                         className={cn(
                           "w-full rounded-xl border p-4 text-left transition-colors",
                           isSelected
-                            ? "border-rose-600 bg-rose-50 dark:bg-rose-950/20"
+                            ? "border-primary bg-accent"
                             : "border-border hover:border-muted-foreground/40"
                         )}
                       >
@@ -1185,7 +1259,7 @@ export default function CheckoutPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">{address.fullName}</span>
                               {address.isDefault && (
-                                <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
+                                <span className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground">
                                   Default
                                 </span>
                               )}
@@ -1199,7 +1273,7 @@ export default function CheckoutPage() {
                             className={cn(
                               "mt-1 size-4 shrink-0 rounded-full border-2 transition-colors",
                               isSelected
-                                ? "border-rose-600 bg-rose-600"
+                                ? "border-primary bg-primary"
                                 : "border-muted-foreground/40"
                             )}
                           />
@@ -1216,7 +1290,7 @@ export default function CheckoutPage() {
           <div className="space-y-4">
             <div className="rounded-xl border p-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <Package className="size-5 text-rose-600" />
+                <Package className="size-5 text-primary" />
                 Order Summary
               </h2>
 
@@ -1240,11 +1314,11 @@ export default function CheckoutPage() {
                         {formatVariantSummary(item.size, item.color)} × {item.quantity}
                       </p>
                       {item.availableQty !== undefined && item.quantity > item.availableQty && (
-                        <p className="text-xs font-medium text-red-600">
+                        <p className="text-xs font-medium text-destructive">
                           Only {item.availableQty} left
                         </p>
                       )}
-                      <p className="text-sm font-semibold text-rose-600">
+                      <p className="text-sm font-semibold text-primary">
                         ₹{(item.finalPrice * item.quantity).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -1258,14 +1332,14 @@ export default function CheckoutPage() {
                   <span>₹{cart.subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-success">
                     <span>Discount</span>
                     <span>−₹{cart.totalDiscount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span className="text-green-600">FREE</span>
+                  <span className="text-success">FREE</span>
                 </div>
                 {/* The COD charge is part of the order, so it belongs above the
                     total and inside it — the summary used to show a total with
@@ -1317,7 +1391,7 @@ export default function CheckoutPage() {
             {stockIssues.length > 0 && (
               <div
                 id="checkout-stock-issues"
-                className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400"
+                className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <div>
@@ -1335,14 +1409,14 @@ export default function CheckoutPage() {
             {/* Silent under full COD: there is no gateway in that flow, so a
                 failed checkout.js is not the customer's problem. */}
             {!quote.isPlaceOnly && scriptState === "error" && (
-              <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-400">
+              <div className="flex items-start justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" />
                   <span>Payment gateway failed to load. Disable any ad blockers and retry.</span>
                 </div>
                 <button
                   onClick={retryScript}
-                  className="shrink-0 rounded p-1 hover:bg-red-100"
+                  className="shrink-0 rounded p-1 hover:bg-destructive/20"
                   title="Retry loading payment"
                 >
                   <RefreshCw className="size-3.5" />
@@ -1360,14 +1434,14 @@ export default function CheckoutPage() {
                     setPolicyAgreed(e.target.checked);
                     if (e.target.checked) setPolicyError(false);
                   }}
-                  className="mt-0.5 size-4 shrink-0 accent-rose-600"
+                  className="mt-0.5 size-4 shrink-0 accent-primary"
                 />
                 <span>
                   I have read and agree to the{" "}
                   <Link
                     href="/policies/return-policy"
                     target="_blank"
-                    className="font-medium text-rose-600 underline hover:text-rose-700"
+                    className="font-medium text-primary underline hover:text-primary"
                   >
                     Cancellation, Return, Refund &amp; Exchange Policy
                   </Link>
@@ -1375,21 +1449,21 @@ export default function CheckoutPage() {
                 </span>
               </label>
               {policyError && (
-                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                <p className="mt-1.5 text-xs font-medium text-destructive">
                   Please accept the policy to place your order.
                 </p>
               )}
             </div>
 
             {resumedFromSignIn && (
-              <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-900 dark:border-green-900/50 dark:bg-green-950/20 dark:text-green-200">
+              <div className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0" />
                 <span>You&apos;re signed in — check your order and place it.</span>
               </div>
             )}
 
             <Button
-              className="w-full gap-2 bg-rose-600 hover:bg-rose-700"
+              className="w-full gap-2 bg-primary hover:bg-primary/90"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isProcessing || (!quote.isPlaceOnly && scriptState === "error")}
@@ -1415,7 +1489,7 @@ export default function CheckoutPage() {
             </Button>
 
             {authBlockReason && (
-              <p className="text-center text-sm font-medium text-rose-700 dark:text-rose-400">
+              <p className="text-center text-sm font-medium text-accent-foreground">
                 {authBlockReason}
               </p>
             )}

@@ -41,11 +41,11 @@ export function useProducts(filter: ProductFilter = {}, initialData?: ProductPag
 /**
  * Fetches a single product's details by its slug.
  */
-export function useProduct(slug: string, initialData?: ProductDetail) {
+export function useProduct(slug: string, initialData?: ProductDetail, enabled = true) {
   return useQuery({
     queryKey: ["products", "detail", slug],
     queryFn: () => getProduct(slug),
-    enabled: !!slug,
+    enabled: !!slug && enabled,
     initialData,
   });
 }

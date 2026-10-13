@@ -42,7 +42,7 @@ export const GUEST_ADDRESS_FIELD_ORDER: GuestAddressField[] = [
 
 // Ten digits opening 6-9 — the whole of India's mobile range. Landlines are
 // rejected on purpose: the courier calls this number on the doorstep.
-const INDIAN_MOBILE = /^[6-9]\d{9}$/;
+export const INDIAN_MOBILE = /^[6-9]\d{9}$/;
 
 // Indian pincodes never start with a zero.
 const PINCODE = /^[1-9]\d{5}$/;

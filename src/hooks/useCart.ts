@@ -1,6 +1,8 @@
 "use client";
 
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
   addToCart,
@@ -17,6 +19,7 @@ import { useAuthStore } from "@/stores/authStore";
 // would put a wrong `value` into the reports, which is worse than the event
 // being absent. It wants the cart cache read at the call site instead.
 import { gaAddToCart } from "@/lib/ga";
+import { buildGuestCart, cartBadgeCount } from "@/lib/guestCart";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
@@ -51,6 +54,7 @@ export function useAddToCart() {
   const qc = useQueryClient();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const guestAdd = useGuestCartStore((s) => s.addItem);
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async (payload: AddToCartPayload & { productName: string; productSlug: string; thumbnail: string | null; price: number; discountAmount: number }) => {
@@ -74,7 +78,10 @@ export function useAddToCart() {
     },
     onSuccess: (data, payload) => {
       if (data) qc.setQueryData(CART_KEY, data);
-      toast.success("Added to cart");
+      toast.success("Added to cart", {
+        // The cart drawer is gone, so the confirmation carries the way to it.
+        action: { label: "View cart", onClick: () => router.push("/cart") },
+      });
       // Reported here rather than at each button, so an add from a grid
       // quick-add counts the same as one from the product page. GA4's funnel is
       // only readable if add_to_cart means "an item was added", not "an item was
@@ -199,35 +206,32 @@ export function useCart() {
   const { data: serverCart, isLoading } = useServerCart();
   const guestItems = useGuestCartStore((s) => s.items);
   const isMerging = useIsMergingCart();
+  const hydrated = useIsClient();
 
   if (isAuthenticated) {
     return { cart: serverCart ?? null, isLoading, isMerging };
   }
 
-  // Derive a CartData-like object from guest items
-  const subtotal = guestItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const totalDiscount = guestItems.reduce((sum, i) => sum + i.discountAmount * i.quantity, 0);
-  const guestCart: CartData = {
-    id: "guest",
-    items: guestItems.map((i) => ({
-      id: `${i.productId}-${i.size}-${i.color}`,
-      productId: i.productId,
-      productName: i.productName,
-      productSlug: i.productSlug,
-      thumbnail: i.thumbnail,
-      price: i.price,
-      discountAmount: i.discountAmount,
-      finalPrice: i.price - i.discountAmount,
-      quantity: i.quantity,
-      size: i.size,
-      color: i.color,
-      lineTotal: (i.price - i.discountAmount) * i.quantity,
-    })),
-    itemCount: guestItems.reduce((sum, i) => sum + i.quantity, 0),
-    subtotal,
-    totalDiscount,
-    total: subtotal - totalDiscount,
-  };
+  const guestCart = buildGuestCart(guestItems);
 
-  return { cart: guestCart, isLoading: false, isMerging };
+  // The guest cart lives in the browser, so the server's HTML can only ever show
+  // it empty. Until the client has taken over, report "loading" rather than
+  // "empty": otherwise every page load flashes "Your cart is empty" over a cart
+  // that has items in it.
+  return { cart: guestCart, isLoading: !hydrated, isMerging };
+}
+
+const noopSubscribe = () => () => {};
+
+/** False on the server and during hydration, true once the browser has taken over. */
+function useIsClient(): boolean {
+  return useSyncExternalStore(noopSubscribe, () => true, () => false);
+}
+
+/** The header badge's number; see cartBadgeCount for why it is not simply cart.itemCount. */
+export function useCartItemCount(): number {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: serverCart } = useServerCart();
+  const guestItems = useGuestCartStore((s) => s.items);
+  return cartBadgeCount(isAuthenticated, serverCart, guestItems);
 }

@@ -85,7 +85,7 @@ function SocialIconBar({ links, size }: { links: SocialLink[]; size: "sm" | "md"
           target="_blank"
           rel="noopener noreferrer"
           aria-label={link.label}
-          className={`flex ${dim} items-center justify-center rounded-full border border-border text-muted-foreground hover:border-rose-400 hover:text-rose-600 transition-colors`}
+          className={`flex ${dim} items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors`}
         >
           <SocialIcon platform={link.platform} className={icon} />
         </a>
@@ -133,7 +133,7 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li><Link href="/products" className="text-sm font-medium text-rose-600">View all →</Link></li>
+              <li><Link href="/products" className="text-sm font-medium text-primary">View all →</Link></li>
             </ul>
           </div>
           <div className="px-4 py-4">
@@ -149,8 +149,10 @@ export function Footer() {
         </div>
 
         <div className="border-b border-border px-4 py-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Help &amp; Legal</p>
           <ul className="flex flex-col gap-1.5">
+            <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About Us</Link></li>
+            <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link></li>
             <li><Link href="/policies/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
             <li><Link href="/policies/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground">Terms &amp; Conditions</Link></li>
             <li><Link href="/policies/return-policy" className="text-sm text-muted-foreground hover:text-foreground">Return Policy</Link></li>
@@ -190,7 +192,7 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li><Link href="/products" className="text-sm font-medium text-rose-600 hover:text-rose-700">View all →</Link></li>
+              <li><Link href="/products" className="text-sm font-medium text-primary hover:text-primary">View all →</Link></li>
             </ul>
           </div>
 
@@ -206,8 +208,10 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-foreground">Legal</h4>
+            <h4 className="text-sm font-semibold text-foreground">Help &amp; Legal</h4>
             <ul className="mt-3 flex flex-col gap-2">
+              <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About Us</Link></li>
+              <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact Us</Link></li>
               <li><Link href="/policies/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
               <li><Link href="/policies/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground">Terms & Conditions</Link></li>
               <li><Link href="/policies/return-policy" className="text-sm text-muted-foreground hover:text-foreground">Return Policy</Link></li>

@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Menu, Heart, User, ShoppingBag, Home, Package, X,
-  Tag, ChevronRight, Search, LogIn, MapPin,
+  Tag, ChevronRight, LogIn, MapPin, Search,
 } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Button } from "@/components/ui/button";
-import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CartButton } from "@/components/cart/CartButton";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
@@ -38,7 +38,7 @@ export function Header() {
     pathname.split("/").length === 3;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
         {/* Mobile hamburger */}
         <Sheet>
@@ -77,9 +77,7 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
-                    <Home className="size-4" />
-                  </div>
+                  <Home className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                   Home
                 </SheetClose>
                 <SheetClose
@@ -90,9 +88,7 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/30">
-                    <ShoppingBag className="size-4" />
-                  </div>
+                  <ShoppingBag className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                   All Products
                 </SheetClose>
                 <SheetClose
@@ -103,12 +99,10 @@ export function Header() {
                     />
                   }
                 >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/30">
-                    <Tag className="size-4" />
-                  </div>
+                  <Tag className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                   <span className="flex-1">Sale</span>
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
-                    HOT
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                    SALE
                   </span>
                 </SheetClose>
               </div>
@@ -170,12 +164,10 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600 dark:bg-pink-950/30">
-                      <Heart className="size-4" />
-                    </div>
+                    <Heart className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     Wishlist
                     {wishlistCount > 0 && (
-                      <span className="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
                         {wishlistCount}
                       </span>
                     )}
@@ -188,9 +180,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30">
-                      <Package className="size-4" />
-                    </div>
+                    <Package className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     My Orders
                   </SheetClose>
                   <SheetClose
@@ -201,9 +191,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30">
-                      <User className="size-4" />
-                    </div>
+                    <User className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     Account
                   </SheetClose>
                   <SheetClose
@@ -214,9 +202,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
-                      <MapPin className="size-4" />
-                    </div>
+                    <MapPin className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     Track Order
                   </SheetClose>
                 </>
@@ -233,9 +219,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30">
-                      <LogIn className="size-4" />
-                    </div>
+                    <LogIn className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     Login
                   </SheetClose>
                   <SheetClose
@@ -246,9 +230,7 @@ export function Header() {
                       />
                     }
                   >
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30">
-                      <MapPin className="size-4" />
-                    </div>
+                    <MapPin className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     Track Order
                   </SheetClose>
                 </>
@@ -305,19 +287,24 @@ export function Header() {
           })}
         </nav>
 
+        {!isProductDetail && (
+          <div className="ml-auto hidden w-full max-w-xs md:block lg:max-w-sm">
+            <SearchBar />
+          </div>
+        )}
+
         {/* Action icons */}
-        <div className="ml-auto flex items-center gap-1">
-          {/* Search toggle — hidden on PDP */}
-          {!isProductDetail && (
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={searchOpen ? "Close search" : "Search"}
-              onClick={() => setSearchOpen((v) => !v)}
-            >
-              {searchOpen ? <X className="size-5" /> : <Search className="size-5" />}
-            </Button>
-          )}
+        <div className="ml-auto flex items-center gap-1 md:ml-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label={searchOpen ? "Close search" : "Search"}
+            aria-expanded={searchOpen}
+            onClick={() => setSearchOpen((v) => !v)}
+          >
+            {searchOpen ? <X className="size-5" /> : <Search className="size-5" />}
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -326,7 +313,7 @@ export function Header() {
           >
             <Heart className="size-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-semibold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
@@ -339,14 +326,15 @@ export function Header() {
           >
             <User className="size-5" />
           </Button>
-          <CartDrawer />
+          <CartButton />
         </div>
       </div>
 
-      {/* Expandable search bar — shown when toggled, hidden on PDP */}
-      {!isProductDetail && searchOpen && (
-        <div className="border-t border-border px-4 py-2">
-          <SearchBar />
+      {/* On a phone search is an icon beside the wishlist and opens a bar under
+          the header, so it costs no height until it is wanted. */}
+      {searchOpen && (
+        <div className="border-t border-border px-4 py-2 md:hidden">
+          <SearchBar autoFocus onDone={() => setSearchOpen(false)} />
         </div>
       )}
     </header>

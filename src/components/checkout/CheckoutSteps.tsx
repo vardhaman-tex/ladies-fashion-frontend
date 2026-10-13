@@ -31,8 +31,8 @@ export function CheckoutSteps({ current }: { current: 1 | 2 | 3 }) {
               <span
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
-                  isComplete && "border-emerald-600 bg-emerald-600 text-white",
-                  isCurrent && "border-rose-600 bg-rose-600 text-white",
+                  isComplete && "border-success/30 bg-success text-white",
+                  isCurrent && "border-primary bg-primary text-white",
                   !isComplete && !isCurrent && "border-border text-muted-foreground"
                 )}
               >

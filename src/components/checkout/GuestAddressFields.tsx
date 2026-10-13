@@ -1,9 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { estimateDelivery, formatDeliveryWindow, isPincode, lookupPincode } from "@/lib/pincode";
 import { StateCombobox } from "@/components/checkout/StateCombobox";
 import type {
   GuestAddressErrors,
@@ -60,7 +61,7 @@ function FieldShell({
       </Label>
       {children}
       {error && (
-        <p id={errorId(field)} className="text-xs font-medium text-red-600 dark:text-red-400">
+        <p id={errorId(field)} className="text-xs font-medium text-destructive">
           {error}
         </p>
       )}
@@ -122,14 +123,47 @@ export function GuestAddressFields({
   form,
   errors,
   onChange,
+  onFill,
   disabled,
 }: {
   form: GuestAddressForm;
   errors: GuestAddressErrors;
   onChange: (field: GuestAddressField, value: string) => void;
+  /** Sets several fields at once; a pincode lookup fills city and state together. */
+  onFill?: (patch: Partial<GuestAddressForm>) => void;
   disabled?: boolean;
 }) {
   const shared = { form, errors, onChange, disabled };
+
+  // Typing a full pincode fills in what it implies. It only ever fills empty
+  // fields: a city the shopper typed themselves is the one they meant, and a
+  // post office district is a close guess, not the last word.
+  const formRef = useRef(form);
+  const fillRef = useRef(onFill);
+  useEffect(() => {
+    formRef.current = form;
+    fillRef.current = onFill;
+  });
+  const pincode = form.pincode.trim();
+  // Remembers which pincode the hint is for, so editing the pincode hides it
+  // at once rather than showing a stale place until the next lookup lands.
+  const [located, setLocated] = useState<{ pincode: string; place: string } | null>(null);
+  useEffect(() => {
+    if (!isPincode(pincode)) return;
+    let current = true;
+    void lookupPincode(pincode).then((place) => {
+      if (!current || !place) return;
+      const now = formRef.current;
+      const patch: Partial<GuestAddressForm> = {};
+      if (!now.city.trim()) patch.city = place.city;
+      if (!now.state.trim()) patch.state = place.state;
+      if (Object.keys(patch).length > 0) fillRef.current?.(patch);
+      setLocated({ pincode, place: `${place.city ? `${place.city}, ` : ""}${place.state}` });
+    });
+    return () => {
+      current = false;
+    };
+  }, [pincode]);
 
   return (
     <div className="space-y-4">
@@ -151,6 +185,11 @@ export function GuestAddressFields({
           autoComplete="tel"
         />
       </div>
+
+      <p className="-mt-2 text-xs text-muted-foreground">
+        By entering your number you agree to get order updates on WhatsApp, and a reminder if you
+        leave before finishing. Reply STOP to opt out.
+      </p>
 
       <Field
         {...shared}
@@ -214,6 +253,12 @@ export function GuestAddressFields({
           autoComplete="postal-code"
         />
       </div>
+
+      {located?.pincode === pincode && isPincode(pincode) && !errors.pincode && (
+        <p className="text-xs text-muted-foreground" aria-live="polite">
+          Delivering to {located.place} · Estimated delivery {formatDeliveryWindow(estimateDelivery())}
+        </p>
+      )}
     </div>
   );
 }

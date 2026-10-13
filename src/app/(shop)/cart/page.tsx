@@ -8,10 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { useClearCart, useCart } from "@/hooks/useCart";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { getCodAvailability, quotePayment } from "@/lib/cod";
+import { inr } from "@/lib/money";
 
 export default function CartPage() {
   const { cart, isLoading, isMerging } = useCart();
   const { mutate: clearCart, isPending: clearing } = useClearCart();
+  const { data: siteSettings } = useSiteSettings();
+
+  // What cash on delivery would make this cart cost, shown before checkout so
+  // the fee is never a surprise at the last step. Null when COD is off or does
+  // not apply to this total, in which case the line is simply not shown.
+  const codOption =
+    cart && siteSettings && getCodAvailability(siteSettings, cart.total).available
+      ? quotePayment("COD_FULL", cart.total, siteSettings.codAdvanceAmount, siteSettings.codFeeAmount)
+      : null;
 
   // Reported once the cart has resolved to something, keyed on the item count
   // rather than the cart object: a refetch returning the same cart must not
@@ -49,11 +61,11 @@ export default function CartPage() {
     cart?.items.some((item) => item.availableQty !== undefined && item.quantity > item.availableQty) ?? false;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 pb-32 sm:py-8 lg:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon-sm" render={<Link href="/products" aria-label="Back" />}>
-          <ArrowLeft className="size-4" />
+        <Button variant="ghost" size="icon" render={<Link href="/products" aria-label="Back" />}>
+          <ArrowLeft className="size-5" />
         </Button>
         <h1 className="font-heading text-2xl font-bold">
           Cart {cart && cart.itemCount > 0 && (
@@ -73,7 +85,7 @@ export default function CartPage() {
       */}
       {isMerging && isEmpty ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-          <Loader2 className="size-10 animate-spin text-rose-600" />
+          <Loader2 className="size-10 animate-spin text-primary" />
           <p className="text-lg font-medium">Moving your items into your cart…</p>
           <p className="text-sm text-muted-foreground">
             The items you added before signing in are on their way.
@@ -89,7 +101,7 @@ export default function CartPage() {
       ) : (
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Items list */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <div className="rounded-xl border bg-card">
               <div className="divide-y px-4">
                 {cart.items.map((item) => (
@@ -118,41 +130,84 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({cart.itemCount} items)</span>
-                  <span>₹{cart.subtotal.toFixed(0)}</span>
+                  <span>{inr(cart.subtotal)}</span>
                 </div>
                 {cart.totalDiscount > 0 && (
-                  <div className="flex justify-between text-green-600 font-medium">
+                  <div className="flex justify-between text-success font-medium">
                     <span>Discount</span>
-                    <span>−₹{cart.totalDiscount.toFixed(0)}</span>
+                    <span>−{inr(cart.totalDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
-                  <span className="text-green-600">Free</span>
+                  <span className="text-success">Free</span>
                 </div>
               </div>
               <Separator />
               <div className="flex justify-between font-semibold text-base">
                 <span>Total</span>
-                <span>₹{cart.total.toFixed(0)}</span>
+                <span>{inr(cart.total)}</span>
               </div>
+              {codOption && (
+                <div className="space-y-1 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  <p>
+                    Pay online: <span className="font-medium text-foreground">{inr(cart.total)}</span>
+                  </p>
+                  <p>
+                    Cash on delivery:{" "}
+                    <span className="font-medium text-foreground">{inr(codOption.total)}</span>
+                    {codOption.fee > 0 ? ` (includes ${inr(codOption.fee)} fee)` : ""}
+                  </p>
+                  {codOption.payableNow > 0 && (
+                    <p>
+                      Pay <span className="font-medium text-foreground">{inr(codOption.payableNow)}</span> online
+                      now to confirm, and{" "}
+                      <span className="font-medium text-foreground">{inr(codOption.dueOnDelivery)}</span> on
+                      delivery. The advance is part of the total, not extra.
+                    </p>
+                  )}
+                </div>
+              )}
               {hasStockIssues && (
-                <p className="text-xs font-medium text-red-600">
+                <p className="text-xs font-medium text-destructive">
                   Some items exceed available stock. Reduce quantity to continue.
                 </p>
               )}
+              {/* On a phone the checkout button lives in the sticky bar below, so it
+                  is under the thumb however long the list is. */}
               <Button
-                className="w-full bg-rose-600 hover:bg-rose-700"
+                size="lg"
+                className="hidden w-full rounded-full lg:inline-flex"
                 disabled={hasStockIssues}
                 render={<Link href="/checkout" />}
               >
                 Proceed to Checkout
               </Button>
-              <Button variant="outline" className="w-full" render={<Link href="/products" />}>
+              <Button variant="outline" size="lg" className="w-full rounded-full" render={<Link href="/products" />}>
                 Continue Shopping
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {!isEmpty && cart && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t bg-background/95 px-4 pt-3 shadow-lg backdrop-blur lg:hidden"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+        >
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Total · free delivery</p>
+            <p className="text-lg leading-tight font-bold text-foreground">{inr(cart.total)}</p>
+          </div>
+          <Button
+            size="lg"
+            className="h-12 flex-1 rounded-full text-base"
+            disabled={hasStockIssues}
+            render={<Link href="/checkout" />}
+          >
+            Checkout
+          </Button>
         </div>
       )}
     </div>

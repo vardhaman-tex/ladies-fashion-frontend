@@ -34,18 +34,19 @@ export function ProductSort({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+    <div className={cn("flex items-center gap-2 overflow-x-auto [scrollbar-width:none] lg:flex-wrap [&::-webkit-scrollbar]:hidden", className)}>
       {SORT_OPTIONS.map((option) => {
         const active = currentSort === option.value;
         return (
           <button
             key={option.value}
+            aria-pressed={active}
             onClick={() => handleChange(option.value)}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors lg:h-8 lg:px-3 lg:text-xs",
               active
-                ? "border-rose-600 bg-rose-600 text-white"
-                : "border-border bg-background text-muted-foreground hover:border-rose-400 hover:text-rose-600"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-primary"
             )}
           >
             {option.label}

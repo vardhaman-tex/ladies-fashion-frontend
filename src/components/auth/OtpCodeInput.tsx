@@ -114,9 +114,9 @@ export function OtpCodeInput({
           onFocus={(event) => event.target.select()}
           className={cn(
             "size-12 rounded-lg border bg-transparent text-center text-lg font-semibold outline-none transition-colors",
-            "focus-visible:border-rose-600 focus-visible:ring-3 focus-visible:ring-rose-600/30",
+            "focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            invalid ? "border-red-500" : "border-input"
+            invalid ? "border-destructive/40" : "border-input"
           )}
         />
       ))}

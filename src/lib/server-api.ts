@@ -1,3 +1,4 @@
+import type { SiteSettings } from "@/services/siteSettingsService";
 /**
  * Server-side data access for SEO surfaces.
  *
@@ -91,6 +92,11 @@ export const getTrendingServer = cache(
     apiGet<PageResponse<ProductSummary>>(`/api/v1/products/trending${query({ size })}`)
 );
 
+export const getBestSellersServer = cache(
+  (size = 8): Promise<PageResponse<ProductSummary> | null> =>
+    apiGet<PageResponse<ProductSummary>>(`/api/v1/products/best-sellers${query({ size })}`)
+);
+
 export const getSaleProductsServer = cache(
   (size = 8): Promise<PageResponse<ProductSummary> | null> =>
     apiGet<PageResponse<ProductSummary>>(`/api/v1/products/sale${query({ size })}`)
@@ -118,8 +124,8 @@ export const getSocialLinksServer = cache(
 );
 
 export const getSiteSettingsServer = cache(
-  (): Promise<{ logoUrl: string | null } | null> =>
-    apiGet<{ logoUrl: string | null }>("/api/v1/settings/site", 300)
+  (): Promise<SiteSettings | null> =>
+    apiGet<SiteSettings>("/api/v1/settings/site", 300)
 );
 
 /**

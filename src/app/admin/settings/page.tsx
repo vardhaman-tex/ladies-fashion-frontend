@@ -106,7 +106,7 @@ function SocialLinkForm({
 
       <div className="flex items-center justify-between">
         <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-rose-600" />
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-primary" />
           Show in footer
         </label>
         <div className="flex items-center gap-2">
@@ -449,7 +449,7 @@ function CodSection() {
               type="checkbox"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
-              className="mt-0.5 size-4 shrink-0 accent-rose-600"
+              className="mt-0.5 size-4 shrink-0 accent-primary"
             />
             <span>
               <span className="font-medium">Offer cash on delivery at checkout</span>

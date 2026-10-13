@@ -18,10 +18,11 @@ import { Button } from "@/components/ui/button";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductStrip } from "@/components/product/ProductStrip";
 import { WishlistButton } from "@/components/product/WishlistButton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart, useCart, useUpdateCartItem } from "@/hooks/useCart";
 import { useDebouncedQuantity } from "@/hooks/useDebouncedQuantity";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductTrustBox } from "@/components/product/ProductTrustBox";
 import { SizeGuideDialog } from "@/components/product/SizeGuideDialog";
 import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDisplay";
@@ -51,7 +52,7 @@ function QtyStepper({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border border-rose-600 bg-rose-50 px-1 ${className}`}
+      className={`flex items-center justify-between rounded-lg border border-primary bg-accent px-1 ${className}`}
     >
       <Button
         variant="ghost"
@@ -129,13 +130,13 @@ function StockIndicator({
   }
   if (availableQty !== null && availableQty <= 10) {
     return (
-      <span className="text-xs font-semibold text-amber-600">
+      <span className="text-xs font-semibold text-warning">
         Only {availableQty} left!
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+    <span className="flex items-center gap-1 text-xs font-semibold text-success">
       <CheckCircle2 className="size-3.5" />
       In Stock
     </span>
@@ -484,7 +485,7 @@ export default function ProductDetailClient({
               </div>
               <button
                 onClick={handleShare}
-                className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full border hover:bg-muted transition-colors"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border hover:bg-muted transition-colors"
                 aria-label="Share product"
               >
                 <Share2 className="size-4 text-muted-foreground" />
@@ -496,23 +497,24 @@ export default function ProductDetailClient({
               <StockIndicator inStock={inStockNow} availableQty={availableQty} />
             </div>
 
-            {/* Price */}
-            <div className="flex items-center gap-3">
-              {hasDiscount ? (
-                <>
-                  <span className="text-lg text-muted-foreground line-through">
-                    {inr(product.price)}
-                  </span>
-                  <span className="text-2xl font-bold text-destructive">
-                    {inr(product.finalPrice)}
-                  </span>
-                  <Badge variant="destructive">
-                    {Math.round(product.discountPercent)}% OFF
-                  </Badge>
-                </>
-              ) : (
-                <span className="text-2xl font-bold">{inr(product.price)}</span>
+            {/* Price. The price stays in the text colour: red reads as an error
+                or a clearance bin, and the saving is said in words underneath. */}
+            <div>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="text-3xl font-bold text-foreground">{inr(product.finalPrice)}</span>
+                {hasDiscount && (
+                  <>
+                    <span className="text-lg text-muted-foreground line-through">{inr(product.price)}</span>
+                    <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-sm font-semibold text-success">
+                      {Math.round(product.discountPercent)}% off
+                    </span>
+                  </>
+                )}
+              </div>
+              {hasDiscount && (
+                <p className="mt-1 text-sm font-medium text-success">You save {inr(product.discountAmount)}</p>
               )}
+              <p className="mt-1 text-xs text-muted-foreground">Inclusive of all taxes. Free shipping across India.</p>
             </div>
 
             {/* Fabric */}
@@ -528,7 +530,7 @@ export default function ProductDetailClient({
             {displayVariants.length > 1 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-foreground">
-                  Color{selectedVariant ? <span className="ml-1 font-bold text-rose-600">— {selectedVariant.color}</span> : ""}
+                  Color{selectedVariant ? <span className="ml-1 font-bold text-primary">— {selectedVariant.color}</span> : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {displayVariants.map((variant) => {
@@ -545,7 +547,7 @@ export default function ProductDetailClient({
                         aria-label={variant.color}
                         onClick={() => selectVariant(variant.id)}
                         className={`relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-all ${
-                          isSelected ? "border-rose-600 ring-2 ring-rose-200" : "border-border"
+                          isSelected ? "border-primary ring-2 ring-primary/20" : "border-border"
                         }`}
                       >
                         {variantThumb ? (
@@ -576,12 +578,12 @@ export default function ProductDetailClient({
                     moment a customer needs it is the moment she is choosing. */}
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <p className="text-sm font-medium text-foreground">
-                    Size{selectedSize ? <span className="ml-1 font-bold text-rose-600">— {formatSizeLabel(selectedSize)}</span> : ""}
+                    Size{selectedSize ? <span className="ml-1 font-bold text-primary">— {formatSizeLabel(selectedSize)}</span> : ""}
                   </p>
                   <button
                     type="button"
                     onClick={() => setSizeGuideOpen(true)}
-                    className="text-sm font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700"
+                    className="flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-2"
                   >
                     Size guide
                   </button>
@@ -593,12 +595,12 @@ export default function ProductDetailClient({
                       type="button"
                       disabled={!sku.inStock}
                       onClick={() => setSelectedSize(selectedSize === sku.size ? null : sku.size)}
-                      className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      className={`h-11 min-w-12 rounded-full border px-4 text-sm font-medium transition-colors ${
                         selectedSize === sku.size
-                          ? "border-rose-600 bg-rose-600 text-white"
+                          ? "border-primary bg-primary text-primary-foreground"
                           : !sku.inStock
                             ? "border-border text-muted-foreground/50 line-through"
-                            : "border-border text-foreground hover:border-rose-400"
+                            : "border-border text-foreground hover:border-primary/40"
                       }`}
                     >
                       {formatSizeLabel(sku.size)}
@@ -620,7 +622,9 @@ export default function ProductDetailClient({
                 />
               ) : (
                 <Button
-                  className="flex-1"
+                  size="lg"
+                  variant="outline"
+                  className="h-12 flex-1 rounded-full border-2 border-primary text-primary hover:bg-accent"
                   disabled={!inStockNow || adding}
                   onClick={handleAddToCart}
                 >
@@ -629,8 +633,8 @@ export default function ProductDetailClient({
                 </Button>
               )}
               <Button
-                className="flex-1"
-                variant="secondary"
+                size="lg"
+                className="h-12 flex-1 rounded-full"
                 disabled={!inStockNow || adding}
                 onClick={cartItem ? () => router.push("/cart") : handleBuyNow}
               >
@@ -663,26 +667,41 @@ export default function ProductDetailClient({
                 which under 1% of ad visitors ever reached. */}
             <ProductTrustBox productName={product.name} />
 
-            {/* Tabs */}
-            <Tabs defaultValue="description">
-              <TabsList>
-                <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="fabric">Fabric & Care</TabsTrigger>
-              </TabsList>
-              <TabsContent value="description">
-                <p className="text-sm text-muted-foreground">
-                  {product.description ?? "No description available."}
-                </p>
-              </TabsContent>
-              <TabsContent value="fabric">
-                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            {/* Accordions, not tabs: a tab hides one of its two panels, and on a
+                phone a shopper deciding on a suit wants the fabric and the exchange
+                terms one tap away, not behind a different view. */}
+            <Accordion defaultValue={["details"]} className="border-t">
+              <AccordionItem value="details">
+                <AccordionTrigger className="min-h-12 text-base font-semibold">Product details</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  <p>{product.description ?? "No description available."}</p>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="fabric">
+                <AccordionTrigger className="min-h-12 text-base font-semibold">Fabric &amp; care</AccordionTrigger>
+                <AccordionContent className="flex flex-col gap-2 text-muted-foreground">
                   <p>{product.fabricDetails ?? "No fabric details available."}</p>
                   <p>{product.careInstructions ?? "No care instructions available."}</p>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </AccordionContent>
+              </AccordionItem>
+              {/* Restates the published Terms (size exchange within 2 days, no refund
+                  for change of mind). Change it together with them. */}
+              <AccordionItem value="exchange">
+                <AccordionTrigger className="min-h-12 text-base font-semibold">Delivery &amp; exchange</AccordionTrigger>
+                <AccordionContent className="flex flex-col gap-2 text-muted-foreground">
+                  <p>Free shipping across India.</p>
+                  <p>
+                    Wrong size? We exchange it for another size of the same piece within 2 days of delivery, subject to
+                    stock. Damaged, defective or wrong item? Tell us within 2 days with photos and an unboxing video. We
+                    don&apos;t offer refunds for change of mind.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
+
+        <ProductReviews slug={product.slug} />
 
         {/* Related products */}
         {hasSimilar && (
@@ -719,7 +738,7 @@ export default function ProductDetailClient({
               {product.name}
             </p>
             {hasDiscount ? (
-              <p className="text-sm font-bold text-destructive">
+              <p className="text-sm font-bold text-foreground">
                 {inr(product.finalPrice)}
               </p>
             ) : (
@@ -736,7 +755,6 @@ export default function ProductDetailClient({
             />
           ) : (
           <Button
-            size="sm"
             disabled={!inStockNow || adding}
             onClick={() => {
               if (needsSizeChoice && !selectedSize) {
@@ -745,7 +763,8 @@ export default function ProductDetailClient({
               }
               handleAddToCart();
             }}
-            className="shrink-0"
+            size="lg"
+            className="h-12 shrink-0 rounded-full px-6"
           >
             <ShoppingCartIcon className="size-4" />
             {adding ? "Adding…" : needsSizeChoice && !selectedSize ? "Select Size" : "Add to Cart"}
