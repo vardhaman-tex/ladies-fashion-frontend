@@ -17,7 +17,7 @@ const TRUST_BADGES = [
   { icon: Truck, label: "Free shipping", sub: "Across India" },
   { icon: Banknote, label: "Cash on delivery", sub: "Pay when it arrives" },
   { icon: ShieldCheck, label: "Secure payment", sub: "Encrypted checkout" },
-  { icon: MessageCircle, label: "Ask a person", sub: "Help on WhatsApp" },
+  { icon: MessageCircle, label: "WhatsApp help", sub: "Help on WhatsApp" },
 ];
 
 type ProductPage = PageResponse<ProductSummary>;
@@ -81,22 +81,6 @@ export default function HomeClient({
       .map((p) => ({ id: p.id, image: p.thumbnail as string, href: `/products/${p.slug}`, alt: p.name }));
   })();
 
-  const trustRow = (
-      <section key="trust" className="mx-auto w-full max-w-7xl px-4" aria-label="Why shop with us">
-        <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
-          {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
-            <li key={label} className="flex items-center gap-3">
-              <Icon className="size-6 shrink-0 text-primary" aria-hidden="true" strokeWidth={1.6} />
-              <div className="min-w-0">
-                <p className="text-sm leading-tight font-semibold text-foreground">{label}</p>
-                <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{sub}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-  );
-
   return (
     <div className="flex flex-col gap-6 pb-8 sm:gap-12 sm:pb-12 lg:gap-16">
       {/* Categories. A round rail on phones, where it has to be one swipe from
@@ -104,7 +88,7 @@ export default function HomeClient({
           which left no way to browse by category from the home page. */}
       {categories && categories.length > 0 && (
         <section id="categories" className="scroll-mt-24" aria-label="Shop by category">
-          <div className="mx-auto w-full max-w-7xl px-4 md:hidden">
+          <div className="mx-auto w-full max-w-7xl px-4 pt-4 md:hidden">
             <ul className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {categories.map((category, index) => (
                 <li key={category.id} className="w-[4.5rem] shrink-0 snap-start">
@@ -159,12 +143,25 @@ export default function HomeClient({
 
       {/* The opening photo is a short slider of real products. Kept compact so
           the first product rail is on the first screen of a phone. */}
-      <section className="mx-auto w-full max-w-7xl md:px-4 md:pt-4">
+      <section className="mx-auto w-full max-w-7xl px-4 md:pt-2">
         <HeroSlider slides={heroSlides} />
       </section>
 
+      {/* Trust, in one line: the four things a first-time buyer wonders about,
+          answered before the first product. */}
+      <section className="mx-auto w-full max-w-7xl px-4" aria-label="Why shop with us">
+        <ul className="grid grid-cols-4 gap-1 rounded-2xl border bg-card px-1 py-3">
+          {TRUST_BADGES.map(({ icon: Icon, label }) => (
+            <li key={label} className="flex flex-col items-center gap-1.5 px-1 text-center">
+              <Icon className="size-5 text-primary" aria-hidden="true" strokeWidth={1.7} />
+              <span className="text-[11px] leading-tight font-medium text-foreground sm:text-sm">{label}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* A product shows once on the page, in the first rail that has it. */}
-      {productSections.map((section, sectionIndex) => (
+      {productSections.map((section) => (
         <Fragment key={section.key}>
         <section className="mx-auto w-full max-w-7xl px-4">
           <div className="flex items-end justify-between gap-3">
@@ -187,9 +184,6 @@ export default function HomeClient({
             ))}
           </ul>
         </section>
-        {/* Trust sits after the first rail: product first, reassurance as the
-            shopper decides, not before they have seen anything to buy. */}
-        {sectionIndex === 0 && trustRow}
         </Fragment>
       ))}
 

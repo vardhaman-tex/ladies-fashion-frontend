@@ -62,7 +62,7 @@ export function HeroSlider({ slides, intervalMs = 5000 }: HeroSliderProps) {
 
   return (
     <div
-      className="relative h-72 overflow-hidden bg-accent sm:h-80 md:h-[26rem] md:rounded-3xl"
+      className="relative h-[23rem] overflow-hidden rounded-2xl bg-accent sm:h-[28rem] md:h-[30rem] md:rounded-3xl"
       onPointerDown={() => setPaused(true)}
       onFocus={() => setPaused(true)}
       role="region"
@@ -91,8 +91,10 @@ export function HeroSlider({ slides, intervalMs = 5000 }: HeroSliderProps) {
         ))}
       </ul>
 
-      {/* One caption for the whole slider, on a solid panel: legible over any photo. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground sm:px-8 sm:py-4">
+      {/* One caption for the whole slider, over the foot of the photo. The scrim
+          is only as tall as the text, so the picture stays almost entirely
+          visible; white on that dark foot reads over any photo. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-linear-to-t from-black/75 via-black/45 to-transparent px-4 pt-14 pb-4 text-white sm:px-8 sm:pb-6">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold tracking-[0.18em] uppercase opacity-90">New season collection</p>
           <h1 className="font-heading text-xl leading-tight font-bold sm:text-3xl">Celebrate every occasion in style</h1>
@@ -109,7 +111,7 @@ export function HeroSlider({ slides, intervalMs = 5000 }: HeroSliderProps) {
       </div>
 
       {slides.length > 1 && (
-        <div className="absolute inset-x-0 bottom-[4.75rem] flex justify-center gap-1.5 sm:bottom-[5.5rem]" aria-hidden="true">
+        <div className="absolute inset-x-0 top-3 flex justify-center gap-1.5" aria-hidden="true">
           {slides.map((slide, index) => (
             <span
               key={slide.id}
