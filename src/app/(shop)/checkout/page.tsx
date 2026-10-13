@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAddresses, ADDRESSES_KEY } from "@/hooks/useAddresses";
+import { useAbandonedCartCapture } from "@/hooks/useAbandonedCartCapture";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { useAuthStore } from "@/stores/authStore";
 import { useGuestCartStore } from "@/stores/cartStore";
@@ -263,6 +264,15 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     pincode: "",
+  });
+
+  // Remembers the cart once a guest has given a number, so a reminder can bring
+  // them back. The WhatsApp notice sits next to the phone field.
+  useAbandonedCartCapture({
+    enabled: !isAuthenticated && !authLoading,
+    phone: guestForm.phone,
+    name: guestForm.fullName,
+    items: cart?.items ?? [],
   });
 
   function setField(field: GuestAddressField, value: string) {

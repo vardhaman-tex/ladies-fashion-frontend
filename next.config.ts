@@ -41,6 +41,7 @@ const NOINDEX_PATHS = [
   "/wishlist",
   "/track-order",
   "/review",
+  "/resume",
   "/guest-order-confirmed",
   "/login",
   "/register",

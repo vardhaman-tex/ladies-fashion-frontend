@@ -186,6 +186,11 @@ export function GuestAddressFields({
         />
       </div>
 
+      <p className="-mt-2 text-xs text-muted-foreground">
+        By entering your number you agree to get order updates on WhatsApp, and a reminder if you
+        leave before finishing. Reply STOP to opt out.
+      </p>
+
       <Field
         {...shared}
         field="email"

@@ -26,6 +26,8 @@ export default function robots(): MetadataRoute.Robots {
     "/orders/",
     "/wishlist",
     "/track-order",
+    "/review",
+    "/resume",
     "/guest-order-confirmed",
     "/login",
     "/register",
