@@ -278,6 +278,13 @@ export default function CheckoutPage() {
     if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
   }
 
+  /** A pincode lookup fills city and state in one go; two setField calls would overwrite each other. */
+  function fillFields(patch: Partial<GuestAddressForm>) {
+    const next = { ...guestForm, ...patch };
+    setGuestForm(next);
+    if (hasSubmitted) setFieldErrors(validateGuestAddress(next));
+  }
+
   // ─── Auth loading ───────────────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -643,6 +650,7 @@ export default function CheckoutPage() {
                   form={guestForm}
                   errors={fieldErrors}
                   onChange={setField}
+                  onFill={fillFields}
                   disabled={isProcessing}
                 />
                 {/* Solid, not outlined. As an outline button it read as part

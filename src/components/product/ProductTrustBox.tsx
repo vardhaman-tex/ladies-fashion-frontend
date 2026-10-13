@@ -3,6 +3,7 @@
 import { MessageCircle, Truck, Wallet } from "lucide-react";
 
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { DeliveryCheck } from "@/components/product/DeliveryCheck";
 import { inr } from "@/lib/money";
 import { SUPPORT_HOURS, SUPPORT_WHATSAPP_DISPLAY, whatsAppLink } from "@/lib/support";
 
@@ -43,9 +44,8 @@ export function ProductTrustBox({ productName }: { productName: string }) {
             <span className="font-medium">Free shipping</span> across India on every order
           </span>
         </li>
-        <li className="flex items-start gap-2.5">
-          <Truck className="mt-0.5 size-4 shrink-0 text-rose-600" />
-          <span>Dispatched in 1–2 days · Delivered in 4–7</span>
+        <li>
+          <DeliveryCheck />
         </li>
       </ul>
 
