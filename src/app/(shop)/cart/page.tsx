@@ -61,11 +61,11 @@ export default function CartPage() {
     cart?.items.some((item) => item.availableQty !== undefined && item.quantity > item.availableQty) ?? false;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 pb-32 sm:py-8 lg:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon-sm" render={<Link href="/products" aria-label="Back" />}>
-          <ArrowLeft className="size-4" />
+        <Button variant="ghost" size="icon" render={<Link href="/products" aria-label="Back" />}>
+          <ArrowLeft className="size-5" />
         </Button>
         <h1 className="font-heading text-2xl font-bold">
           Cart {cart && cart.itemCount > 0 && (
@@ -173,18 +173,41 @@ export default function CartPage() {
                   Some items exceed available stock. Reduce quantity to continue.
                 </p>
               )}
+              {/* On a phone the checkout button lives in the sticky bar below, so it
+                  is under the thumb however long the list is. */}
               <Button
-                className="w-full bg-primary hover:bg-primary/90"
+                size="lg"
+                className="hidden w-full rounded-full lg:inline-flex"
                 disabled={hasStockIssues}
                 render={<Link href="/checkout" />}
               >
                 Proceed to Checkout
               </Button>
-              <Button variant="outline" className="w-full" render={<Link href="/products" />}>
+              <Button variant="outline" size="lg" className="w-full rounded-full" render={<Link href="/products" />}>
                 Continue Shopping
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {!isEmpty && cart && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-4 border-t bg-background/95 px-4 pt-3 shadow-lg backdrop-blur lg:hidden"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+        >
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Total · free delivery</p>
+            <p className="text-lg leading-tight font-bold text-foreground">{inr(cart.total)}</p>
+          </div>
+          <Button
+            size="lg"
+            className="h-12 flex-1 rounded-full text-base"
+            disabled={hasStockIssues}
+            render={<Link href="/checkout" />}
+          >
+            Checkout
+          </Button>
         </div>
       )}
     </div>
