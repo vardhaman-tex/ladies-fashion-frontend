@@ -22,6 +22,8 @@ export interface CartData {
   totalDiscount: number;
   couponCode: string | null;
   couponDiscount: number;
+  promotionName: string | null;
+  promotionDiscount: number;
   total: number;
 }
 
