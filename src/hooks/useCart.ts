@@ -21,6 +21,7 @@ import { useAuthStore } from "@/stores/authStore";
 // would put a wrong `value` into the reports, which is worse than the event
 // being absent. It wants the cart cache read at the call site instead.
 import { gaAddToCart } from "@/lib/ga";
+import { track } from "@/lib/analytics";
 import { buildGuestCart, cartBadgeCount } from "@/lib/guestCart";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
@@ -95,6 +96,7 @@ export function useAddToCart() {
         quantity: payload.quantity,
         ...(payload.size ? { item_variant: payload.size } : {}),
       });
+      track("ADD_TO_CART", { refId: payload.productId, refSlug: payload.productSlug });
     },
     onError: () => toast.error("Failed to add to cart"),
   });

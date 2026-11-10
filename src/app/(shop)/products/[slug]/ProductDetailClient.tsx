@@ -29,6 +29,7 @@ import { dedupeSizes, formatFabric, formatSizeLabel } from "@/lib/catalogueDispl
 import { inr } from "@/lib/money";
 import { trackAddToCart, trackViewContent } from "@/lib/pixel";
 import { gaViewItem } from "@/lib/ga";
+import { track } from "@/lib/analytics";
 import { colourSlug, findVariantByColourSlug } from "@/lib/variantUrl";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "sonner";
@@ -286,6 +287,7 @@ export default function ProductDetailClient({
   // object: a refetch that returns an identical product must not report a
   // second view of the same page.
   const viewedId = product?.id;
+  const viewedSlug = product?.slug;
   const viewedName = product?.name;
   const viewedPrice = product?.finalPrice;
   const viewedCategory = product?.category?.name;
@@ -293,13 +295,14 @@ export default function ProductDetailClient({
   useEffect(() => {
     if (!viewedId || !viewedName || viewedPrice == null) return;
     trackViewContent({ id: viewedId, name: viewedName, value: viewedPrice });
+    track("PRODUCT_VIEW", { refId: viewedId, refSlug: viewedSlug });
     gaViewItem({
       item_id: viewedId,
       item_name: viewedName,
       price: viewedPrice,
       ...(viewedCategory ? { item_category: viewedCategory } : {}),
     });
-  }, [viewedId, viewedName, viewedPrice, viewedCategory]);
+  }, [viewedId, viewedSlug, viewedName, viewedPrice, viewedCategory]);
 
   if (isLoading) return <PDPSkeleton />;
 

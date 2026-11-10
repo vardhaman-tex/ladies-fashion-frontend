@@ -58,6 +58,7 @@ import {
 } from "@/lib/checkoutAddress";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/pixel";
 import { gaAddPaymentInfo, gaBeginCheckout, gaPurchase } from "@/lib/ga";
+import { track } from "@/lib/analytics";
 import type { PaymentMethod } from "@/types/payment";
 
 /**
@@ -441,6 +442,7 @@ export default function CheckoutPage() {
       // The order's value, COD charge included — that is what the customer
       // pays and what the campaign should be optimising toward.
       trackInitiateCheckout(pixelGuestItems, guestQuote.total);
+      track("CHECKOUT_START");
 
       // The same moment, reported for GA4's funnel. add_payment_info carries
       // the method, which is the dimension worth having in this business: it is
@@ -505,6 +507,7 @@ export default function CheckoutPage() {
         // confirmation rather than opening a sheet that cannot open.
         if (!orderData.razorpayOrderId || !orderData.keyId || orderData.amountPaise === 0) {
           trackPurchase(orderData.internalOrderId, orderData.orderTotal, pixelGuestItems);
+          track("ORDER_PLACED", { refId: orderData.internalOrderId });
           gaPurchase(
             orderData.internalOrderId,
             orderData.orderTotal,
@@ -552,6 +555,7 @@ export default function CheckoutPage() {
               // Worth revisiting once the RTO rate on COD is known — if refused
               // deliveries are common this systematically overstates ROAS.
               trackPurchase(confirmed.id, guestQuote.total, pixelGuestItems);
+              track("ORDER_PLACED", { refId: confirmed.id });
               gaPurchase(confirmed.id, guestQuote.total, gaGuestItems, guestMethod);
               pendingGuestOrder.current = null;
               clearGuestCart();
@@ -1089,6 +1093,7 @@ export default function CheckoutPage() {
     }
 
     trackInitiateCheckout(pixelItems, pixelTotal);
+    track("CHECKOUT_START");
     gaBeginCheckout(gaItems, pixelTotal);
     // activeMethod, not the raw radio state: what is reported has to be what
     // the order is actually placed as.
@@ -1107,6 +1112,7 @@ export default function CheckoutPage() {
       // rather than opening a sheet that cannot open.
       if (!orderData.razorpayOrderId || !orderData.keyId || orderData.amountPaise === 0) {
         trackPurchase(orderData.internalOrderId, orderData.orderTotal, pixelItems);
+        track("ORDER_PLACED", { refId: orderData.internalOrderId });
         gaPurchase(orderData.internalOrderId, orderData.orderTotal, gaItems, orderData.paymentMethod);
         clearGuestCart();
         toast.success(
@@ -1143,6 +1149,7 @@ export default function CheckoutPage() {
               razorpaySignature: response.razorpay_signature,
             });
             trackPurchase(confirmedOrder.id, pixelTotal, pixelItems);
+            track("ORDER_PLACED", { refId: confirmedOrder.id });
             gaPurchase(confirmedOrder.id, pixelTotal, gaItems, activeMethod);
             clearGuestCart();
             toast.success(
