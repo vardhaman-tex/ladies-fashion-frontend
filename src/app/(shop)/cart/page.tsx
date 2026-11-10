@@ -7,6 +7,7 @@ import { gaViewCart } from "@/lib/ga";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CartItemRow } from "@/components/cart/CartItemRow";
+import { CouponInput } from "@/components/cart/CouponInput";
 import { useClearCart, useCart } from "@/hooks/useCart";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { getCodAvailability, quotePayment } from "@/lib/cod";
@@ -127,6 +128,10 @@ export default function CartPage() {
             <div className="rounded-xl border bg-card p-4 space-y-4 sticky top-24">
               <h2 className="font-semibold text-base">Order Summary</h2>
               <Separator />
+              <CouponInput
+                appliedCode={cart.couponCode ?? null}
+                couponDiscount={cart.couponDiscount ?? 0}
+              />
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({cart.itemCount} items)</span>
@@ -136,6 +141,12 @@ export default function CartPage() {
                   <div className="flex justify-between text-success font-medium">
                     <span>Discount</span>
                     <span>−{inr(cart.totalDiscount)}</span>
+                  </div>
+                )}
+                {(cart.couponDiscount ?? 0) > 0 && (
+                  <div className="flex justify-between text-success font-medium">
+                    <span>Coupon ({cart.couponCode})</span>
+                    <span>−{inr(cart.couponDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-muted-foreground">

@@ -39,6 +39,8 @@ export interface OrderData {
   subtotal: number;
   totalDiscount: number;
   adminDiscount: number;
+  couponCode: string | null;
+  couponDiscount: number;
   /** The cash-on-delivery charge on this order, already counted inside `total`. */
   codFee: number;
   total: number;
@@ -87,6 +89,8 @@ export interface TrackOrderData {
   addrPincode: string;
   subtotal: number;
   totalDiscount: number;
+  couponCode: string | null;
+  couponDiscount: number;
   total: number;
   paymentMethod: OrderPaymentMethod;
   paymentStatus: OrderPaymentStatus;

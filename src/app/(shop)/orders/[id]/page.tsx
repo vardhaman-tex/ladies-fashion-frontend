@@ -231,6 +231,12 @@ function OrderDetailContent({ id }: { id: string }) {
               <span>−₹{order.totalDiscount.toLocaleString("en-IN")}</span>
             </div>
           )}
+          {(order.couponDiscount ?? 0) > 0 && (
+            <div className="flex justify-between text-success">
+              <span>Coupon{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+              <span>−₹{order.couponDiscount.toLocaleString("en-IN")}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Delivery</span>
             <span className="text-success">FREE</span>

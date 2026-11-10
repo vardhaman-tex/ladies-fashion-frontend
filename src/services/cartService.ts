@@ -28,6 +28,16 @@ export async function clearCart(): Promise<CartData> {
   return data.data;
 }
 
+export async function applyCoupon(code: string): Promise<CartData> {
+  const { data } = await api.post<{ data: CartData }>(`${BASE}/coupon`, { code });
+  return data.data;
+}
+
+export async function removeCoupon(): Promise<CartData> {
+  const { data } = await api.delete<{ data: CartData }>(`${BASE}/coupon`);
+  return data.data;
+}
+
 export async function mergeGuestCart(items: GuestCartItem[]): Promise<CartData> {
   const payload = {
     items: items.map((i) => ({

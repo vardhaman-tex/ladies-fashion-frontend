@@ -20,6 +20,8 @@ export interface CartData {
   itemCount: number;
   subtotal: number;
   totalDiscount: number;
+  couponCode: string | null;
+  couponDiscount: number;
   total: number;
 }
 
