@@ -28,6 +28,8 @@ export function buildGuestCart(items: readonly GuestCartItem[]): CartData {
     itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
     subtotal,
     totalDiscount,
+    couponCode: null,
+    couponDiscount: 0,
     total: subtotal - totalDiscount,
   };
 }
