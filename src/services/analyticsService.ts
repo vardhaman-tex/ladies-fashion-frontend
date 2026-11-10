@@ -37,3 +37,33 @@ export const getTopProducts = async (days = 30, limit = 10): Promise<TopProductR
   );
   return data.data;
 };
+
+export interface DailyCountRow {
+  date: string;
+  count: number;
+}
+
+export interface UserActivityRow {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  eventCount: number;
+  lastSeen: string;
+}
+
+export const getDailyBreakdown = async (days = 30): Promise<DailyCountRow[]> => {
+  const { data } = await api.get<ApiResponse<DailyCountRow[]>>(
+    "/api/v1/admin/analytics/daily",
+    { params: { days } }
+  );
+  return data.data;
+};
+
+export const getTopUsers = async (days = 30, limit = 20): Promise<UserActivityRow[]> => {
+  const { data } = await api.get<ApiResponse<UserActivityRow[]>>(
+    "/api/v1/admin/analytics/users",
+    { params: { days, limit } }
+  );
+  return data.data;
+};
