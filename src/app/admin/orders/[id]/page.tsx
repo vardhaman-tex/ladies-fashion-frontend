@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Pencil, X, Banknote, Link2, Copy, Check,
-  Loader2, ExternalLink, AlertCircle,
+  Loader2, ExternalLink, AlertCircle, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,8 @@ import {
   useOrderPaymentLinks,
   useCreatePaymentLink,
   useCancelPaymentLink,
+  useOrderRefunds,
+  useCreateRefund,
 } from "@/hooks/useAdmin";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { OrderData, OrderStatus, OrderPaymentStatus } from "@/types/order";
 import type { PaymentLink, PaymentLinkStatus } from "@/types/paymentLink";
+import type { RefundType } from "@/types/refund";
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   PENDING:   "bg-amber-100 text-amber-800",
@@ -31,6 +34,7 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   SHIPPED:   "bg-indigo-100 text-indigo-800",
   DELIVERED: "bg-green-100 text-green-800",
   CANCELLED: "bg-red-100 text-red-800",
+  REFUNDED:  "bg-slate-100 text-slate-700",
 };
 
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -40,6 +44,7 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   SHIPPED:   ["DELIVERED"],
   DELIVERED: [],
   CANCELLED: [],
+  REFUNDED:  [],
 };
 
 const PAYMENT_STATUS_LABELS: Record<OrderPaymentStatus, string> = {
@@ -506,6 +511,172 @@ function EditOrderModal({
   );
 }
 
+/* ── Refund Card ────────────────────────────────────────────────────────── */
+function RefundCard({ order }: { order: OrderData }) {
+  const { data: refunds = [], isLoading: loadingRefunds } = useOrderRefunds(order.id);
+  const createRefundMutation = useCreateRefund(order.id);
+
+  const [showForm, setShowForm] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [refundType, setRefundType] = useState<RefundType>(
+    order.razorpayPaymentId ? "RAZORPAY" : "MANUAL"
+  );
+  const [notes, setNotes] = useState("");
+
+  const alreadyRefunded = order.refundedAmount ?? 0;
+  const maxRefundable = order.amountPaid - alreadyRefunded;
+  const canRefund = maxRefundable > 0 && order.status !== "CANCELLED" && order.status !== "PENDING";
+
+  function handleSubmit() {
+    const parsedAmount = amount.trim() === "" ? undefined : Number(amount);
+    if (parsedAmount != null && (!Number.isFinite(parsedAmount) || parsedAmount <= 0)) {
+      toast.error("Enter a valid amount, or leave blank to refund the full balance.");
+      return;
+    }
+    if (parsedAmount != null && parsedAmount > maxRefundable) {
+      toast.error(`Refund cannot exceed ${inr(maxRefundable)}.`);
+      return;
+    }
+    createRefundMutation.mutate(
+      { amount: parsedAmount, reason: reason || undefined, refundType, notes: notes || undefined },
+      {
+        onSuccess: () => {
+          toast.success("Refund issued");
+          setShowForm(false);
+          setAmount("");
+          setReason("");
+          setNotes("");
+        },
+        onError: (err) => toast.error(errorMessage(err, "Refund failed")),
+      }
+    );
+  }
+
+  return (
+    <div className="rounded-xl border p-4 text-sm">
+      <h3 className="mb-1 flex items-center gap-1.5 font-semibold">
+        <RotateCcw className="size-4 text-rose-600" /> Refunds
+      </h3>
+
+      {loadingRefunds ? (
+        <div className="h-10 animate-pulse rounded bg-muted" />
+      ) : refunds.length > 0 ? (
+        <ul className="mb-3 space-y-2">
+          {refunds.map((r) => (
+            <li key={r.id} className="rounded-lg border p-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-green-700">{inr(r.amount)}</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {r.refundType === "RAZORPAY" ? "Razorpay" : "Manual"}
+                </span>
+              </div>
+              {r.reason && <p className="mt-0.5 text-xs text-muted-foreground">{r.reason}</p>}
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {new Date(r.createdAt).toLocaleDateString("en-IN", {
+                  day: "numeric", month: "short", year: "numeric",
+                })}
+              </p>
+              {r.razorpayRefundId && (
+                <p className="mt-0.5 font-mono text-[10px] text-muted-foreground break-all">
+                  {r.razorpayRefundId}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mb-3 text-muted-foreground">No refunds issued yet.</p>
+      )}
+
+      {!canRefund ? (
+        <p className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+          {order.amountPaid === 0
+            ? "No payment collected — nothing to refund."
+            : order.status === "CANCELLED"
+              ? "Order cancelled. Issue a refund manually outside this system if payment was collected."
+              : maxRefundable <= 0
+                ? "Already fully refunded."
+                : "Refunds are not available until payment is collected."}
+        </p>
+      ) : !showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+        >
+          Issue refund — up to {inr(maxRefundable)} available
+        </button>
+      ) : (
+        <div className="space-y-3 border-t pt-3">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium">Amount (₹)</label>
+            <input
+              type="number"
+              min={0.01}
+              max={maxRefundable}
+              placeholder={String(maxRefundable)}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">Blank refunds the full {inr(maxRefundable)}.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium">Refund via</label>
+            <select
+              value={refundType}
+              onChange={(e) => setRefundType(e.target.value as RefundType)}
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            >
+              {order.razorpayPaymentId && <option value="RAZORPAY">Razorpay (online)</option>}
+              <option value="MANUAL">Manual (bank transfer / cash)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium">Reason (optional)</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Customer return, wrong item shipped"
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium">Internal notes (optional)</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowForm(false)}
+              className="flex-1 rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={createRefundMutation.isPending}
+              className="flex-1 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+            >
+              {createRefundMutation.isPending ? "Processing…" : "Issue Refund"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function AdminOrderDetailPage({
   params,
@@ -694,6 +865,8 @@ export default function AdminOrderDetailPage({
           <PaymentBreakdownCard order={order} />
 
           <PaymentLinksCard order={order} />
+
+          <RefundCard order={order} />
 
           {/* Payment Info */}
           {(order.razorpayOrderId || order.razorpayPaymentId) && (

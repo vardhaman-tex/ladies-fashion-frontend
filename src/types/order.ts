@@ -1,4 +1,4 @@
-export type OrderStatus = "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+export type OrderStatus = "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
 
 /** How an order is paid for. Separate from OrderStatus, which is about fulfilment. */
 export type OrderPaymentMethod = "PREPAID" | "COD_PARTIAL" | "COD_FULL";
@@ -46,6 +46,8 @@ export interface OrderData {
   /** The cash-on-delivery charge on this order, already counted inside `total`. */
   codFee: number;
   total: number;
+  /** Total amount refunded so far. */
+  refundedAmount: number;
   // Payment split — an order can be part-paid, so these are not derivable from status
   paymentMethod: OrderPaymentMethod;
   paymentStatus: OrderPaymentStatus;

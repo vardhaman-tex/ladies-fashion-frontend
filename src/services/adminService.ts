@@ -5,6 +5,7 @@ import type { OrderData } from "@/types/order";
 import type { OrderStatus } from "@/types/order";
 import type { ProductSummary } from "@/types/product";
 import type { PaymentLink, CreatePaymentLinkRequest } from "@/types/paymentLink";
+import type { RefundData, CreateRefundPayload } from "@/types/refund";
 
 // Stats
 export const getAdminStats = async (): Promise<AdminStats> => {
@@ -89,6 +90,25 @@ export const cancelOrderPaymentLink = async (
 ): Promise<PaymentLink> => {
   const { data } = await api.post<ApiResponse<PaymentLink>>(
     `/api/v1/admin/orders/${orderId}/payment-links/${linkId}/cancel`
+  );
+  return data.data;
+};
+
+// Refunds
+export const createRefund = async (
+  orderId: string,
+  payload: CreateRefundPayload
+): Promise<RefundData> => {
+  const { data } = await api.post<ApiResponse<RefundData>>(
+    `/api/v1/admin/orders/${orderId}/refunds`,
+    payload
+  );
+  return data.data;
+};
+
+export const listRefunds = async (orderId: string): Promise<RefundData[]> => {
+  const { data } = await api.get<ApiResponse<RefundData[]>>(
+    `/api/v1/admin/orders/${orderId}/refunds`
   );
   return data.data;
 };
