@@ -187,8 +187,8 @@ function DailyChart({ data }: { data: DailyCountRow[] }) {
 
 /* ── skeleton ─────────────────────────────────────────────────────────── */
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded bg-muted", className)} />;
+function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={cn("animate-pulse rounded bg-muted", className)} style={style} />;
 }
 
 /* ── main page ───────────────────────────────────────────────────────────── */
