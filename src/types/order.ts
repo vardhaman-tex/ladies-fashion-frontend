@@ -1,4 +1,4 @@
-export type OrderStatus = "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+export type OrderStatus = "PENDING" | "PAID" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
 
 /** How an order is paid for. Separate from OrderStatus, which is about fulfilment. */
 export type OrderPaymentMethod = "PREPAID" | "COD_PARTIAL" | "COD_FULL";
