@@ -17,6 +17,7 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   SHIPPED:   "bg-muted text-foreground/80",
   DELIVERED: "bg-success/10 text-success",
   CANCELLED: "bg-destructive/10 text-destructive",
+  REFUNDED:  "bg-slate-100 text-slate-700",
 };
 
 function StatusBadge({ status }: { status: OrderStatus }) {
