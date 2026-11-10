@@ -16,10 +16,13 @@ import {
   getOrderPaymentLinks,
   createOrderPaymentLink,
   cancelOrderPaymentLink,
+  createRefund,
+  listRefunds,
 } from "@/services/adminService";
 import type { AdminEditOrderPayload } from "@/services/adminService";
 import type { OrderStatus } from "@/types/order";
 import type { CreatePaymentLinkRequest } from "@/types/paymentLink";
+import type { CreateRefundPayload } from "@/types/refund";
 
 export const ADMIN_KEYS = {
   stats: ["admin", "stats"] as const,
@@ -30,6 +33,7 @@ export const ADMIN_KEYS = {
     ["admin", "products", search, page, categorySlug] as const,
   inventory: (lowStock?: boolean, page?: number) => ["admin", "inventory", lowStock, page] as const,
   paymentLinks: (orderId: string) => ["admin", "order", orderId, "payment-links"] as const,
+  refunds: (orderId: string) => ["admin", "order", orderId, "refunds"] as const,
 };
 
 export function useAdminStats() {
@@ -168,5 +172,25 @@ export function useUpdateInventory() {
       lowStockThreshold?: number;
     }) => updateInventory(skuId, { availableQty, lowStockThreshold }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "inventory"] }),
+  });
+}
+
+export function useOrderRefunds(orderId: string) {
+  return useQuery({
+    queryKey: ADMIN_KEYS.refunds(orderId),
+    queryFn: () => listRefunds(orderId),
+    enabled: !!orderId,
+  });
+}
+
+export function useCreateRefund(orderId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateRefundPayload) => createRefund(orderId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ADMIN_KEYS.refunds(orderId) });
+      qc.invalidateQueries({ queryKey: ADMIN_KEYS.order(orderId) });
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+    },
   });
 }
