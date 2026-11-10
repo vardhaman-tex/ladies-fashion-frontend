@@ -6,9 +6,11 @@ import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
   addToCart,
+  applyCoupon,
   clearCart,
   getCart,
   mergeGuestCart,
+  removeCoupon,
   removeCartItem,
   updateCartItem,
 } from "@/services/cartService";
@@ -171,6 +173,26 @@ export function useClearCart() {
     onSuccess: (data) => {
       if (data) qc.setQueryData(CART_KEY, data);
     },
+  });
+}
+
+export function useApplyCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) => applyCoupon(code),
+    onSuccess: (data) => qc.setQueryData(CART_KEY, data),
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      toast.error(err?.response?.data?.message ?? "Invalid or expired coupon");
+    },
+  });
+}
+
+export function useRemoveCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: removeCoupon,
+    onSuccess: (data) => qc.setQueryData(CART_KEY, data),
+    onError: () => toast.error("Failed to remove coupon"),
   });
 }
 
