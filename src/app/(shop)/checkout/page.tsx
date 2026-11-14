@@ -786,6 +786,18 @@ export default function CheckoutPage() {
                       <span>−₹{guestDiscount.toLocaleString("en-IN")}</span>
                     </div>
                   )}
+                  {cart!.couponDiscount > 0 && (
+                    <div className="flex justify-between text-success">
+                      <span>Coupon{cart!.couponCode ? ` (${cart!.couponCode})` : ""}</span>
+                      <span>−₹{cart!.couponDiscount.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
+                  {cart!.promotionDiscount > 0 && (
+                    <div className="flex justify-between text-success">
+                      <span>Promo{cart!.promotionName ? ` — ${cart!.promotionName}` : ""}</span>
+                      <span>−₹{cart!.promotionDiscount.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery</span>
                     <span className="text-success">FREE</span>
@@ -1342,6 +1354,18 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-success">
                     <span>Discount</span>
                     <span>−₹{cart.totalDiscount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                {cart.couponDiscount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Coupon{cart.couponCode ? ` (${cart.couponCode})` : ""}</span>
+                    <span>−₹{cart.couponDiscount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                {cart.promotionDiscount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Promo{cart.promotionName ? ` — ${cart.promotionName}` : ""}</span>
+                    <span>−₹{cart.promotionDiscount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
