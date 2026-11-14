@@ -175,8 +175,8 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
           >
             Save Changes
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/banners">Cancel</Link>
+          <Button variant="outline" render={<Link href="/admin/banners" />}>
+            Cancel
           </Button>
         </div>
       </div>

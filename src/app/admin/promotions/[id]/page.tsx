@@ -192,8 +192,8 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
           >
             Save Changes
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/promotions">Cancel</Link>
+          <Button variant="outline" render={<Link href="/admin/promotions" />}>
+            Cancel
           </Button>
         </div>
       </div>

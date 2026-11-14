@@ -117,8 +117,8 @@ export default function NewBannerPage() {
           <Button onClick={() => mut.mutate()} disabled={!form.title || mut.isPending}>
             Create Banner
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/banners">Cancel</Link>
+          <Button variant="outline" render={<Link href="/admin/banners" />}>
+            Cancel
           </Button>
         </div>
       </div>

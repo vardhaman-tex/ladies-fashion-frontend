@@ -53,10 +53,8 @@ export default function AdminBannersPage() {
             Manage homepage heroes, collection strips, and ticker banners
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/banners/new">
-            <Plus className="size-4 mr-1.5" /> New Banner
-          </Link>
+        <Button render={<Link href="/admin/banners/new" />}>
+          <Plus className="size-4 mr-1.5" /> New Banner
         </Button>
       </div>
 
@@ -110,10 +108,8 @@ export default function AdminBannersPage() {
                   <ToggleLeft className="size-4 text-muted-foreground" />
                 )}
               </Button>
-              <Button size="icon" variant="ghost" className="size-8" asChild>
-                <Link href={`/admin/banners/${banner.id}`}>
-                  <Edit2 className="size-3.5" />
-                </Link>
+              <Button size="icon" variant="ghost" className="size-8" render={<Link href={`/admin/banners/${banner.id}`} />}>
+                <Edit2 className="size-3.5" />
               </Button>
               <Button
                 size="icon"
