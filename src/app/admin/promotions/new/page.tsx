@@ -170,8 +170,8 @@ export default function NewPromotionPage() {
           >
             Create Promotion
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/promotions">Cancel</Link>
+          <Button variant="outline" render={<Link href="/admin/promotions" />}>
+            Cancel
           </Button>
         </div>
       </div>

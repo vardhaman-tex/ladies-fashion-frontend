@@ -41,6 +41,8 @@ export interface OrderData {
   adminDiscount: number;
   couponCode: string | null;
   couponDiscount: number;
+  promotionName: string | null;
+  promotionDiscount: number;
   /** The cash-on-delivery charge on this order, already counted inside `total`. */
   codFee: number;
   total: number;

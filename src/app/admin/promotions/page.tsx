@@ -58,10 +58,8 @@ export default function AdminPromotionsPage() {
             Auto-applied discounts with advanced targeting
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/promotions/new">
-            <Plus className="size-4 mr-1.5" /> New Promotion
-          </Link>
+        <Button render={<Link href="/admin/promotions/new" />}>
+          <Plus className="size-4 mr-1.5" /> New Promotion
         </Button>
       </div>
 
@@ -139,10 +137,8 @@ export default function AdminPromotionsPage() {
                     <ToggleLeft className="size-4 text-muted-foreground" />
                   )}
                 </Button>
-                <Button size="icon" variant="ghost" className="size-8" asChild>
-                  <Link href={`/admin/promotions/${promo.id}`}>
-                    <Edit2 className="size-3.5" />
-                  </Link>
+                <Button size="icon" variant="ghost" className="size-8" render={<Link href={`/admin/promotions/${promo.id}`} />}>
+                  <Edit2 className="size-3.5" />
                 </Button>
               </div>
             </div>

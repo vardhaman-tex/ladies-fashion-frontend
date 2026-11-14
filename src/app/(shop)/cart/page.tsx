@@ -149,6 +149,12 @@ export default function CartPage() {
                     <span>−{inr(cart.couponDiscount)}</span>
                   </div>
                 )}
+                {(cart.promotionDiscount ?? 0) > 0 && (
+                  <div className="flex justify-between text-success font-medium">
+                    <span>{cart.promotionName ?? "Promotion"}</span>
+                    <span>−{inr(cart.promotionDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
                   <span className="text-success">Free</span>

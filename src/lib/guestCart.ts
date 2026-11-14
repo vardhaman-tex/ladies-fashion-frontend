@@ -30,6 +30,8 @@ export function buildGuestCart(items: readonly GuestCartItem[]): CartData {
     totalDiscount,
     couponCode: null,
     couponDiscount: 0,
+    promotionName: null,
+    promotionDiscount: 0,
     total: subtotal - totalDiscount,
   };
 }
