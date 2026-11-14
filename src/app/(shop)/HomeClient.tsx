@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
 import { HeroSlider, type HeroSlide } from "@/components/home/HeroSlider";
+import { HomepageHeroBanner } from "@/components/home/HomepageHeroBanner";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
@@ -146,6 +147,9 @@ export default function HomeClient({
       <section className="mx-auto w-full max-w-7xl px-4 md:pt-2">
         <HeroSlider slides={heroSlides} />
       </section>
+
+      {/* Promotional hero banner — shown only when an active banner exists */}
+      <HomepageHeroBanner />
 
       {/* Trust, in one line: the four things a first-time buyer wonders about,
           answered before the first product. */}

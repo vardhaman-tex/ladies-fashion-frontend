@@ -1,148 +1,209 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { Plus, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
-import { useAdminPromotions, useTogglePromotion } from "@/hooks/usePromotions";
-import { Skeleton } from "@/components/common/LoadingSkeleton";
-import { cn } from "@/lib/utils";
+import { Plus, Edit2, ToggleLeft, ToggleRight, Zap, Share2, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
+import { getPromotions, togglePromotion, generatePromoCodes } from "@/services/promotionService";
+import type { PromotionResponse } from "@/services/promotionService";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminPromotionsPage() {
+  const qc = useQueryClient();
   const [page, setPage] = useState(0);
-  const { data, isLoading } = useAdminPromotions(page);
-  const toggle = useTogglePromotion();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [genCount, setGenCount] = useState<Record<string, number>>({});
+  const [genPrefix, setGenPrefix] = useState<Record<string, string>>({});
 
-  const promotions = data?.content ?? [];
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-promotions", page],
+    queryFn: () => getPromotions(page),
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: (id: string) => togglePromotion(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-promotions"] });
+      toast.success("Promotion status updated");
+    },
+  });
+
+  const genMut = useMutation({
+    mutationFn: ({ id, count, prefix }: { id: string; count: number; prefix?: string }) =>
+      generatePromoCodes(id, count, prefix),
+    onSuccess: (created) => {
+      toast.success(`${created} coupon codes generated`);
+    },
+    onError: () => toast.error("Failed to generate codes"),
+  });
+
+  function copyShareLink(promo: PromotionResponse) {
+    if (!promo.shareToken) return;
+    const url = `${window.location.origin}/?promo=${promo.shareToken}`;
+    navigator.clipboard.writeText(url).catch(() => {});
+    setCopiedId(promo.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  const promos = data?.content ?? [];
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Promotions</h1>
-        <Link
-          href="/admin/promotions/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
-        >
-          <Plus className="size-4" />
-          New Promotion
-        </Link>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Promotions</h1>
+          <p className="text-sm text-muted-foreground">
+            Auto-applied discounts with advanced targeting
+          </p>
+        </div>
+        <Button render={<Link href="/admin/promotions/new" />}>
+          <Plus className="size-4 mr-1.5" /> New Promotion
+        </Button>
       </div>
 
-      <div className="rounded-xl border">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Discount</th>
-                <th className="px-4 py-3">Min Order</th>
-                <th className="px-4 py-3">Priority</th>
-                <th className="px-4 py-3">Validity</th>
-                <th className="px-4 py-3">Uses</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {isLoading
-                ? Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <td key={j} className="px-4 py-3">
-                          <Skeleton className="h-4 w-full" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : promotions.map((p) => (
-                    <tr key={p.id} className="hover:bg-muted/20">
-                      <td className="px-4 py-3 font-medium">{p.name}</td>
-                      <td className="px-4 py-3">
-                        {p.discountType === "FLAT"
-                          ? `₹${p.discountValue.toLocaleString("en-IN")}`
-                          : `${p.discountValue}%`}
-                        {p.discountType === "PERCENT" && p.maxDiscount && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            (max ₹{p.maxDiscount.toLocaleString("en-IN")})
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {p.minOrderValue ? `₹${p.minOrderValue.toLocaleString("en-IN")}` : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{p.priority}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {p.validFrom
-                          ? new Date(p.validFrom).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-                          : "—"}
-                        {" → "}
-                        {p.validTo
-                          ? new Date(p.validTo).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-                          : "∞"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{p.timesUsed}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                            p.isActive
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {p.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/admin/promotions/${p.id}/edit`}
-                            className="rounded p-1 text-muted-foreground hover:text-foreground"
-                            title="Edit"
-                          >
-                            <Pencil className="size-4" />
-                          </Link>
-                          <button
-                            onClick={() => toggle.mutate(p.id)}
-                            disabled={toggle.isPending}
-                            className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                            title={p.isActive ? "Deactivate" : "Activate"}
-                          >
-                            {p.isActive
-                              ? <ToggleRight className="size-4 text-green-600" />
-                              : <ToggleLeft className="size-4" />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
-        </div>
+      {isLoading && (
+        <div className="text-muted-foreground text-sm">Loading…</div>
+      )}
 
-        {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t px-4 py-3 text-sm">
-            <span className="text-muted-foreground">
-              Page {page + 1} of {data.totalPages} ({data.totalElements} promotions)
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
+      {!isLoading && promos.length === 0 && (
+        <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
+          No promotions yet. Create one to get started.
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {promos.map((promo) => (
+          <div
+            key={promo.id}
+            className="rounded-xl border bg-card p-4 space-y-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm">{promo.name}</span>
+                  <Badge variant={promo.isActive ? "default" : "secondary"}>
+                    {promo.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                  {promo.stackable && (
+                    <Badge variant="outline" className="text-xs">Stackable</Badge>
+                  )}
+                  {promo.userSegment !== "ALL" && (
+                    <Badge variant="outline" className="text-xs text-blue-600">
+                      {promo.userSegment === "NEW_USER" ? "New users" : "Returning users"}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {promo.discountType === "FLAT" ? `₹${promo.discountValue} off` : `${promo.discountValue}% off`}
+                  {promo.maxDiscount ? ` (max ₹${promo.maxDiscount})` : ""}
+                  {promo.minOrderValue ? ` · min order ₹${promo.minOrderValue}` : ""}
+                  {promo.minQuantity ? ` · min qty ${promo.minQuantity}` : ""}
+                  {" · "}priority {promo.priority}
+                  {" · "}used {promo.timesUsed}×
+                </p>
+                {promo.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{promo.description}</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {promo.shareToken && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8"
+                    title="Copy share link"
+                    onClick={() => copyShareLink(promo)}
+                  >
+                    {copiedId === promo.id ? (
+                      <Check className="size-3.5 text-green-600" />
+                    ) : (
+                      <Share2 className="size-3.5" />
+                    )}
+                  </Button>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8"
+                  onClick={() => toggleMut.mutate(promo.id)}
+                  title={promo.isActive ? "Deactivate" : "Activate"}
+                >
+                  {promo.isActive ? (
+                    <ToggleRight className="size-4 text-green-600" />
+                  ) : (
+                    <ToggleLeft className="size-4 text-muted-foreground" />
+                  )}
+                </Button>
+                <Button size="icon" variant="ghost" className="size-8" render={<Link href={`/admin/promotions/${promo.id}`} />}>
+                  <Edit2 className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Bulk code generation row */}
+            <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+              <Zap className="size-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground">Generate coupon codes:</span>
+              <input
+                type="text"
+                placeholder="Prefix (e.g. DIWALI)"
+                value={genPrefix[promo.id] ?? ""}
+                onChange={(e) => setGenPrefix((p) => ({ ...p, [promo.id]: e.target.value }))}
+                className="h-6 px-1.5 text-xs border rounded w-28 bg-background"
+              />
+              <input
+                type="number"
+                min={1}
+                max={500}
+                placeholder="Count"
+                value={genCount[promo.id] ?? ""}
+                onChange={(e) => setGenCount((p) => ({ ...p, [promo.id]: Number(e.target.value) }))}
+                className="h-6 px-1.5 text-xs border rounded w-16 bg-background"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-xs px-2"
+                onClick={() => genMut.mutate({
+                  id: promo.id,
+                  count: genCount[promo.id] ?? 10,
+                  prefix: genPrefix[promo.id] || undefined,
+                })}
+                disabled={genMut.isPending}
               >
-                Prev
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(data.totalPages - 1, p + 1))}
-                disabled={page >= data.totalPages - 1}
-                className="rounded border px-3 py-1 disabled:opacity-40 hover:border-rose-400"
-              >
-                Next
-              </button>
+                Generate
+              </Button>
             </div>
           </div>
-        )}
+        ))}
       </div>
+
+      {data && data.totalPages > 1 && (
+        <div className="flex justify-center gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground self-center">
+            {page + 1} / {data.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page + 1 >= data.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

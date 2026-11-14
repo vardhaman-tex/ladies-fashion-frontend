@@ -5,18 +5,18 @@ import { toast } from "sonner";
 import {
   createPromotion,
   getPromotion,
-  listPromotions,
+  getPromotions,
   togglePromotion,
   updatePromotion,
 } from "@/services/promotionService";
-import type { CreatePromotionPayload } from "@/types/promotion";
+import type { CreatePromotionPayload } from "@/services/promotionService";
 
 export const PROMOTIONS_KEY = ["admin", "promotions"];
 
 export function useAdminPromotions(page = 0) {
   return useQuery({
     queryKey: [...PROMOTIONS_KEY, page],
-    queryFn: () => listPromotions(page),
+    queryFn: () => getPromotions(page),
   });
 }
 
