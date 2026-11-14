@@ -31,6 +31,7 @@ export function CollectionStripBanner() {
                   width={420}
                   height={180}
                   className="h-36 w-full object-cover"
+                  unoptimized
                 />
               )}
               <div
