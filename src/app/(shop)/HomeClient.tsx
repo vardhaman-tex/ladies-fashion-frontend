@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRightIcon, Banknote, MessageCircle, Ruler, ShieldCheck, Truck, PackageCheck } from "lucide-react";
 import { HeroSlider, type HeroSlide } from "@/components/home/HeroSlider";
 import { HomepageHeroBanner } from "@/components/home/HomepageHeroBanner";
+import { CollectionStripBanner } from "@/components/home/CollectionStripBanner";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
@@ -150,6 +151,9 @@ export default function HomeClient({
 
       {/* Promotional hero banner — shown only when an active banner exists */}
       <HomepageHeroBanner />
+
+      {/* Collection strip — horizontally scrollable promo cards */}
+      <CollectionStripBanner />
 
       {/* Trust, in one line: the four things a first-time buyer wonders about,
           answered before the first product. */}
