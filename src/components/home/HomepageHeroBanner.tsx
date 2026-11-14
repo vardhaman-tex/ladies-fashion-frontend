@@ -25,6 +25,7 @@ export function HomepageHeroBanner() {
           height={400}
           className="h-48 w-full object-cover sm:h-64"
           priority
+          unoptimized
         />
       )}
       <div className={banner.imageUrl ? "absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-4 sm:p-6" : "p-4 sm:p-6"}>

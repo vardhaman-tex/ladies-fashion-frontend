@@ -37,10 +37,10 @@ export function usePromoToken() {
         } catch {
           // ignore
         }
-        toast.success(`Promotion applied: ${promo.name}`, {
+        toast.success(`Promo unlocked: ${promo.name}`, {
           description: promo.discountType === "FLAT"
-            ? `₹${promo.discountValue} off on your order`
-            : `${promo.discountValue}% off${promo.maxDiscount ? ` (up to ₹${promo.maxDiscount})` : ""}`,
+            ? `₹${promo.discountValue} off — discount will apply at checkout`
+            : `${promo.discountValue}% off${promo.maxDiscount ? ` (up to ₹${promo.maxDiscount})` : ""} — discount will apply at checkout`,
           duration: 5000,
         });
       })
