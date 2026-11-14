@@ -8,7 +8,7 @@ import { useAdminPromotion, useUpdatePromotion } from "@/hooks/usePromotions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/common/LoadingSkeleton";
-import type { CreatePromotionPayload, DiscountType } from "@/types/promotion";
+import type { CreatePromotionPayload, DiscountType } from "@/services/promotionService";
 
 export default function EditPromotionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -22,17 +22,19 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
     if (promotion && !form) {
       setForm({
         name: promotion.name,
-        description: promotion.description,
+        description: promotion.description ?? undefined,
         discountType: promotion.discountType,
         discountValue: promotion.discountValue,
-        maxDiscount: promotion.maxDiscount,
-        minOrderValue: promotion.minOrderValue,
-        validFrom: promotion.validFrom,
-        validTo: promotion.validTo,
+        maxDiscount: promotion.maxDiscount ?? undefined,
+        minOrderValue: promotion.minOrderValue ?? undefined,
+        validFrom: promotion.validFrom ?? undefined,
+        validTo: promotion.validTo ?? undefined,
         isActive: promotion.isActive,
         priority: promotion.priority,
         restrictedProductIds: promotion.restrictedProductIds,
         restrictedCategoryIds: promotion.restrictedCategoryIds,
+        userSegment: "ALL",
+        stackable: false,
       });
     }
   }, [promotion, form]);
@@ -87,7 +89,7 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
           <label className="mb-1 block text-sm font-medium">Description</label>
           <Input
             value={form.description ?? ""}
-            onChange={(e) => set("description", e.target.value || null)}
+            onChange={(e) => set("description", e.target.value || undefined)}
           />
         </div>
 
@@ -124,7 +126,7 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
               min={0}
               placeholder="Leave blank for no cap"
               value={form.maxDiscount ?? ""}
-              onChange={(e) => set("maxDiscount", e.target.value ? parseFloat(e.target.value) : null)}
+              onChange={(e) => set("maxDiscount", e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
         )}
@@ -137,7 +139,7 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
               min={0}
               placeholder="None"
               value={form.minOrderValue ?? ""}
-              onChange={(e) => set("minOrderValue", e.target.value ? parseFloat(e.target.value) : null)}
+              onChange={(e) => set("minOrderValue", e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
           <div>
@@ -157,7 +159,7 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
             <Input
               type="datetime-local"
               value={form.validFrom ? form.validFrom.slice(0, 16) : ""}
-              onChange={(e) => set("validFrom", e.target.value ? `${e.target.value}:00` : null)}
+              onChange={(e) => set("validFrom", e.target.value ? `${e.target.value}:00` : undefined)}
             />
           </div>
           <div>
@@ -165,7 +167,7 @@ export default function EditPromotionPage({ params }: { params: Promise<{ id: st
             <Input
               type="datetime-local"
               value={form.validTo ? form.validTo.slice(0, 16) : ""}
-              onChange={(e) => set("validTo", e.target.value ? `${e.target.value}:00` : null)}
+              onChange={(e) => set("validTo", e.target.value ? `${e.target.value}:00` : undefined)}
             />
           </div>
         </div>
