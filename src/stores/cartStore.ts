@@ -4,10 +4,12 @@ import type { GuestCartItem } from "@/types/cart";
 
 interface GuestCartState {
   items: GuestCartItem[];
+  couponCode: string | null;
   addItem: (item: GuestCartItem) => void;
   updateItem: (productId: string, size: string | null, color: string | null, quantity: number) => void;
   removeItem: (productId: string, size: string | null, color: string | null) => void;
   clearCart: () => void;
+  setCouponCode: (code: string | null) => void;
   itemCount: () => number;
 }
 
@@ -19,6 +21,7 @@ export const useGuestCartStore = create<GuestCartState>()(
   persist(
     (set, get) => ({
       items: [],
+      couponCode: null,
 
       addItem: (incoming) =>
         set((state) => {
@@ -49,7 +52,9 @@ export const useGuestCartStore = create<GuestCartState>()(
           items: state.items.filter((i) => !sameVariant(i, productId, size, color)),
         })),
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], couponCode: null }),
+
+      setCouponCode: (code) => set({ couponCode: code }),
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),

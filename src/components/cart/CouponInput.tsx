@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useApplyCoupon, useRemoveCoupon } from "@/hooks/useCart";
+import { useApplyCoupon, useGuestApplyCoupon, useGuestRemoveCoupon, useRemoveCoupon } from "@/hooks/useCart";
+import { useAuthStore } from "@/stores/authStore";
 import { inr } from "@/lib/money";
 
 interface CouponInputProps {
@@ -14,13 +15,32 @@ interface CouponInputProps {
 
 export function CouponInput({ appliedCode, couponDiscount }: CouponInputProps) {
   const [code, setCode] = useState("");
-  const { mutate: apply, isPending: applying } = useApplyCoupon();
-  const { mutate: remove, isPending: removing } = useRemoveCoupon();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const { mutate: applyAuth, isPending: applyingAuth } = useApplyCoupon();
+  const { mutate: removeAuth, isPending: removingAuth } = useRemoveCoupon();
+  const { mutate: applyGuest, isPending: applyingGuest } = useGuestApplyCoupon();
+  const { mutate: removeGuest, isPending: removingGuest } = useGuestRemoveCoupon();
+
+  const applying = isAuthenticated ? applyingAuth : applyingGuest;
+  const removing = isAuthenticated ? removingAuth : removingGuest;
 
   function handleApply() {
     const trimmed = code.trim();
     if (!trimmed) return;
-    apply(trimmed, { onSuccess: () => setCode("") });
+    if (isAuthenticated) {
+      applyAuth(trimmed, { onSuccess: () => setCode("") });
+    } else {
+      applyGuest(trimmed, { onSuccess: () => setCode("") });
+    }
+  }
+
+  function handleRemove() {
+    if (isAuthenticated) {
+      removeAuth();
+    } else {
+      removeGuest();
+    }
   }
 
   if (appliedCode) {
@@ -32,7 +52,7 @@ export function CouponInput({ appliedCode, couponDiscount }: CouponInputProps) {
           <span className="text-success">−{inr(couponDiscount)}</span>
         </div>
         <button
-          onClick={() => remove()}
+          onClick={handleRemove}
           disabled={removing}
           className="ml-2 rounded p-0.5 text-success/70 hover:text-success disabled:opacity-50"
           aria-label="Remove coupon"
