@@ -1,14 +1,23 @@
 import type { CartData, GuestCartItem } from "@/types/cart";
 
+export interface GuestDiscount {
+  couponCode: string | null;
+  couponDiscount: number;
+  promotionName: string | null;
+  promotionDiscount: number;
+}
+
 /**
  * The cart a guest sees, derived from what is in their browser.
  *
  * Pure so the badge, the cart page and checkout cannot disagree about what a
  * guest's cart is worth: they all call this, and it is tested.
  */
-export function buildGuestCart(items: readonly GuestCartItem[]): CartData {
+export function buildGuestCart(items: readonly GuestCartItem[], discount?: GuestDiscount): CartData {
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const totalDiscount = items.reduce((sum, i) => sum + i.discountAmount * i.quantity, 0);
+  const couponDiscount = discount?.couponDiscount ?? 0;
+  const promotionDiscount = discount?.promotionDiscount ?? 0;
   return {
     id: "guest",
     items: items.map((i) => ({
@@ -28,11 +37,11 @@ export function buildGuestCart(items: readonly GuestCartItem[]): CartData {
     itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
     subtotal,
     totalDiscount,
-    couponCode: null,
-    couponDiscount: 0,
-    promotionName: null,
-    promotionDiscount: 0,
-    total: subtotal - totalDiscount,
+    couponCode: discount?.couponCode ?? null,
+    couponDiscount,
+    promotionName: discount?.promotionName ?? null,
+    promotionDiscount,
+    total: subtotal - totalDiscount - couponDiscount - promotionDiscount,
   };
 }
 

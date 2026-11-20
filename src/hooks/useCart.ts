@@ -8,6 +8,7 @@ import {
   addToCart,
   applyCoupon,
   clearCart,
+  fetchGuestDiscount,
   getCart,
   mergeGuestCart,
   removeCoupon,
@@ -26,6 +27,7 @@ import { buildGuestCart, cartBadgeCount } from "@/lib/guestCart";
 import type { AddToCartPayload, CartData, GuestCartItem } from "@/types/cart";
 
 export const CART_KEY = ["cart"];
+export const GUEST_DISCOUNT_KEY = ["guest-discount"];
 
 /**
  * Keyed so anything rendering the cart can ask whether a merge is in flight.
@@ -40,6 +42,48 @@ export const MERGE_CART_KEY = ["cart", "merge"];
 /** Whether the guest cart is being merged into the server cart right now. */
 export function useIsMergingCart() {
   return useIsMutating({ mutationKey: MERGE_CART_KEY }) > 0;
+}
+
+/** Fetches promotion + coupon discounts for the current guest cart from the backend. */
+export function useGuestDiscount() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const guestItems = useGuestCartStore((s) => s.items);
+  const couponCode = useGuestCartStore((s) => s.couponCode);
+
+  return useQuery({
+    queryKey: [...GUEST_DISCOUNT_KEY, guestItems, couponCode],
+    queryFn: () => fetchGuestDiscount(guestItems, couponCode),
+    enabled: !isAuthenticated && guestItems.length > 0,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useGuestApplyCoupon() {
+  const qc = useQueryClient();
+  const setCouponCode = useGuestCartStore((s) => s.setCouponCode);
+  const guestItems = useGuestCartStore((s) => s.items);
+
+  return useMutation({
+    mutationFn: (code: string) => fetchGuestDiscount(guestItems, code),
+    onSuccess: (_, code) => {
+      setCouponCode(code.trim().toUpperCase());
+      qc.invalidateQueries({ queryKey: GUEST_DISCOUNT_KEY });
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      toast.error(err?.response?.data?.message ?? "Invalid or expired coupon");
+    },
+  });
+}
+
+export function useGuestRemoveCoupon() {
+  const qc = useQueryClient();
+  const setCouponCode = useGuestCartStore((s) => s.setCouponCode);
+
+  return useMutation({
+    mutationFn: async () => { setCouponCode(null); },
+    onSuccess: () => qc.invalidateQueries({ queryKey: GUEST_DISCOUNT_KEY }),
+  });
 }
 
 /** Server cart for authenticated users */
@@ -223,7 +267,7 @@ export function useMergeCart() {
 /**
  * Returns the unified cart for the current session:
  * - authenticated → server cart
- * - guest → derived from guest store
+ * - guest → derived from guest store + backend discount fetch
  */
 export function useCart() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -231,12 +275,13 @@ export function useCart() {
   const guestItems = useGuestCartStore((s) => s.items);
   const isMerging = useIsMergingCart();
   const hydrated = useIsClient();
+  const { data: guestDiscount } = useGuestDiscount();
 
   if (isAuthenticated) {
     return { cart: serverCart ?? null, isLoading, isMerging };
   }
 
-  const guestCart = buildGuestCart(guestItems);
+  const guestCart = buildGuestCart(guestItems, guestDiscount);
 
   // The guest cart lives in the browser, so the server's HTML can only ever show
   // it empty. Until the client has taken over, report "loading" rather than
